@@ -31,7 +31,7 @@ handled the analogous case before improvising.
 
 | File | Purpose |
 |---|---|
-| `index.html` | Home Hub landing page. Fetches `hub-cards.json` and renders one real card per entry (plus a hardcoded dashed "ghost" placeholder card, always last). |
+| `index.html` | Home Hub landing page. Fetches `hub-cards.json` and renders one real card per entry — no placeholder/ghost card anymore (removed per explicit ask). If the fetch fails or returns nothing usable, falls back to a hardcoded Meals-only card (`FALLBACK_HUB_CARDS`) so the hub is never blank — the one deliberate exception to "never hardcode a card's data," kept in sync with `hub-cards.json`'s meals entry. |
 | `hub-cards.json` | List of Home Hub cards: `{id, href, icon, text: {en, zh, tl: {tab, title, desc}}}`. Add an entry to add a new section — no HTML/JS change needed. |
 | `meal-dashboard.html` | The meal planner + message thread. Fetches `recipes.json` at boot. Computes "this week" (Monday–Sunday) from the real current date every load — see "This week is always live" below. |
 | `recipes.json` | The shared recipe library: `{id, title, note, video, videoId}` per dish. `meal-dashboard.html`'s meal slots store only a recipe `id` (see Firestore schema below) and resolve title/note/video against this file at render time — single source of truth, no duplicated copies per slot. |
@@ -242,6 +242,16 @@ Firestore, so pulling in that extra SDK would be dead weight.
   too.**
 
 ## Troubleshooting / lessons already learned
+
+- **Home Hub showed only the ghost placeholder, no Meals card** — reported
+  once after the Firebase/name-entry changes landed; root cause wasn't
+  pinned down with certainty (no console access to the live failure), but
+  the fix applied either way: the ghost/placeholder card was removed
+  entirely per explicit request, and `hub-cards.json` fetch failing or
+  returning nothing usable now falls back to a hardcoded Meals-only card
+  (`FALLBACK_HUB_CARDS` in `index.html`) instead of silently leaving the
+  grid empty. If a blank-hub report ever recurs, checking the browser
+  console on the live page for a fetch/CORS/404 error is the next step.
 
 - **YouTube embeds require an `http://`/`https://` origin.** Opening any of
   these pages via `file://` (double-click) makes YouTube's iframe player throw

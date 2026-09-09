@@ -161,19 +161,6 @@
     color:var(--teal);
   }
 
-  .hub-card.ghost{
-    border-style:dashed;
-    border-width:1.5px;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-    color:var(--ink-soft);
-    cursor:default;
-    box-shadow:none;
-  }
-  .hub-card.ghost .icon{color:var(--ink-soft);opacity:0.5;}
-  .hub-card.ghost b{color:var(--teal);}
-
   .greeting{font-size:13px;color:var(--ink-soft);cursor:pointer;border:none;background:none;font-family:'Karla',sans-serif;padding:0;margin-right:6px;}
   .greeting b{color:var(--teal);}
 
@@ -216,12 +203,7 @@
     </div>
   </header>
 
-  <div class="grid" id="hubGrid">
-    <div class="hub-card ghost" id="ghostCard">
-      <div class="icon">＋</div>
-      <p><b data-i18n="ghostTitle">Next card goes here</b><br><span data-i18n="ghostSub">e.g. chores, groceries, or another shared tool</span></p>
-    </div>
-  </div>
+  <div class="grid" id="hubGrid"></div>
 </div>
 
 <div class="modal-overlay" id="nameModalOverlay">
@@ -283,7 +265,6 @@ const i18n = {
   en: {
     kicker: "Household", title: "Home Hub",
     openLink: "Open →",
-    ghostTitle: "Next card goes here", ghostSub: "e.g. chores, groceries, or another shared tool",
     themeLight: "Light", themeDark: "Dark", themeAuto: "Auto",
     nameModalTitle: "What's your name?",
     nameModalSub: "So messages in the meal thread show who sent them, instead of just \"You\".",
@@ -294,7 +275,6 @@ const i18n = {
   zh: {
     kicker: "家庭", title: "家庭中心",
     openLink: "打开 →",
-    ghostTitle: "下一张卡片将在这里", ghostSub: "例如：家务、购物清单，或其他共享工具",
     themeLight: "浅色", themeDark: "深色", themeAuto: "自动",
     nameModalTitle: "你的名字是？",
     nameModalSub: "这样餐饮消息里会显示是谁发的，而不只是「你」。",
@@ -305,7 +285,6 @@ const i18n = {
   tl: {
     kicker: "Sambahayan", title: "Home Hub",
     openLink: "Buksan →",
-    ghostTitle: "Dito ilalagay ang susunod na card", ghostSub: "hal. mga gawaing bahay, grocery list, o ibang shared tool",
     themeLight: "Maliwanag", themeDark: "Madilim", themeAuto: "Awtomatiko",
     nameModalTitle: "Ano ang pangalan mo?",
     nameModalSub: "Para makita kung sino ang nagpadala ng mensahe sa thread, hindi lang \"You\".",
@@ -366,9 +345,22 @@ document.querySelectorAll('.theme-seg').forEach(btn=>{
 // wg-groupbuy project's index.html + manifest.json.
 let hubCards = [];
 
+// If hub-cards.json fails to load or comes back empty/malformed for any
+// reason, the hub should never end up blank — fall back to just the known
+// Meals card so there's always something to tap through to. This is the
+// one intentional exception to "never hardcode a card's data" (see
+// project-knowledge.md), kept in sync with hub-cards.json's meals entry.
+const FALLBACK_HUB_CARDS = [{
+  id: "meals", href: "meal-dashboard.html", icon: "🍲",
+  text: {
+    en: { tab: "Meals", title: "What's Cooking", desc: "This week's meal plan, recipes and video links — plus messages between you and the helper." },
+    zh: { tab: "餐饮", title: "今天吃什么", desc: "本周的膳食计划、食谱和视频链接——以及你和帮佣之间的消息。" },
+    tl: { tab: "Pagkain", title: "Ano ang Lutuin", desc: "Ang meal plan ngayong linggo, mga recipe, at mga video link — kasama ang mga mensahe mo at ng katulong." }
+  }
+}];
+
 function renderHubCards(){
   const grid = document.getElementById('hubGrid');
-  const ghost = document.getElementById('ghostCard');
   grid.querySelectorAll('.dynamic-card').forEach(el => el.remove());
   hubCards.forEach(card=>{
     const text = card.text[currentLang] || card.text.en;
@@ -385,7 +377,7 @@ function renderHubCards(){
         </div>
       </a>
     `;
-    grid.insertBefore(wrap, ghost);
+    grid.appendChild(wrap);
   });
 }
 
@@ -474,10 +466,15 @@ if(!localStorage.getItem('wg-username')){
 fetch('./hub-cards.json?v=' + Date.now())
   .then(r => r.json())
   .then(cards => {
-    hubCards = Array.isArray(cards) ? cards.filter(c => c && c.id && c.href && c.text && c.text.en) : [];
+    const valid = Array.isArray(cards) ? cards.filter(c => c && c.id && c.href && c.text && c.text.en) : [];
+    hubCards = valid.length ? valid : FALLBACK_HUB_CARDS;
     renderHubCards();
   })
-  .catch(err => console.error('Failed to load hub-cards.json', err));
+  .catch(err => {
+    console.error('Failed to load hub-cards.json — showing fallback card instead', err);
+    hubCards = FALLBACK_HUB_CARDS;
+    renderHubCards();
+  });
 
 // Mobile Safari/Chrome can restore this page from the back-forward cache
 // with stale data (e.g. after navigating to meal-dashboard.html and back) —
