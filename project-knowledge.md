@@ -260,30 +260,49 @@ Firestore, so pulling in that extra SDK would be dead weight.
   the helper regardless of the current UI language toggle (this is the same
   toggle-leaking-into-message-content bug flagged earlier in this file —
   don't reintroduce it here either).
-- **Real translation is now wired in, client-side.** Sending a message now
-  calls the Cloud Translation API (v2, REST) directly from the browser
-  (`translateText()` in `meal-dashboard.html`) to translate your Chinese
-  message to Tagalog before writing it to Firestore, instead of the fixed
-  placeholder note. The Send button shows "Translating..." while the call
-  is in flight. **Needs a real API key to actually translate** — until
-  `TRANSLATE_API_KEY` is filled in (currently `"PASTE_ME"`), or if the API
-  call fails for any reason, it silently falls back to the same placeholder
-  note as before, so a missing/broken key never blocks sending a message.
-  Setup (Google Cloud Console, same `wg-family-assistant` project Firebase
-  uses):
-  1. Enable **Cloud Translation API** for the project (billing must be
-     enabled on the project — the Basic tier's free allowance is the first
-     500,000 characters/month, then paid beyond that).
-  2. Create an API key, restrict it to **Cloud Translation API** only, and
-     add an **HTTP referrer restriction** for this site (e.g.
-     `zoidz78.github.io/*`) — this key sits in the page source and is
-     visible to anyone, so the referrer restriction is the only thing
-     stopping someone else from using it on your quota.
-  3. Paste the key into `TRANSLATE_API_KEY` in `meal-dashboard.html`.
-  This is one-directional only (Chinese → Tagalog, for messages you send)
-  — there's still no path in the UI for the helper to type a message that
-  gets tagged `from:"helper"`, so there's nothing yet that needs Tagalog →
-  Chinese translation. That would be a separate feature if ever needed.
+- **Translation is now auto-detected with a single fixed target: English**
+  — not the three-way per-viewer design tried briefly before this, and not
+  the original fixed Chinese→Tagalog assumption either. Reasoning: you
+  type English only, your wife types English or Chinese, the helper types
+  English or Tagalog — everyone already understands English, so there's no
+  need to translate into three languages or vary the target by who's
+  looking. A sent message stores `{ text, origLang, translatedEn }`:
+  - `text` — exactly what was typed, in whichever language that was.
+  - `origLang` — auto-detected via the Cloud Translation API's `/detect`
+    endpoint (`detectLanguage()`), normalized to `'en'`/`'zh'`/`'tl'`
+    (regional/alternate codes like `zh-TW` or `fil` collapse into the
+    closest of the three). `null` if detection wasn't possible (no API
+    key, or the call failed) — stored and shown untranslated rather than
+    guessed at.
+  - `translatedEn` — the English translation, fetched via one
+    `translateText()` call, **only when `origLang` is known and isn't
+    already `'en'`** (an English message never gets a translate call at
+    all — nothing to do).
+  - **Rendering is the same for every viewer** — the translated box always
+    shows `translatedEn` (or "Translation unavailable" if it's missing)
+    whenever `origLang !== 'en'`, regardless of the viewer's own EN/中文/TL
+    toggle. This deliberately does NOT vary by viewer (an earlier version
+    of this feature did, and was reverted — simpler, cheaper, and matches
+    the existing rule that message content must never depend on the UI
+    language toggle).
+  - Cost/API note: at most 2 calls per message now (1 detect + 1 translate,
+    down from up to 3) — an English message costs just the 1 detect call.
+    Trivial at household chat volume against the free tier below.
+  - **Setup** (Google Cloud Console, same `wg-family-assistant` project
+    Firebase uses): enable **Cloud Translation API** (needs billing
+    enabled on the project — free allowance is the first 500,000
+    characters/month, then paid beyond that); create an API key restricted
+    to that one API plus an **HTTP referrer restriction** for this site
+    (e.g. `zoidz78.github.io/*`) — the key sits visibly in the page source,
+    so the referrer restriction is what stops anyone else from using it;
+    then paste it into `TRANSLATE_API_KEY` near the top of
+    `meal-dashboard.html` (currently `"PASTE_ME"`). Without a real key,
+    every message is stored and shown with `origLang: null` — untranslated
+    but never broken.
+  - Old messages (the original `text_zh`/`text_tl` shape, from before any
+    of this and the original hand-typed helper/you demo pairs) still
+    render exactly as before — the renderer branches on whether `m.text`
+    exists.
 - **Chat bubble alignment is per-viewer too, not just the label.** Fixing
   the "You" label (above) didn't fix alignment — a message from another
   family member's device still rendered right-aligned like your own,
@@ -295,6 +314,19 @@ Firestore, so pulling in that extra SDK would be dead weight.
   name, same as a helper message. `m.from` itself is untouched and still
   drives the Chinese/Tagalog pairing and translation-box color — those
   don't depend on who's viewing.
+
+- **"Clear all messages" button (🗑️, next to the bell) — testing only.**
+  Wipes every message in every meal slot for the *current week only*
+  (`mealThreads/{weekId}`) — leaves `mealPlans` (staples, dishes, status)
+  and other weeks' message history untouched. Confirms via a native
+  `window.confirm()` before doing anything, because **it writes straight to
+  Firestore**, so it clears the shared/live copy for every device
+  currently looking at this week, not just the one that clicked it — this
+  isn't a "clear my local view" button. Safe to leave in for now since it's
+  clearly labeled as testing-only, but worth removing (or hiding behind
+  something less discoverable) before handing this off as a finished
+  household tool, since anyone with the page open can wipe the week's
+  messages for everyone with two taps.
 
 ## Troubleshooting / lessons already learned
 

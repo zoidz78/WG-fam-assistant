@@ -13,7 +13,7 @@ live across every device — everyone sees the same thing in real time.
 | File | Purpose |
 |---|---|
 | `index.html` | The Home Hub landing page. Reads `hub-cards.json` to know what cards to show — never hardcodes a card's data. Asks for your name on first visit. |
-| `meal-dashboard.html` | The meal planner + message thread. Reads `recipes.json` for the list of dishes the helper knows how to cook. Always shows the current week (Monday–Sunday), computed from today's date. |
+| `meal-dashboard.html` | The meal planner + message thread. Reads `recipes.json` for the list of dishes the helper knows how to cook. Always shows the current week (Monday–Sunday), computed from today's date. Has a 🗑️ button next to the bell for wiping this week's messages — see "Clearing messages" below before tapping it. |
 | `hub-cards.json` | List of cards shown on the Home Hub. Add an entry here to add a new section (e.g. chores, groceries) — no HTML/JS changes needed. |
 | `recipes.json` | The shared recipe library — every dish the helper knows how to cook, with its cooking note and an optional video. Add an entry here to teach a new recipe. |
 | `firestore-rules.md` | Firestore security rules for the live, cross-device parts of the app (staples, dish picks, status, messages, saved names). **Live** — already applied in the Firebase project this app uses. |
@@ -24,8 +24,28 @@ live across every device — everyone sees the same thing in real time.
 The first time you open the Home Hub, it asks for your name and remembers
 it on that device. This is so messages you send in the meal thread show up
 as "You" to you, but with your actual name to everyone else — so if more
-than one person is chatting with the helper, it's clear who said what. Tap
-your name (top of the Home Hub) any time to change it.
+than one person is chatting with the helper, it's clear who said what. Your
+own messages sit on the right side of the thread; everyone else's (the
+helper's, or another family member's) sit on the left — that's per-device,
+so what shows as "your" side depends on which phone/browser you're on, not
+who's speaking. Tap your name (top of the Home Hub) any time to change it.
+
+## Messages & translation
+
+Everyone can type in whatever language they're comfortable with — English,
+Chinese, or Tagalog — message by message, no need to pick a language
+first. The app automatically detects what language a message was typed in;
+if it wasn't English, an English translation appears underneath it, since
+everyone using this understands English. An English message doesn't get a
+translation line since there's nothing to translate. This works the same
+way for every reader, no matter which of the EN/中文/TL buttons they
+currently have selected — that toggle only changes the app's own labels
+and buttons, not the conversation itself.
+
+If a message shows "Translation unavailable" instead of an actual
+translation, the translation service isn't reachable at that moment (or
+hasn't been set up yet) — the original message still sends and saves
+normally either way.
 
 ## Editing a recipe
 
@@ -36,6 +56,20 @@ when picking a dish for a meal slot. Like adding a brand-new dish from
 inside the app, an edit made this way only lasts for your current browser
 session — to make it permanent for everyone, edit `recipes.json` directly
 (see below) and re-upload.
+
+## Clearing messages
+
+The 🗑️ button next to the bell icon on the meal dashboard deletes every
+message in every meal slot **for the current week**, after asking you to
+confirm. It's meant for testing, not everyday use — a few things worth
+knowing before tapping it:
+
+- It clears the **shared, live** copy — if the helper or another family
+  member has the page open at the time, their messages disappear for them
+  too, not just on your device.
+- It doesn't touch the meal plan itself (dishes, staples, status) or any
+  other week's messages — only this week's chat.
+- There's no undo.
 
 ## Adding a new recipe
 
