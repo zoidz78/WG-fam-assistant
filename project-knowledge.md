@@ -356,6 +356,20 @@ Firestore, so pulling in that extra SDK would be dead weight.
   an `isMine()` check matching `isOwnMessage()` exactly (the two pages
   don't share a script file) — **keep them in sync if either changes**.
 
+- **Send button was getting squeezed off-screen** on narrower viewports —
+  classic flexbox bug: `.msg-input input` had `flex:1` but no `min-width:0`,
+  so a flex child's default `min-width:auto` stopped it from shrinking
+  below its own content width, pushing the Send button past the edge of
+  the card instead of the input just getting narrower. Fixed by adding
+  `min-width:0`, and separately made the button itself a fixed 38×38px
+  icon button (a "➤" arrow, localized `send` string moved to `title`/
+  `aria-label` instead of visible text) so it can never grow wide enough to
+  cause this again regardless of content. The send logic itself was
+  extracted into `sendMessageForSlot(slotKey)` so both the button's
+  `onclick` and a new `Enter` keydown listener on the message input call
+  the same code — pressing Enter now sends (Shift+Enter is left alone,
+  though a single-line `<input>` has no newline to insert regardless).
+
 ## Troubleshooting / lessons already learned
 
 - **Home Hub showed only the ghost placeholder, no Meals card** — reported

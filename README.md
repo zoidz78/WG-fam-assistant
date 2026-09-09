@@ -32,6 +32,9 @@ who's speaking. Tap your name (top of the Home Hub) any time to change it.
 
 ## Messages & translation
 
+Type your message and either press **Enter** or tap the ➤ button to send —
+no need to reach for the button every time.
+
 Everyone can type in whatever language they're comfortable with — English,
 Chinese, or Tagalog — message by message, no need to pick a language
 first. The app guesses what language a message was typed in and, if it

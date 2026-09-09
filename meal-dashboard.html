@@ -380,6 +380,7 @@
   .msg-input{display:flex;gap:6px;margin-top:10px;}
   .msg-input input{
     flex:1;
+    min-width:0;
     border:1px solid var(--line);
     border-radius:3px;
     padding:7px 9px;
@@ -390,14 +391,20 @@
   }
   .msg-input input::placeholder{color:var(--ink-soft);}
   .msg-input button{
+    flex:0 0 auto;
+    width:38px;
+    height:38px;
     border:1px solid var(--teal);
     background:var(--teal);
     color:var(--paper);
-    font-weight:700;
-    font-size:12px;
-    padding:0 14px;
+    font-size:16px;
+    line-height:1;
+    padding:0;
     border-radius:3px;
     cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
   }
 
   .add-recipe{
@@ -1186,7 +1193,7 @@ function renderMeals(){
           ${threadHtml}
           <div class="msg-input">
             <input type="text" placeholder="${t('inputPlaceholder')}" data-input="${slotKey}">
-            <button data-send="${slotKey}">${t('send')}</button>
+            <button data-send="${slotKey}" title="${t('send')}" aria-label="${t('send')}">➤</button>
           </div>
         </div>
       </div>
@@ -1238,38 +1245,50 @@ function renderMeals(){
     btn.onclick = ()=> openPickDishModal(btn.dataset.addto);
   });
 
+  async function sendMessageForSlot(slotKey){
+    const input = el.querySelector(`[data-input="${slotKey}"]`);
+    const text = input.value.trim();
+    if(!text) return;
+    if(!localStorage.getItem('wg-username')){ openNameModal(); return; }
+    input.value = '';
+    const sendBtn = el.querySelector(`[data-send="${slotKey}"]`);
+    sendBtn.disabled = true;
+    sendBtn.textContent = '⏳'; // brief icon swap while translating — button is icon-only, no room for text
+    // Whoever's typing (you, your wife, the helper) may write in any of
+    // the three app languages message-to-message — nothing here assumes
+    // a fixed language per sender. Guess what was actually typed (see
+    // detectLangHeuristic — no network call, always returns a guess); if
+    // it's not English, translate it to English (everyone reads
+    // English), and everyone sees that same translation regardless of
+    // their own language toggle — see rendering in renderMeals().
+    const origLang = detectLangHeuristic(text);
+    let translatedEn = null;
+    if(origLang !== 'en'){
+      translatedEn = await translateText(text, 'en', origLang);
+    }
+    const newThread = threadData[slotKey].concat([{
+      from:"you", text, origLang, translatedEn, unread: true,
+      senderId: getUserId(), senderName: localStorage.getItem('wg-username')
+    }]);
+    writeThread(slotKey, newThread); // triggers renderMeals(), which rebuilds this button back to '➤'
+  }
+
   el.querySelectorAll('[data-send]').forEach(btn=>{
-    btn.onclick = async ()=>{
-      const slotKey = btn.dataset.send;
-      const input = el.querySelector(`[data-input="${slotKey}"]`);
-      const text = input.value.trim();
-      if(!text) return;
-      if(!localStorage.getItem('wg-username')){ openNameModal(); return; }
-      input.value = '';
-      const sendBtn = el.querySelector(`[data-send="${slotKey}"]`);
-      const originalLabel = sendBtn.textContent;
-      sendBtn.disabled = true;
-      sendBtn.textContent = t('translating');
-      // Whoever's typing (you, your wife, the helper) may write in any of
-      // the three app languages message-to-message — nothing here assumes
-      // a fixed language per sender. Guess what was actually typed (see
-      // detectLangHeuristic — no network call, always returns a guess); if
-      // it's not English, translate it to English (everyone reads
-      // English), and everyone sees that same translation regardless of
-      // their own language toggle — see rendering in renderMeals().
-      const origLang = detectLangHeuristic(text);
-      let translatedEn = null;
-      if(origLang !== 'en'){
-        translatedEn = await translateText(text, 'en', origLang);
+    btn.onclick = ()=> sendMessageForSlot(btn.dataset.send);
+  });
+
+  // Enter sends — this is a single-line input, so there's no reason to
+  // require reaching for the Send button. Shift+Enter is left alone in
+  // case someone's phone keyboard uses it for something else, but plain
+  // Enter always sends rather than doing nothing (a single-line <input>
+  // has no newline to insert anyway).
+  el.querySelectorAll('[data-input]').forEach(input=>{
+    input.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        sendMessageForSlot(input.dataset.input);
       }
-      const newThread = threadData[slotKey].concat([{
-        from:"you", text, origLang, translatedEn, unread: true,
-        senderId: getUserId(), senderName: localStorage.getItem('wg-username')
-      }]);
-      writeThread(slotKey, newThread);
-      sendBtn.disabled = false;
-      sendBtn.textContent = originalLabel;
-    };
+    });
   });
 
   renderBell();
