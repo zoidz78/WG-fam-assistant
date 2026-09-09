@@ -1030,7 +1030,7 @@ function writeThread(slotKey, newMessages){
 }
 
 function unreadForMeal(slotKey){
-  return threadData[slotKey].filter(m => m.from === 'helper' && m.unread).length;
+  return threadData[slotKey].filter(m => !isOwnMessage(m) && m.unread).length;
 }
 
 function totalUnread(){
@@ -1263,7 +1263,7 @@ function renderMeals(){
         translatedEn = await translateText(text, 'en', origLang);
       }
       const newThread = threadData[slotKey].concat([{
-        from:"you", text, origLang, translatedEn,
+        from:"you", text, origLang, translatedEn, unread: true,
         senderId: getUserId(), senderName: localStorage.getItem('wg-username')
       }]);
       writeThread(slotKey, newThread);
@@ -1340,10 +1340,10 @@ function closeNotifPopover(){
 function renderNotifPopover(){
   const popover = document.getElementById('notifPopover');
   const entries = mealSlots.map(slotKey=>{
-    const unreadMsgs = threadData[slotKey].filter(m => m.from === 'helper' && m.unread);
+    const unreadMsgs = threadData[slotKey].filter(m => !isOwnMessage(m) && m.unread);
     if(unreadMsgs.length === 0) return null;
     const latest = unreadMsgs[unreadMsgs.length - 1];
-    const text = latest.text_zh || latest.text_tl;
+    const text = typeof latest.text === 'string' ? latest.text : (latest.text_zh || latest.text_tl);
     return { slotKey, text, count: unreadMsgs.length };
   }).filter(Boolean);
 
@@ -1368,7 +1368,7 @@ function renderNotifPopover(){
 }
 
 function jumpToMealThread(slotKey){
-  const newThread = threadData[slotKey].map(m => m.from === 'helper' ? { ...m, unread: false } : m);
+  const newThread = threadData[slotKey].map(m => !isOwnMessage(m) ? { ...m, unread: false } : m);
   writeThread(slotKey, newThread);
   closeNotifPopover();
   const card = document.getElementById('mealcard-' + slotKey);

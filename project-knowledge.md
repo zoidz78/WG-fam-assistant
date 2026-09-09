@@ -339,6 +339,23 @@ Firestore, so pulling in that extra SDK would be dead weight.
   household tool, since anyone with the page open can wipe the week's
   messages for everyone with two taps.
 
+- **Unread bell/badge only ever counted `from:"helper"` messages —
+  meaningless once real people all send as `"you"`.** Two bugs compounded:
+  the send handler never set `unread: true` on a new message at all, and
+  every unread-counting site (`unreadForMeal()`, the notification popover,
+  `jumpToMealThread()`'s mark-as-read, and the Home Hub's
+  `subscribeMealsBadge()`) filtered on the hardcoded `from === 'helper'`
+  role. Since the multi-user redesign means your wife and the helper also
+  send as `from:"you"` (just with their own `senderName`), none of that
+  ever matched — the bell and Home Hub badge would never have lit up for
+  anything anyone actually typed. Fixed by: (1) setting `unread: true` on
+  every newly sent message, and (2) switching every counting/marking site
+  to `!isOwnMessage(m)` instead of `from === 'helper'` — "unread" now means
+  "not sent by this device," which is what actually matters once anyone
+  can be on either side of a conversation. `index.html`'s badge duplicates
+  an `isMine()` check matching `isOwnMessage()` exactly (the two pages
+  don't share a script file) — **keep them in sync if either changes**.
+
 ## Troubleshooting / lessons already learned
 
 - **Home Hub showed only the ghost placeholder, no Meals card** — reported

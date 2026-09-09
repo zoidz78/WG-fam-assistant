@@ -418,11 +418,21 @@ function paintMealsBadge(count){
 
 function subscribeMealsBadge(){
   if(!db) return; // Firebase not configured yet — no live badge until it is.
+  // Mirrors meal-dashboard.html's isOwnMessage() exactly — kept in sync
+  // manually since the two pages don't share a script file. A helper
+  // message is never "mine"; a "you" message with no senderId (saved
+  // before that field existed) falls back to "mine" on every device,
+  // same legacy behavior as the chat thread itself.
+  function isMine(m){
+    if(m.from !== 'you') return false;
+    if(!m.senderId) return true;
+    return m.senderId === getUserId();
+  }
   onSnapshot(doc(db, 'mealThreads', currentWeekId()), snap => {
     if(!snap.exists()) { paintMealsBadge(0); return; }
     const data = snap.data();
     const total = Object.values(data).reduce((sum, arr) =>
-      sum + (Array.isArray(arr) ? arr.filter(m => m.from === 'helper' && m.unread).length : 0), 0);
+      sum + (Array.isArray(arr) ? arr.filter(m => m.unread && !isMine(m)).length : 0), 0);
     paintMealsBadge(total);
   }, err => console.error('Failed to subscribe to mealThreads badge', err));
 }
