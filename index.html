@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Home Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EEF2EA;
+    --paper: #FBFAF6;
+    --ink: #2A2420;
+    --ink-soft: #6B6459;
+    --teal: #2F4A43;
+    --teal-soft: #E4EBE7;
+    --mustard: #E3A23D;
+    --mustard-soft: #FBEDD6;
+    --brick: #C1502E;
+    --line: #DAD4C6;
+    --dot: rgba(42,36,32,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]):not([data-theme="dark"]){
+      --bg: #1E1B17;
+      --paper: #2A2622;
+      --ink: #EDE8DF;
+      --ink-soft: #A89F91;
+      --teal: #6FA394;
+      --teal-soft: #24332F;
+      --mustard: #E3A23D;
+      --mustard-soft: #3A2E17;
+      --brick: #E07854;
+      --line: #46403A;
+      --dot: rgba(255,255,255,0.06);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg: #1E1B17;
+    --paper: #2A2622;
+    --ink: #EDE8DF;
+    --ink-soft: #A89F91;
+    --teal: #6FA394;
+    --teal-soft: #24332F;
+    --mustard: #E3A23D;
+    --mustard-soft: #3A2E17;
+    --brick: #E07854;
+    --line: #46403A;
+    --dot: rgba(255,255,255,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+    background-size: 22px 22px;
+    color:var(--ink);
+    font-family:'Karla', sans-serif;
+    min-height:100vh;
+    transition:background-color 0.2s ease, color 0.2s ease;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:32px 16px 60px;}
+
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:26px;flex-wrap:wrap;}
+  .brand{display:flex;flex-direction:column;gap:2px;}
+  header .kicker{font-size:13px;color:var(--ink-soft);display:block;margin-bottom:2px;}
+  header h1{font-family:'Fraunces',serif;font-style:italic;font-weight:500;font-size:32px;margin:0;color:var(--teal);}
+
+  .controls{display:flex;gap:6px;align-items:center;}
+  .theme-switch{
+    display:flex;
+    border:1px solid var(--line);
+    background:var(--paper);
+    border-radius:999px;
+    padding:2px;
+  }
+  .theme-seg{
+    border:none;
+    background:none;
+    font-family:'Karla',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:999px;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .theme-seg.active{background:var(--teal);color:var(--paper);}
+  .lang-btn{
+    border:1px solid var(--line);
+    background:var(--paper);
+    padding:6px 12px;
+    font-family:'Karla',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    border-radius:3px;
+  }
+  .lang-btn.active{background:var(--teal);color:var(--paper);border-color:var(--teal);}
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:16px;
+  }
+  @media(min-width:640px){.grid{grid-template-columns:repeat(2,1fr);}}
+
+  .hub-card-wrap{position:relative;}
+  .hub-card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:2px;
+    box-shadow:2px 3px 0 rgba(42,36,32,0.08);
+    text-decoration:none;
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    position:relative;
+    min-height:150px;
+  }
+  .notif-badge{
+    position:absolute;
+    top:-8px;left:-8px;
+    min-width:22px;height:22px;
+    border-radius:11px;
+    background:var(--brick);
+    color:var(--paper);
+    font-family:'Karla',sans-serif;
+    font-weight:800;
+    font-size:12px;
+    display:flex;align-items:center;justify-content:center;
+    padding:0 5px;
+    border:2px solid var(--bg);
+    box-shadow:0 1px 3px rgba(0,0,0,0.3);
+    z-index:2;
+  }
+  .hub-card .tab{
+    display:inline-block;
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:12.5px;
+    padding:5px 14px;
+    color:var(--paper);
+    background:var(--teal);
+    border-radius:0 0 4px 0;
+    align-self:flex-start;
+  }
+  .hub-card .body{padding:16px;flex:1;display:flex;flex-direction:column;}
+  .hub-card .icon{font-size:28px;margin-bottom:8px;}
+  .hub-card h2{font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin:0 0 6px;line-height:1.25;}
+  .hub-card p{font-size:13px;color:var(--ink-soft);margin:0;line-height:1.45;flex:1;}
+  .hub-card .go{
+    margin-top:12px;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--teal);
+  }
+
+  .hub-card.ghost{
+    border-style:dashed;
+    border-width:1.5px;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    color:var(--ink-soft);
+    cursor:default;
+    box-shadow:none;
+  }
+  .hub-card.ghost .icon{color:var(--ink-soft);opacity:0.5;}
+  .hub-card.ghost b{color:var(--teal);}
+
+  .greeting{font-size:13px;color:var(--ink-soft);cursor:pointer;border:none;background:none;font-family:'Karla',sans-serif;padding:0;margin-right:6px;}
+  .greeting b{color:var(--teal);}
+
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(42,36,32,0.45);
+    align-items:center;justify-content:center;padding:16px;z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--paper);border-radius:4px;width:100%;max-width:360px;padding:20px;box-shadow:0 8px 30px rgba(0,0,0,0.2);}
+  .modal h3{font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin:0 0 6px;}
+  .modal p.sub{font-size:13px;color:var(--ink-soft);margin:0 0 14px;line-height:1.4;}
+  .modal input[type="text"]{
+    width:100%;border:1px solid var(--line);border-radius:3px;padding:9px 10px;
+    font-family:'Karla',sans-serif;font-size:14px;background:var(--paper);color:var(--ink);
+  }
+  .modal input[type="text"]::placeholder{color:var(--ink-soft);}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+  .modal-actions button{padding:8px 16px;border-radius:3px;font-family:'Karla',sans-serif;font-weight:700;font-size:13px;cursor:pointer;}
+  .btn-cancel{background:none;border:1px solid var(--line);color:var(--ink-soft);}
+  .btn-save{background:var(--teal);border:1px solid var(--teal);color:var(--paper);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="kicker" data-i18n="kicker">Household</span>
+      <h1 data-i18n="title">Home Hub</h1>
+    </div>
+    <div class="controls">
+      <button class="greeting" id="greetingBtn" style="display:none;"></button>
+      <div class="theme-switch" id="themeSwitch">
+        <button class="theme-seg" data-theme-choice="light" data-i18n="themeLight">Light</button>
+        <button class="theme-seg" data-theme-choice="dark" data-i18n="themeDark">Dark</button>
+        <button class="theme-seg" data-theme-choice="auto" data-i18n="themeAuto">Auto</button>
+      </div>
+      <button class="lang-btn" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="zh">中文</button>
+      <button class="lang-btn" data-lang="tl">TL</button>
+    </div>
+  </header>
+
+  <div class="grid" id="hubGrid">
+    <div class="hub-card ghost" id="ghostCard">
+      <div class="icon">＋</div>
+      <p><b data-i18n="ghostTitle">Next card goes here</b><br><span data-i18n="ghostSub">e.g. chores, groceries, or another shared tool</span></p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="nameModalOverlay">
+  <div class="modal">
+    <h3 data-i18n="nameModalTitle">What's your name?</h3>
+    <p class="sub" data-i18n="nameModalSub">So messages in the meal thread show who sent them, instead of just "You".</p>
+    <input type="text" id="nameInput" data-i18n-ph="nameModalPh" placeholder="e.g. Mom, Dad, Effendy...">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="nameModalSkip" data-i18n="skip">Skip for now</button>
+      <button class="btn-save" id="nameModalSave" data-i18n="save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// TODO: paste this app's Firebase project config here (Firebase Console →
+// Project settings → General → Your apps → SDK setup and configuration).
+// These values aren't secrets — access control comes from firestore-rules.md,
+// not from hiding this config. Must match the config pasted into
+// meal-dashboard.html so both pages talk to the same Firestore project.
+const firebaseConfig = {
+  apiKey: "AIzaSyA6GjU443-D-M2ADE6reI7wBZYuYERTsSU",
+  authDomain: "wg-family-assistant.firebaseapp.com",
+  projectId: "wg-family-assistant",
+  storageBucket: "wg-family-assistant.firebasestorage.app",
+  messagingSenderId: "220482684013",
+  appId: "1:220482684013:web:27fca12be8fe9bfbd52b64"
+};
+let db = null;
+try {
+  db = getFirestore(initializeApp(firebaseConfig));
+} catch (e) {
+  console.warn('Firebase not configured yet — name will only be saved locally.', e);
+}
+
+// A random per-device ID (kept in localStorage) is the doc ID in the
+// familyMembers collection — separate from the display name itself, so
+// renaming later just updates the same doc instead of creating a new one.
+function getUserId(){
+  let id = localStorage.getItem('wg-userid');
+  if(!id){
+    id = (crypto.randomUUID ? crypto.randomUUID() : 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+    localStorage.setItem('wg-userid', id);
+  }
+  return id;
+}
+
+function saveFamilyMemberName(name){
+  localStorage.setItem('wg-username', name);
+  if(!db) return;
+  setDoc(doc(db, 'familyMembers', getUserId()), { name, updatedAt: Date.now() }, { merge: true })
+    .catch(err => console.error('Failed to save name to Firestore', err));
+}
+
+const i18n = {
+  en: {
+    kicker: "Household", title: "Home Hub",
+    openLink: "Open →",
+    ghostTitle: "Next card goes here", ghostSub: "e.g. chores, groceries, or another shared tool",
+    themeLight: "Light", themeDark: "Dark", themeAuto: "Auto",
+    nameModalTitle: "What's your name?",
+    nameModalSub: "So messages in the meal thread show who sent them, instead of just \"You\".",
+    nameModalPh: "e.g. Mom, Dad, Effendy...",
+    skip: "Skip for now", save: "Save",
+    greetingHi: "Hi, "
+  },
+  zh: {
+    kicker: "家庭", title: "家庭中心",
+    openLink: "打开 →",
+    ghostTitle: "下一张卡片将在这里", ghostSub: "例如：家务、购物清单，或其他共享工具",
+    themeLight: "浅色", themeDark: "深色", themeAuto: "自动",
+    nameModalTitle: "你的名字是？",
+    nameModalSub: "这样餐饮消息里会显示是谁发的，而不只是「你」。",
+    nameModalPh: "例如：妈妈、爸爸、Effendy...",
+    skip: "暂时跳过", save: "保存",
+    greetingHi: "你好，"
+  },
+  tl: {
+    kicker: "Sambahayan", title: "Home Hub",
+    openLink: "Buksan →",
+    ghostTitle: "Dito ilalagay ang susunod na card", ghostSub: "hal. mga gawaing bahay, grocery list, o ibang shared tool",
+    themeLight: "Maliwanag", themeDark: "Madilim", themeAuto: "Awtomatiko",
+    nameModalTitle: "Ano ang pangalan mo?",
+    nameModalSub: "Para makita kung sino ang nagpadala ng mensahe sa thread, hindi lang \"You\".",
+    nameModalPh: "hal. Mommy, Daddy, Effendy...",
+    skip: "Laktawan muna", save: "I-save",
+    greetingHi: "Hi, "
+  }
+};
+
+let currentLang = localStorage.getItem('wg-lang') || 'en';
+function t(key){ return i18n[currentLang][key] || key; }
+
+function syncLangUI(){
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active', b.dataset.lang === currentLang));
+  document.querySelectorAll('[data-i18n]').forEach(elm=>{
+    elm.textContent = t(elm.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(elm=>{
+    elm.placeholder = t(elm.dataset.i18nPh);
+  });
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    currentLang = btn.dataset.lang;
+    localStorage.setItem('wg-lang', currentLang);
+    syncLangUI();
+    applyTheme();
+    renderHubCards();
+    renderGreeting();
+  };
+});
+
+let themePref = localStorage.getItem('wg-theme') || 'auto';
+
+function applyTheme(){
+  if(themePref === 'auto'){
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', themePref);
+  }
+  document.querySelectorAll('.theme-seg').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.themeChoice === themePref);
+  });
+}
+
+document.querySelectorAll('.theme-seg').forEach(btn=>{
+  btn.onclick = ()=>{
+    themePref = btn.dataset.themeChoice;
+    localStorage.setItem('wg-theme', themePref);
+    applyTheme();
+  };
+});
+
+// Cards live in hub-cards.json (each entry carries its own EN/中文/TL text)
+// so adding a future section (chores, groceries, ...) is a pure JSON edit —
+// index.html never hardcodes a card's data, same philosophy as the sibling
+// wg-groupbuy project's index.html + manifest.json.
+let hubCards = [];
+
+function renderHubCards(){
+  const grid = document.getElementById('hubGrid');
+  const ghost = document.getElementById('ghostCard');
+  grid.querySelectorAll('.dynamic-card').forEach(el => el.remove());
+  hubCards.forEach(card=>{
+    const text = card.text[currentLang] || card.text.en;
+    const wrap = document.createElement('div');
+    wrap.className = 'hub-card-wrap dynamic-card';
+    wrap.innerHTML = `
+      <a class="hub-card" href="${card.href}" id="hubcard-${card.id}">
+        <span class="tab">${text.tab}</span>
+        <div class="body">
+          <div class="icon">${card.icon}</div>
+          <h2>${text.title}</h2>
+          <p>${text.desc}</p>
+          <span class="go">${t('openLink')}</span>
+        </div>
+      </a>
+    `;
+    grid.insertBefore(wrap, ghost);
+  });
+}
+
+// This week's Monday-based key — must match the same formula in
+// meal-dashboard.html so both pages agree on which mealThreads doc holds
+// this week's messages.
+function currentWeekId(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const idx = (today.getDay() + 6) % 7;
+  const monday = new Date(today); monday.setDate(today.getDate() - idx);
+  return `${monday.getFullYear()}-${String(monday.getMonth()+1).padStart(2,'0')}-${String(monday.getDate()).padStart(2,'0')}`;
+}
+
+// Live unread-helper-message badge on the Meals card, read straight from
+// the same mealThreads/{weekId} doc meal-dashboard.html writes to — no more
+// localStorage stand-in (see project-knowledge.md "replace this fallback
+// logic once the badge is Firestore-driven for real").
+function paintMealsBadge(count){
+  const mealsLink = document.getElementById('hubcard-meals');
+  if(!mealsLink) return;
+  const wrap = mealsLink.parentElement;
+  let badge = wrap.querySelector('.notif-badge');
+  if(count > 0){
+    if(!badge){
+      badge = document.createElement('span');
+      badge.className = 'notif-badge';
+      wrap.appendChild(badge);
+    }
+    badge.textContent = count;
+  } else if(badge){
+    badge.remove();
+  }
+}
+
+function subscribeMealsBadge(){
+  if(!db) return; // Firebase not configured yet — no live badge until it is.
+  onSnapshot(doc(db, 'mealThreads', currentWeekId()), snap => {
+    if(!snap.exists()) { paintMealsBadge(0); return; }
+    const data = snap.data();
+    const total = Object.values(data).reduce((sum, arr) =>
+      sum + (Array.isArray(arr) ? arr.filter(m => m.from === 'helper' && m.unread).length : 0), 0);
+    paintMealsBadge(total);
+  }, err => console.error('Failed to subscribe to mealThreads badge', err));
+}
+
+// --- Name entry (first visit) ---
+function renderGreeting(){
+  const btn = document.getElementById('greetingBtn');
+  const name = localStorage.getItem('wg-username');
+  if(name){
+    btn.style.display = '';
+    btn.innerHTML = `${t('greetingHi')}<b>${name}</b>`;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+function openNameModal(){
+  document.getElementById('nameInput').value = localStorage.getItem('wg-username') || '';
+  document.getElementById('nameModalOverlay').classList.add('open');
+}
+function closeNameModal(){
+  document.getElementById('nameModalOverlay').classList.remove('open');
+}
+
+document.getElementById('greetingBtn').onclick = openNameModal;
+document.getElementById('nameModalSkip').onclick = closeNameModal;
+document.getElementById('nameModalSave').onclick = ()=>{
+  const name = document.getElementById('nameInput').value.trim();
+  if(!name){ document.getElementById('nameInput').focus(); return; }
+  saveFamilyMemberName(name);
+  renderGreeting();
+  closeNameModal();
+};
+
+syncLangUI();
+applyTheme();
+renderGreeting();
+subscribeMealsBadge();
+if(!localStorage.getItem('wg-username')){
+  openNameModal();
+}
+// GitHub Pages / mobile browsers can serve a stale cached copy of this
+// JSON after a re-upload — appending a changing query string defeats that
+// cache on every load, same fix applied in the wg-groupbuy project.
+fetch('./hub-cards.json?v=' + Date.now())
+  .then(r => r.json())
+  .then(cards => {
+    hubCards = Array.isArray(cards) ? cards.filter(c => c && c.id && c.href && c.text && c.text.en) : [];
+    renderHubCards();
+  })
+  .catch(err => console.error('Failed to load hub-cards.json', err));
+
+// Mobile Safari/Chrome can restore this page from the back-forward cache
+// with stale data (e.g. after navigating to meal-dashboard.html and back) —
+// force a real reload in that case so hub-cards.json and the badge count
+// are re-fetched fresh, same fix applied in the wg-groupbuy project.
+window.addEventListener('pageshow', (event) => {
+  if(event.persisted) window.location.reload();
+});
+</script>
+</body>
+</html>

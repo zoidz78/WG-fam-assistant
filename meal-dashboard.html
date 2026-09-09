@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Meal Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EEF2EA;
+    --paper: #FBFAF6;
+    --ink: #2A2420;
+    --ink-soft: #6B6459;
+    --teal: #2F4A43;
+    --teal-soft: #E4EBE7;
+    --mustard: #E3A23D;
+    --mustard-soft: #FBEDD6;
+    --brick: #C1502E;
+    --brick-soft: #F7E2DA;
+    --moss: #7A9B76;
+    --moss-soft: #E7EFE4;
+    --line: #DAD4C6;
+    --dot: rgba(42,36,32,0.06);
+    --dish-bg: rgba(255,255,255,0.5);
+    --cooking-text: #8a5c14;
+    --done-text: #3f5b3c;
+    --kids-accent: #6B4E7A;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]):not([data-theme="dark"]){
+      --bg: #1E1B17;
+      --paper: #2A2622;
+      --ink: #EDE8DF;
+      --ink-soft: #A89F91;
+      --teal: #6FA394;
+      --teal-soft: #24332F;
+      --mustard: #E3A23D;
+      --mustard-soft: #3A2E17;
+      --brick: #E07854;
+      --brick-soft: #3A2018;
+      --moss: #9CC198;
+      --moss-soft: #263323;
+      --line: #46403A;
+      --dot: rgba(255,255,255,0.06);
+      --dish-bg: rgba(255,255,255,0.04);
+      --cooking-text: #E3A23D;
+      --done-text: #9CC198;
+      --kids-accent: #B98FCB;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg: #1E1B17;
+    --paper: #2A2622;
+    --ink: #EDE8DF;
+    --ink-soft: #A89F91;
+    --teal: #6FA394;
+    --teal-soft: #24332F;
+    --mustard: #E3A23D;
+    --mustard-soft: #3A2E17;
+    --brick: #E07854;
+    --brick-soft: #3A2018;
+    --moss: #9CC198;
+    --moss-soft: #263323;
+    --line: #46403A;
+    --dot: rgba(255,255,255,0.06);
+    --dish-bg: rgba(255,255,255,0.04);
+    --cooking-text: #E3A23D;
+    --done-text: #9CC198;
+    --kids-accent: #B98FCB;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+    background-size: 22px 22px;
+    color:var(--ink);
+    font-family:'Karla', sans-serif;
+    min-height:100vh;
+    padding-bottom:40px;
+    transition:background-color 0.2s ease, color 0.2s ease;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:20px 16px 0;}
+
+  /* Header */
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .brand{display:flex;flex-direction:column;gap:2px;}
+  .back-link{
+    font-family:'Karla',sans-serif;
+    font-size:12px;
+    font-weight:700;
+    color:var(--teal);
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    margin-bottom:2px;
+  }
+  .back-link:hover{text-decoration:underline;}
+  .brand .kicker{font-size:13px;color:var(--ink-soft);}
+  .brand h1{font-family:'Fraunces',serif;font-style:italic;font-weight:500;font-size:30px;margin:0;color:var(--teal);}
+  .langs{display:flex;gap:6px;align-items:center;}
+  .theme-switch{
+    display:flex;
+    border:1px solid var(--line);
+    background:var(--paper);
+    border-radius:999px;
+    padding:2px;
+    margin-right:4px;
+  }
+  .theme-seg{
+    border:none;
+    background:none;
+    font-family:'Karla',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:999px;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .theme-seg.active{background:var(--teal);color:var(--paper);}
+  .bell{
+    position:relative;
+    width:34px;height:34px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    border-radius:3px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+    cursor:pointer;
+    margin-right:4px;
+  }
+  .bell .count{
+    position:absolute;top:-6px;right:-6px;
+    background:var(--brick);
+    color:var(--paper);
+    font-size:10px;
+    font-weight:700;
+    min-width:16px;height:16px;
+    border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    padding:0 3px;
+    border:1.5px solid var(--bg);
+  }
+  .notif-popover{
+    display:none;
+    position:absolute;
+    top:42px;right:0;
+    width:260px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:6px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.18);
+    z-index:60;
+    overflow:hidden;
+    text-align:left;
+  }
+  .notif-popover.open{display:block;}
+  .notif-item{padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .notif-item:last-child{border-bottom:none;}
+  .notif-item:hover{background:var(--teal-soft);}
+  .notif-meal{font-family:'Fraunces',serif;font-weight:600;font-size:13px;color:var(--teal);margin-bottom:2px;}
+  .notif-text{font-size:12.5px;color:var(--ink-soft);line-height:1.35;}
+  .notif-empty{padding:14px 12px;font-size:12.5px;color:var(--ink-soft);text-align:center;}
+  .unread-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brick);margin-right:5px;}
+  .card.flash{animation:flashBg 1.2s ease;}
+  @keyframes flashBg{
+    0%{background:var(--teal-soft);}
+    100%{background:var(--paper);}
+  }
+  .lang-btn{
+    border:1px solid var(--line);
+    background:var(--paper);
+    padding:6px 12px;
+    font-family:'Karla',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    border-radius:3px;
+  }
+  .lang-btn.active{background:var(--teal);color:var(--paper);border-color:var(--teal);}
+
+  /* Day strip */
+  .day-strip{display:flex;gap:2px;overflow-x:auto;border-bottom:2px solid var(--ink);margin-bottom:26px;padding-bottom:0;}
+  .day-tab{
+    position:relative;
+    flex:0 0 auto;
+    padding:10px 16px 12px;
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    white-space:nowrap;
+    border:1px solid transparent;
+    border-bottom:none;
+  }
+  .day-tab .num{display:block;font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink);}
+  .day-tab.today::after{content:'today';position:absolute;top:-2px;right:6px;font-size:9px;letter-spacing:0.04em;color:var(--brick);}
+  .day-tab.active{
+    background:var(--paper);
+    color:var(--teal);
+    border-color:var(--ink);
+    border-radius:4px 4px 0 0;
+    margin-bottom:-2px;
+  }
+  .day-tab.active .num{color:var(--teal);}
+
+  /* Meal cards */
+  .meals{display:grid;grid-template-columns:1fr;gap:16px;}
+  @media(min-width:720px){.meals{grid-template-columns:repeat(3,1fr);}}
+
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:2px;
+    position:relative;
+    box-shadow:2px 3px 0 rgba(42,36,32,0.08);
+  }
+  .card.kids{border-style:dashed;border-color:var(--kids-accent);}
+  .card .tab{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:13px;
+    padding:5px 14px;
+    color:var(--paper);
+    border-radius:0 0 4px 0;
+  }
+  .card .tab .badge{
+    background:var(--paper);
+    color:var(--brick);
+    font-family:'Karla',sans-serif;
+    font-weight:800;
+    font-size:10.5px;
+    min-width:16px;height:16px;
+    border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    padding:0 3px;
+  }
+  .card.breakfast .tab{background:var(--mustard);}
+  .card.lunch .tab{background:var(--teal);}
+  .card.dinner .tab{background:var(--brick);}
+  .card.kids .tab{background:var(--kids-accent);}
+
+  .card-body{padding:14px 16px 16px;}
+  .recipe-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin:0 0 3px;line-height:1.25;}
+  .recipe-note{font-size:13px;color:var(--ink-soft);margin:0 0 8px;line-height:1.4;}
+
+  .staple-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .staple-btn{
+    font-family:'Karla',sans-serif;
+    font-size:11.5px;
+    font-weight:700;
+    padding:6px 10px;
+    border-radius:3px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .staple-btn.selected{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+
+  .dish{
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:10px 12px;
+    margin-bottom:8px;
+    background:var(--dish-bg);
+  }
+  .dish-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+  .dish-remove{
+    background:none;border:none;color:var(--ink-soft);
+    font-size:15px;cursor:pointer;line-height:1;padding:2px;
+  }
+  .dish-edit{
+    background:none;border:none;color:var(--ink-soft);
+    font-size:13px;cursor:pointer;line-height:1;padding:2px;margin-right:2px;
+  }
+  .dish-edit:hover, .dish-remove:hover{color:var(--teal);}
+  .dish-head-actions{display:flex;align-items:flex-start;flex:0 0 auto;}
+
+  .add-dish-btn{
+    width:100%;
+    border:1.5px dashed var(--line);
+    background:none;
+    color:var(--ink-soft);
+    font-family:'Karla',sans-serif;
+    font-size:12.5px;
+    font-weight:700;
+    padding:9px;
+    border-radius:3px;
+    cursor:pointer;
+    margin-bottom:12px;
+  }
+  .add-dish-btn:hover{border-color:var(--teal);color:var(--teal);}
+
+  .video-chip{
+    display:flex;align-items:center;gap:8px;
+    border:1px solid var(--line);
+    background:var(--teal-soft);
+    padding:7px 10px;
+    border-radius:3px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--teal);
+    margin-bottom:12px;
+    cursor:pointer;
+  }
+  .video-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex:0 0 auto;}
+
+  .video-embed{
+    position:relative;
+    width:100%;
+    padding-top:56.25%;
+    margin-bottom:12px;
+    border-radius:3px;
+    overflow:hidden;
+    border:1px solid var(--line);
+    background:#000;
+  }
+  .video-embed iframe{
+    position:absolute;top:0;left:0;width:100%;height:100%;border:0;
+  }
+
+  .status-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+  .status-btn{
+    font-family:'Karla',sans-serif;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.01em;
+    padding:6px 10px;
+    border-radius:20px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .status-btn.selected.planned{background:var(--teal-soft);color:var(--teal);border-color:var(--teal);}
+  .status-btn.selected.cooking{background:var(--mustard-soft);color:var(--cooking-text);border-color:var(--mustard);}
+  .status-btn.selected.missing{background:var(--brick-soft);color:var(--brick);border-color:var(--brick);}
+  .status-btn.selected.done{background:var(--moss-soft);color:var(--done-text);border-color:var(--moss);}
+
+  .thread{border-top:1px dashed var(--line);padding-top:10px;}
+  .msg{margin-bottom:8px;display:flex;flex-direction:column;align-items:flex-start;}
+  .msg.you{align-items:flex-end;}
+  .msg .bubble{
+    display:inline-block;
+    max-width:85%;
+    font-size:13px;
+    line-height:1.4;
+  }
+  .msg .who{font-size:10.5px;font-weight:700;color:var(--ink-soft);margin-bottom:2px;letter-spacing:0.02em;}
+  .msg .translated{
+    display:block;
+    width:fit-content;
+    max-width:85%;
+    margin-top:5px;
+    padding:6px 8px;
+    border-radius:3px;
+    font-size:12px;
+    line-height:1.4;
+    color:var(--ink-soft);
+    background:var(--teal-soft);
+    border:1px solid var(--line);
+  }
+  .msg.helper .translated{background:var(--mustard-soft);border-color:#EED9AE;}
+  .msg .translated::before{content:'→ ';}
+
+  .msg-input{display:flex;gap:6px;margin-top:10px;}
+  .msg-input input{
+    flex:1;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:7px 9px;
+    font-family:'Karla',sans-serif;
+    font-size:13px;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  .msg-input input::placeholder{color:var(--ink-soft);}
+  .msg-input button{
+    border:1px solid var(--teal);
+    background:var(--teal);
+    color:var(--paper);
+    font-weight:700;
+    font-size:12px;
+    padding:0 14px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+
+  .add-recipe{
+    max-width:920px;margin:30px auto 0;padding:0 16px;
+  }
+  .add-recipe .ghost-card{
+    border:1.5px dashed var(--line);
+    border-radius:3px;
+    padding:16px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .add-recipe .ghost-card b{color:var(--teal);}
+
+  /* Modals (shared look) */
+  .modal-overlay{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(42,36,32,0.45);
+    align-items:center;justify-content:center;
+    padding:16px;
+    z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--paper);
+    border-radius:4px;
+    width:100%;
+    max-width:420px;
+    padding:20px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.2);
+  }
+  .modal .context{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:700;
+    margin-bottom:10px;
+    letter-spacing:0.01em;
+  }
+  .modal .context b{color:var(--teal);}
+  .modal h3{font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin:0 0 14px;}
+  .field-label{font-size:11.5px;font-weight:700;color:var(--ink-soft);margin:12px 0 5px;letter-spacing:0.01em;}
+  .field-label:first-of-type{margin-top:0;}
+  .toggle-row{display:flex;gap:6px;}
+  .toggle-row button{
+    flex:1;
+    border:1px solid var(--line);
+    background:var(--paper);
+    padding:7px;
+    font-family:'Karla',sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    border-radius:3px;
+  }
+  .toggle-row button.active{background:var(--teal-soft);color:var(--teal);border-color:var(--teal);}
+  .modal input[type="text"], .modal textarea{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:8px 9px;
+    font-family:'Karla',sans-serif;
+    font-size:13.5px;
+    background:var(--paper);
+    color:var(--ink);
+    resize:vertical;
+  }
+  .modal input[type="text"]::placeholder, .modal textarea::placeholder{color:var(--ink-soft);}
+  .modal textarea{min-height:70px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+  .modal-actions button{
+    padding:8px 16px;
+    border-radius:3px;
+    font-family:'Karla',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .btn-cancel{background:none;border:1px solid var(--line);color:var(--ink-soft);}
+  .btn-save{background:var(--teal);border:1px solid var(--teal);color:var(--paper);}
+  .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+
+  /* Pick-a-dish modal */
+  .search-input{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:8px 9px;
+    font-family:'Karla',sans-serif;
+    font-size:13.5px;
+    background:var(--paper);
+    color:var(--ink);
+    margin-bottom:10px;
+  }
+  .search-input::placeholder{color:var(--ink-soft);}
+  .dish-pick-list{
+    max-height:280px;
+    overflow-y:auto;
+    border:1px solid var(--line);
+    border-radius:3px;
+  }
+  .dish-pick-item{
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+  }
+  .dish-pick-item-main{flex:1;min-width:0;}
+  .dish-pick-item:last-child{border-bottom:none;}
+  .dish-pick-item:hover{background:var(--teal-soft);}
+  .dish-pick-title{font-family:'Fraunces',serif;font-size:14.5px;font-weight:600;margin-bottom:2px;}
+  .dish-pick-note{font-size:12px;color:var(--ink-soft);line-height:1.35;}
+  .dish-pick-empty{padding:16px 12px;font-size:13px;color:var(--ink-soft);text-align:center;}
+  .add-new-link{
+    display:block;
+    text-align:center;
+    margin-top:12px;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--teal);
+    cursor:pointer;
+    background:none;
+    border:none;
+    width:100%;
+    padding:6px;
+  }
+  .new-dish-context{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:700;
+    margin-bottom:10px;
+    letter-spacing:0.01em;
+  }
+  .new-dish-context b{color:var(--teal);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <a class="back-link" href="index.html">← <span data-i18n="backToHub">Home Hub</span></a>
+      <span class="kicker" data-i18n="kicker">This week's meals</span>
+      <h1 data-i18n="title">What's Cooking</h1>
+    </div>
+    <div class="langs">
+      <div class="theme-switch" id="themeSwitch">
+        <button class="theme-seg" data-theme-choice="light" data-i18n="themeLight">Light</button>
+        <button class="theme-seg" data-theme-choice="dark" data-i18n="themeDark">Dark</button>
+        <button class="theme-seg" data-theme-choice="auto" data-i18n="themeAuto">Auto</button>
+      </div>
+      <div class="bell" id="bellIcon">🔔<span class="count" id="bellCount" style="display:none">0</span>
+        <div class="notif-popover" id="notifPopover"></div>
+      </div>
+      <button class="lang-btn active" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="zh">中文</button>
+      <button class="lang-btn" data-lang="tl">TL</button>
+    </div>
+  </header>
+
+  <div class="day-strip" id="dayStrip"></div>
+  <div class="meals" id="mealArea"></div>
+</div>
+
+<div class="add-recipe">
+  <div class="ghost-card" id="addNewDishGhost">
+    <b data-i18n="addRecipe">+ Add a new dish</b> — <span data-i18n="addRecipeSub">add it to the list so it's easy to pick next time</span>
+  </div>
+</div>
+
+<!-- Pick-a-dish modal -->
+<div class="modal-overlay" id="pickModalOverlay">
+  <div class="modal">
+    <div class="context" id="pickModalContext">Adding to: <b>Wed · Dinner</b></div>
+    <h3 data-i18n="pickDishTitle">Choose a dish</h3>
+    <input type="text" class="search-input" id="dishSearchInput" data-i18n-ph="searchPh" placeholder="Search dishes...">
+    <div class="dish-pick-list" id="dishPickList"></div>
+    <button class="add-new-link" id="addNewDishLink" data-i18n="addNewDishLink">+ Add a new dish</button>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="pickModalCancel" data-i18n="cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- New-dish modal -->
+<div class="modal-overlay" id="newDishModalOverlay">
+  <div class="modal">
+    <div class="new-dish-context" id="newDishContextLine" style="display:none;"></div>
+    <h3 data-i18n="newDishTitle">Add a new dish</h3>
+    <div class="hint" data-i18n="newDishHint">This gets added to the list so you can pick it again next time.</div>
+
+    <div class="field-label" data-i18n="nameLabel">Dish name</div>
+    <input type="text" id="newDishNameInput" data-i18n-ph="dishNamePh">
+
+    <div class="field-label" data-i18n="sourceLabel">Recipe source</div>
+    <div class="toggle-row" id="newSourceToggle">
+      <button data-source="text" class="active" data-i18n="pasteText">Paste text</button>
+      <button data-source="link" data-i18n="pasteLink">Paste link</button>
+    </div>
+    <div id="newSourceTextWrap" style="margin-top:8px;">
+      <textarea id="newDishTextInput" data-i18n-ph="recipeTextPh"></textarea>
+    </div>
+    <div id="newSourceLinkWrap" style="margin-top:8px;display:none;">
+      <input type="text" id="newDishLinkInput" data-i18n-ph="recipeLinkPh">
+      <div class="hint" data-i18n="linkHint">We'll pull the title automatically once this is wired to a live oEmbed lookup — for now, name it below.</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="newDishCancel" data-i18n="cancel">Cancel</button>
+      <button class="btn-save" id="newDishSave" data-i18n="saveDish">Save dish</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="nameModalOverlay">
+  <div class="modal">
+    <h3 data-i18n="nameModalTitle">What's your name?</h3>
+    <div class="hint" data-i18n="nameModalSub">So messages you send show who sent them, instead of just "You".</div>
+    <input type="text" id="nameInput" style="margin-top:10px;" data-i18n-ph="nameModalPh">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="nameModalSkip" data-i18n="skip">Skip for now</button>
+      <button class="btn-save" id="nameModalSave" data-i18n="save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// TODO: paste this app's Firebase project config here — must match the
+// config pasted into index.html so both pages talk to the same Firestore
+// project. See index.html for where to find these values.
+const firebaseConfig = {
+  apiKey: "AIzaSyA6GjU443-D-M2ADE6reI7wBZYuYERTsSU",
+  authDomain: "wg-family-assistant.firebaseapp.com",
+  projectId: "wg-family-assistant",
+  storageBucket: "wg-family-assistant.firebasestorage.app",
+  messagingSenderId: "220482684013",
+  appId: "1:220482684013:web:27fca12be8fe9bfbd52b64"
+};
+let db = null;
+try {
+  db = getFirestore(initializeApp(firebaseConfig));
+} catch (e) {
+  console.warn('Firebase not configured yet — meal plan/messages stay local-only this session.', e);
+}
+
+function getUserId(){
+  let id = localStorage.getItem('wg-userid');
+  if(!id){
+    id = (crypto.randomUUID ? crypto.randomUUID() : 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+    localStorage.setItem('wg-userid', id);
+  }
+  return id;
+}
+// A sent message shows "You" only to the device that actually sent it;
+// every other viewer sees that family member's real name instead — so two
+// people using this on their own phones each see their own messages as
+// "You" and the other person's as their name. Messages saved before this
+// senderId field existed have none, so they fall back to "You" for everyone
+// (previous behavior) rather than guessing.
+function chatLabelFor(m){
+  if(m.from === 'helper') return t('helper');
+  if(m.senderId && m.senderId !== getUserId()) return m.senderName || t('you');
+  return t('you');
+}
+function saveFamilyMemberName(name){
+  localStorage.setItem('wg-username', name);
+  if(!db) return;
+  setDoc(doc(db, 'familyMembers', getUserId()), { name, updatedAt: Date.now() }, { merge: true })
+    .catch(err => console.error('Failed to save name to Firestore', err));
+}
+
+const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// "This week" is computed for real (Monday-start) instead of hardcoded, so
+// the dashboard always shows whatever week it's actually opened during.
+const todayDate = new Date();
+todayDate.setHours(0,0,0,0);
+const todayIndex = (todayDate.getDay() + 6) % 7; // JS getDay(): 0=Sun..6=Sat → remap to 0=Mon..6=Sun
+const mondayDate = new Date(todayDate);
+mondayDate.setDate(todayDate.getDate() - todayIndex);
+const weekDates = days.map((_, i)=>{
+  const d = new Date(mondayDate);
+  d.setDate(mondayDate.getDate() + i);
+  return d;
+});
+const dayNums = weekDates.map(d => d.getDate());
+function isoDate(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+// Monday's date — becomes the Firestore document key once mealPlans/
+// mealThreads are wired in (see project-knowledge.md); introduced now so
+// the in-memory shape already matches what it'll sync against.
+const weekId = isoDate(mondayDate);
+
+let activeDay = todayIndex;
+let currentLang = localStorage.getItem('wg-lang') || 'en';
+
+const i18n = {
+  en: {
+    kicker: "This week's meals", title: "What's Cooking",
+    backToHub: "Home Hub",
+    breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner",
+    planned: "Planned", cooking: "Cooking", missing: "Missing ingredient", done: "Done",
+    videoLink: "Watch recipe video",
+    addRecipe: "+ Add a new dish", addRecipeSub: "add it to the list so it's easy to pick next time",
+    send: "Send", inputPlaceholder: "Type a message...",
+    you: "You", helper: "Helper (Tagalog → 中文)",
+    addDish: "+ Add dish",
+    pickDishTitle: "Choose a dish",
+    searchPh: "Search dishes...",
+    noMatch: "No dishes match.",
+    addNewDishLink: "+ Add a new dish",
+    newDishTitle: "Add a new dish",
+    newDishHint: "This gets added to the list so you can pick it again next time.",
+    alsoAddTo: "Also add to",
+    sourceLabel: "Recipe source",
+    pasteText: "Paste text", pasteLink: "Paste link",
+    recipeTextPh: "Paste the recipe steps here...",
+    recipeLinkPh: "Paste a YouTube / TikTok / IG / FB link...",
+    linkHint: "We'll pull the title automatically once this is wired to a live oEmbed lookup — for now, name it below. For YouTube, either a regular link or the embed code (Share → Embed) works.",
+    nameLabel: "Dish name",
+    dishNamePh: "e.g. Tomato Egg Stir-fry",
+    cancel: "Cancel", saveDish: "Save dish",
+    stapleNone: "No staple", stapleWhite: "White rice", stapleBrown: "Brown rice", stapleNoodles: "Noodles",
+    addingTo: "Adding to",
+    themeLight: "Light", themeDark: "Dark", themeAuto: "Auto",
+    noNewMessages: "No new messages",
+    kids: "Kids",
+    adults: "Adults",
+    nameModalTitle: "What's your name?",
+    nameModalSub: "So messages you send show who sent them, instead of just \"You\".",
+    nameModalPh: "e.g. Mom, Dad, Effendy...",
+    skip: "Skip for now", save: "Save",
+    editRecipe: "Edit recipe",
+    editDishTitle: "Edit dish",
+    noNoteYet: "No note yet — tap ✏️ to add one"
+  },
+  zh: {
+    kicker: "本周餐单", title: "今天吃什么",
+    backToHub: "家庭中心",
+    Mon: "周一", Tue: "周二", Wed: "周三", Thu: "周四", Fri: "周五", Sat: "周六", Sun: "周日",
+    breakfast: "早餐", lunch: "午餐", dinner: "晚餐",
+    planned: "已安排", cooking: "烹饪中", missing: "食材不足", done: "已完成",
+    videoLink: "观看食谱视频",
+    addRecipe: "+ 添加新菜", addRecipeSub: "加入清单，下次直接选用",
+    send: "发送", inputPlaceholder: "输入消息...",
+    you: "你", helper: "帮佣（他加禄语 → 中文）",
+    addDish: "+ 添加菜肴",
+    pickDishTitle: "选择菜肴",
+    searchPh: "搜索菜肴...",
+    noMatch: "未找到匹配的菜肴。",
+    addNewDishLink: "+ 添加新菜",
+    newDishTitle: "添加新菜",
+    newDishHint: "加入清单后，下次可直接选用。",
+    alsoAddTo: "同时添加至",
+    sourceLabel: "食谱来源",
+    pasteText: "粘贴文字", pasteLink: "粘贴链接",
+    recipeTextPh: "在此粘贴食谱步骤...",
+    recipeLinkPh: "粘贴 YouTube / TikTok / IG / FB 链接...",
+    linkHint: "连接实时 oEmbed 查询后会自动提取标题——目前请在下方自行命名。YouTube 视频可以粘贴普通链接，也可以粘贴嵌入代码（分享 → 嵌入）。",
+    nameLabel: "菜名",
+    dishNamePh: "例如：番茄炒蛋",
+    cancel: "取消", saveDish: "保存菜肴",
+    stapleNone: "不需要主食", stapleWhite: "白饭", stapleBrown: "糙米饭", stapleNoodles: "面条",
+    addingTo: "添加至",
+    themeLight: "浅色", themeDark: "深色", themeAuto: "自动",
+    noNewMessages: "没有新消息",
+    kids: "儿童",
+    adults: "成人",
+    nameModalTitle: "你的名字是？",
+    nameModalSub: "这样你发的消息会显示是谁发的，而不只是「你」。",
+    nameModalPh: "例如：妈妈、爸爸、Effendy...",
+    skip: "暂时跳过", save: "保存",
+    editRecipe: "编辑食谱",
+    editDishTitle: "编辑菜肴",
+    noNoteYet: "还没有说明——点 ✏️ 添加"
+  },
+  tl: {
+    kicker: "Mga pagkain ngayong linggo", title: "Ano ang Lutuin",
+    backToHub: "Home Hub",
+    breakfast: "Almusal", lunch: "Tanghalian", dinner: "Hapunan",
+    planned: "Nakaplano", cooking: "Niluluto", missing: "Kulang ang sangkap", done: "Tapos na",
+    videoLink: "Panoorin ang recipe video",
+    addRecipe: "+ Magdagdag ng bagong ulam", addRecipeSub: "idagdag sa listahan para madali nang piliin sa susunod",
+    send: "Ipadala", inputPlaceholder: "Mag-type ng mensahe...",
+    you: "Ikaw", helper: "Katulong (Tagalog → 中文)",
+    addDish: "+ Magdagdag ng ulam",
+    pickDishTitle: "Pumili ng ulam",
+    searchPh: "Maghanap ng ulam...",
+    noMatch: "Walang tugmang ulam.",
+    addNewDishLink: "+ Magdagdag ng bagong ulam",
+    newDishTitle: "Magdagdag ng bagong ulam",
+    newDishHint: "Idadagdag ito sa listahan para madali nang piliin sa susunod.",
+    alsoAddTo: "Idagdag din sa",
+    sourceLabel: "Pinagmulan ng recipe",
+    pasteText: "I-paste ang teksto", pasteLink: "I-paste ang link",
+    recipeTextPh: "I-paste dito ang mga hakbang...",
+    recipeLinkPh: "I-paste ang link mula YouTube / TikTok / IG / FB...",
+    linkHint: "Awtomatikong makukuha ang pamagat kapag naka-connect na sa live oEmbed — sa ngayon, pangalanan ito sa ibaba. Para sa YouTube, pwede ang regular na link o ang embed code (Share → Embed).",
+    nameLabel: "Pangalan ng ulam",
+    dishNamePh: "hal. Tomato Egg Stir-fry",
+    cancel: "Kanselahin", saveDish: "I-save ang ulam",
+    stapleNone: "Walang staple", stapleWhite: "Puting kanin", stapleBrown: "Brown rice", stapleNoodles: "Pansit",
+    addingTo: "Idaragdag sa",
+    themeLight: "Maliwanag", themeDark: "Madilim", themeAuto: "Awtomatiko",
+    noNewMessages: "Walang bagong mensahe",
+    kids: "Mga Bata",
+    adults: "Matatanda",
+    nameModalTitle: "Ano ang pangalan mo?",
+    nameModalSub: "Para makita kung sino ang nagpadala ng mensahe mo, hindi lang \"You\".",
+    nameModalPh: "hal. Mommy, Daddy, Effendy...",
+    skip: "Laktawan muna", save: "I-save",
+    editRecipe: "I-edit ang recipe",
+    editDishTitle: "I-edit ang ulam",
+    noNoteYet: "Wala pang tala — pindutin ang ✏️ para magdagdag"
+  }
+};
+
+const staples = [
+  {id:"none", key:"stapleNone"},
+  {id:"white", key:"stapleWhite"},
+  {id:"brown", key:"stapleBrown"},
+  {id:"noodles", key:"stapleNoodles"}
+];
+
+// Dishes the helper already knows how to cook. Loaded from recipes.json at
+// boot (instead of hardcoded) — picking from here is how a dish gets added
+// to a meal slot; see openNewDishModal/newDishSave for how one gets added
+// to this list. Meal slots store only a recipe id (see mealData below),
+// resolved against this array at render time via findRecipe() — single
+// source of truth, no duplicated title/note/video copies per slot.
+let dishLibrary = [];
+function findRecipe(id){ return dishLibrary.find(d => d.id === id); }
+
+// Each meal type gets an adult card and a paired Kids card right after it
+// (same shape, own staple/dishes/status/thread) so the helper can be told
+// a different menu for the kids without it being confused with the adults'.
+const mealTypes = ['breakfast','lunch','dinner'];
+const mealSlots = [...mealTypes, ...mealTypes.map(t => t + '_kids')];
+function slotType(slotKey){ return slotKey.replace('_kids',''); }
+function isKidsSlot(slotKey){ return slotKey.endsWith('_kids'); }
+function slotTabLabel(slotKey){
+  const base = t(slotType(slotKey));
+  return isKidsSlot(slotKey) ? `🧒 ${base} · ${t('kids')}` : `${base} · ${t('adults')}`;
+}
+function slotContextLabel(slotKey){ return t(slotType(slotKey)) + (isKidsSlot(slotKey) ? ` (${t('kids')})` : ''); }
+
+const statusOrder = ["planned","cooking","missing","done"];
+
+// --- Firestore-backed state ---
+// mealPlans/{weekId}: { [slotKey]: { staple?, dishIds:[{id}], status } }
+// mealThreads/{weekId}: { [slotKey]: [{from, text_zh, text_tl, unread?, senderName?}] }
+// Both are mirrored locally into mealData / threadData; every user action
+// writes straight to Firestore and the onSnapshot listener below re-renders
+// from whatever comes back (including the echo of our own write), so this
+// stays a thin mirror rather than a second source of truth.
+const mealPlanRef = db ? doc(db, 'mealPlans', weekId) : null;
+const mealThreadRef = db ? doc(db, 'mealThreads', weekId) : null;
+
+function blankSlot(slotKey){
+  return isKidsSlot(slotKey) ? { dishIds: [], status: 'planned' } : { staple: 'none', dishIds: [], status: 'planned' };
+}
+
+// Guards against a corrupted or partially-written Firestore doc (a field
+// saved as null, a dishIds entry missing its id, an out-of-range status
+// string from hand-edited data) — same null/blank defensiveness applied in
+// the wg-groupbuy project's missing-product-key handling. Without this, a
+// single bad field in the doc would throw partway through renderMeals()
+// and blank the whole page instead of just that one slot.
+function sanitizeSlot(slotKey, raw){
+  const base = blankSlot(slotKey);
+  if(!raw || typeof raw !== 'object') return base;
+  const dishIds = Array.isArray(raw.dishIds)
+    ? raw.dishIds.filter(d => d && typeof d.id === 'string' && d.id.trim() !== '')
+    : [];
+  const status = statusOrder.includes(raw.status) ? raw.status : base.status;
+  const slot = { ...base, dishIds, status };
+  if(!isKidsSlot(slotKey)){
+    slot.staple = (typeof raw.staple === 'string' && raw.staple.trim() !== '') ? raw.staple : base.staple;
+  }
+  return slot;
+}
+let mealData = Object.fromEntries(mealSlots.map(k => [k, blankSlot(k)]));
+let threadData = Object.fromEntries(mealSlots.map(k => [k, []]));
+
+// videoPlaying is transient UI-only state (which embed is currently
+// showing) — it must never be written to Firestore, or every viewer's
+// player would restart on someone else's unrelated change. Keyed by
+// "slotKey::dishIndex", reset whenever that slot's dish list changes shape.
+let videoPlayingState = {};
+function isVideoPlaying(slotKey, idx){ return !!videoPlayingState[`${slotKey}::${idx}`]; }
+function setVideoPlaying(slotKey, idx){ videoPlayingState[`${slotKey}::${idx}`] = true; }
+
+async function initFirestoreSync(){
+  if(!db) return; // Firebase not configured yet — stays local-only this session.
+  try{
+    const planSnap = await getDoc(mealPlanRef);
+    if(!planSnap.exists()){
+      await setDoc(mealPlanRef, Object.fromEntries(mealSlots.map(k => [k, blankSlot(k)])));
+    }
+    const threadSnap = await getDoc(mealThreadRef);
+    if(!threadSnap.exists()){
+      await setDoc(mealThreadRef, Object.fromEntries(mealSlots.map(k => [k, []])));
+    }
+  }catch(err){
+    console.error('Failed to initialize this week\'s Firestore docs', err);
+    return;
+  }
+  onSnapshot(mealPlanRef, snap => {
+    if(!snap.exists()) return;
+    const data = snap.data();
+    mealSlots.forEach(k => { mealData[k] = sanitizeSlot(k, data[k]); });
+    renderMeals();
+  }, err => console.error('mealPlans subscription failed', err));
+  onSnapshot(mealThreadRef, snap => {
+    if(!snap.exists()) return;
+    const data = snap.data();
+    mealSlots.forEach(k => {
+      const raw = Array.isArray(data[k]) ? data[k] : [];
+      // Drop any entry missing the fields the renderer needs — a hand-edited
+      // or partially-written doc shouldn't be able to blank the whole thread.
+      threadData[k] = raw.filter(m => m && (m.from === 'you' || m.from === 'helper') && (m.text_zh || m.text_tl));
+    });
+    renderMeals();
+  }, err => console.error('mealThreads subscription failed', err));
+}
+
+function writeMealSlot(slotKey, newSlotData){
+  mealData[slotKey] = newSlotData;
+  if(mealPlanRef) updateDoc(mealPlanRef, { [slotKey]: newSlotData }).catch(err => console.error('Failed to save meal plan change', err));
+  renderMeals();
+}
+function writeThread(slotKey, newMessages){
+  threadData[slotKey] = newMessages;
+  if(mealThreadRef) updateDoc(mealThreadRef, { [slotKey]: newMessages }).catch(err => console.error('Failed to save message', err));
+  renderMeals();
+}
+
+function unreadForMeal(slotKey){
+  return threadData[slotKey].filter(m => m.from === 'helper' && m.unread).length;
+}
+
+function totalUnread(){
+  return mealSlots.reduce((sum, slotKey) => sum + unreadForMeal(slotKey), 0);
+}
+
+function renderBell(){
+  const total = totalUnread();
+  const countEl = document.getElementById('bellCount');
+  countEl.textContent = total;
+  countEl.style.display = total > 0 ? 'flex' : 'none';
+}
+
+function t(key){ return i18n[currentLang][key] || key; }
+
+let themePref = localStorage.getItem('wg-theme') || 'auto';
+
+function applyTheme(){
+  if(themePref === 'auto'){
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', themePref);
+  }
+  document.querySelectorAll('.theme-seg').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.themeChoice === themePref);
+  });
+}
+
+document.querySelectorAll('.theme-seg').forEach(btn=>{
+  btn.onclick = ()=>{
+    themePref = btn.dataset.themeChoice;
+    localStorage.setItem('wg-theme', themePref);
+    applyTheme();
+  };
+});
+
+function renderDayStrip(){
+  const el = document.getElementById('dayStrip');
+  el.innerHTML = '';
+  days.forEach((d,i)=>{
+    const tab = document.createElement('div');
+    tab.className = 'day-tab' + (i===activeDay?' active':'') + (i===todayIndex?' today':'');
+    tab.innerHTML = `${t(d)}<span class="num">${dayNums[i]}</span>`;
+    tab.onclick = ()=>{ activeDay = i; renderDayStrip(); renderMeals(); };
+    el.appendChild(tab);
+  });
+}
+
+let autoplayDish = null;
+
+function renderMeals(){
+  const el = document.getElementById('mealArea');
+  el.innerHTML = '';
+  mealSlots.forEach(slotKey=>{
+    const data = mealData[slotKey];
+    const card = document.createElement('div');
+    card.className = 'card ' + slotType(slotKey) + (isKidsSlot(slotKey) ? ' kids' : '');
+    card.id = 'mealcard-' + slotKey;
+
+    let threadHtml = threadData[slotKey].map(m=>{
+      const mine = m.from === 'you';
+      // Each message keeps the language it was actually written in as
+      // primary, regardless of the EN/中文/TL toggle (which only affects
+      // UI copy, not conversation history) — helper writes in Tagalog,
+      // you write in Chinese, each translated for the other party.
+      const primary = m.from === 'helper' ? (m.text_tl||m.text_zh) : (m.text_zh||m.text_tl);
+      const secondary = m.from === 'helper' ? m.text_zh : m.text_tl;
+      const whoLabel = chatLabelFor(m);
+      return `<div class="msg ${m.from}">
+        <div class="who">${m.unread ? '<span class="unread-dot"></span>' : ''}${whoLabel}</div>
+        <div class="bubble">${primary}</div>
+        ${secondary ? `<div class="translated">${secondary}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    const stapleHtml = isKidsSlot(slotKey) ? '' : staples.map(s=>
+      `<button class="staple-btn ${data.staple===s.id?'selected':''}" data-mealtype="${slotKey}" data-staple="${s.id}">${t(s.key)}</button>`
+    ).join('');
+
+    const dishesHtml = data.dishIds.map((entry, idx)=>{
+      const dish = findRecipe(entry.id);
+      if(!dish){
+        // A slot referencing a recipe id that's missing from recipes.json
+        // (hand-edited data drifting) — degrade to a visible warning
+        // instead of throwing, same defensive pattern as the groupbuy
+        // dashboard's missing-product-key guard.
+        return `<div class="dish">
+          <div class="dish-head">
+            <div class="recipe-title">⚠️ ${entry.id}</div>
+            <button class="dish-remove" data-removedish="${slotKey}" data-dishidx="${idx}">✕</button>
+          </div>
+          <p class="recipe-note">Recipe not found — check recipes.json</p>
+        </div>`;
+      }
+      const videoBlock = dish.video ? (
+        dish.videoId && isVideoPlaying(slotKey, idx)
+          ? (()=>{
+              // Only autoplay the instant the chip was just clicked
+              // (autoplayDish, cleared right after this render pass) —
+              // otherwise any later re-render (language switch, status
+              // change, sending a message, etc.) rebuilds this iframe
+              // from scratch and would restart the video from 0:00.
+              const isJustClicked = autoplayDish === `${slotKey}_${idx}`;
+              const src = `https://www.youtube.com/embed/${dish.videoId}?playsinline=1${isJustClicked ? '&autoplay=1' : ''}`;
+              return `<div class="video-embed"><iframe src="${src}" title="${dish.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`;
+            })()
+          : `<div class="video-chip" data-playvideo="${slotKey}" data-dishidx="${idx}"><span class="dot"></span>${t('videoLink')}</div>`
+      ) : '';
+      return `<div class="dish">
+        <div class="dish-head">
+          <div class="recipe-title">${dish.title}</div>
+          <div class="dish-head-actions">
+            <button class="dish-edit" data-editdish="${dish.id}" title="${t('editRecipe')}">✏️</button>
+            <button class="dish-remove" data-removedish="${slotKey}" data-dishidx="${idx}">✕</button>
+          </div>
+        </div>
+        <p class="recipe-note">${dish.note || `<em>${t('noNoteYet')}</em>`}</p>
+        ${videoBlock}
+      </div>`;
+    }).join('');
+
+    card.innerHTML = `
+      <span class="tab">${slotTabLabel(slotKey)}${unreadForMeal(slotKey) > 0 ? `<span class="badge">${unreadForMeal(slotKey)}</span>` : ''}</span>
+      <div class="card-body">
+        ${isKidsSlot(slotKey) ? '' : `<div class="staple-row">${stapleHtml}</div>`}
+        ${dishesHtml}
+        <button class="add-dish-btn" data-addto="${slotKey}" data-i18n="addDish">${t('addDish')}</button>
+        <div class="status-row">
+          ${statusOrder.map(s=>`<button class="status-btn ${s===data.status?'selected '+s:''}" data-type="${slotKey}" data-status="${s}">${t(s)}</button>`).join('')}
+        </div>
+        <div class="thread" data-thread="${slotKey}">
+          ${threadHtml}
+          <div class="msg-input">
+            <input type="text" placeholder="${t('inputPlaceholder')}" data-input="${slotKey}">
+            <button data-send="${slotKey}">${t('send')}</button>
+          </div>
+        </div>
+      </div>
+    `;
+    el.appendChild(card);
+  });
+
+  el.querySelectorAll('.status-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      const slotKey = btn.dataset.type;
+      writeMealSlot(slotKey, { ...mealData[slotKey], status: btn.dataset.status });
+    };
+  });
+
+  el.querySelectorAll('.staple-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      const slotKey = btn.dataset.mealtype;
+      writeMealSlot(slotKey, { ...mealData[slotKey], staple: btn.dataset.staple });
+    };
+  });
+
+  el.querySelectorAll('[data-playvideo]').forEach(chip=>{
+    chip.onclick = ()=>{
+      const slotKey = chip.dataset.playvideo;
+      const idx = chip.dataset.dishidx;
+      // Local-only — never synced to Firestore, so this doesn't restart
+      // the video for anyone else viewing the same dashboard.
+      setVideoPlaying(slotKey, idx);
+      autoplayDish = `${slotKey}_${idx}`;
+      renderMeals();
+    };
+  });
+
+  el.querySelectorAll('[data-editdish]').forEach(btn=>{
+    btn.onclick = ()=> openEditDishModal(btn.dataset.editdish);
+  });
+
+  el.querySelectorAll('[data-removedish]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const slotKey = btn.dataset.removedish;
+      const idx = btn.dataset.dishidx;
+      const newDishIds = mealData[slotKey].dishIds.slice();
+      newDishIds.splice(idx,1);
+      writeMealSlot(slotKey, { ...mealData[slotKey], dishIds: newDishIds });
+    };
+  });
+
+  el.querySelectorAll('[data-addto]').forEach(btn=>{
+    btn.onclick = ()=> openPickDishModal(btn.dataset.addto);
+  });
+
+  el.querySelectorAll('[data-send]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const slotKey = btn.dataset.send;
+      const input = el.querySelector(`[data-input="${slotKey}"]`);
+      const text = input.value.trim();
+      if(!text) return;
+      if(!localStorage.getItem('wg-username')){ openNameModal(); return; }
+      // senderId identifies which device sent this (compared against the
+      // viewer's own getUserId() at render time — see chatLabelFor);
+      // senderName is captured now so a later rename doesn't rewrite history.
+      const newThread = threadData[slotKey].concat([{
+        from:"you", text_zh: text, text_tl: `${text} (halimbawang salin)`,
+        senderId: getUserId(), senderName: localStorage.getItem('wg-username')
+      }]);
+      input.value = '';
+      writeThread(slotKey, newThread);
+    };
+  });
+
+  renderBell();
+  autoplayDish = null;
+}
+
+function syncLangUI(){
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active', b.dataset.lang === currentLang));
+  document.querySelectorAll('[data-i18n]').forEach(elm=>{
+    elm.textContent = t(elm.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(elm=>{
+    elm.placeholder = t(elm.dataset.i18nPh);
+  });
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    currentLang = btn.dataset.lang;
+    localStorage.setItem('wg-lang', currentLang);
+    syncLangUI();
+    applyTheme();
+    renderDayStrip();
+    renderMeals();
+  };
+});
+
+document.getElementById('bellIcon').onclick = (e)=>{
+  e.stopPropagation();
+  const popover = document.getElementById('notifPopover');
+  popover.classList.contains('open') ? closeNotifPopover() : openNotifPopover();
+};
+
+document.addEventListener('click', (e)=>{
+  const popover = document.getElementById('notifPopover');
+  if(popover.classList.contains('open') && !popover.contains(e.target) && e.target.id !== 'bellIcon'){
+    closeNotifPopover();
+  }
+});
+
+function openNotifPopover(){
+  renderNotifPopover();
+  document.getElementById('notifPopover').classList.add('open');
+}
+
+function closeNotifPopover(){
+  document.getElementById('notifPopover').classList.remove('open');
+}
+
+function renderNotifPopover(){
+  const popover = document.getElementById('notifPopover');
+  const entries = mealSlots.map(slotKey=>{
+    const unreadMsgs = threadData[slotKey].filter(m => m.from === 'helper' && m.unread);
+    if(unreadMsgs.length === 0) return null;
+    const latest = unreadMsgs[unreadMsgs.length - 1];
+    const text = latest.text_zh || latest.text_tl;
+    return { slotKey, text, count: unreadMsgs.length };
+  }).filter(Boolean);
+
+  if(entries.length === 0){
+    popover.innerHTML = `<div class="notif-empty">${t('noNewMessages')}</div>`;
+    return;
+  }
+
+  popover.innerHTML = entries.map(en => `
+    <div class="notif-item" data-notiftype="${en.slotKey}">
+      <div class="notif-meal">${slotContextLabel(en.slotKey)}${en.count > 1 ? ` (${en.count})` : ''}</div>
+      <div class="notif-text">${en.text}</div>
+    </div>
+  `).join('');
+
+  popover.querySelectorAll('[data-notiftype]').forEach(item=>{
+    item.onclick = (e)=>{
+      e.stopPropagation();
+      jumpToMealThread(item.dataset.notiftype);
+    };
+  });
+}
+
+function jumpToMealThread(slotKey){
+  const newThread = threadData[slotKey].map(m => m.from === 'helper' ? { ...m, unread: false } : m);
+  writeThread(slotKey, newThread);
+  closeNotifPopover();
+  const card = document.getElementById('mealcard-' + slotKey);
+  if(card){
+    card.scrollIntoView({behavior:'smooth', block:'center'});
+    card.classList.add('flash');
+    setTimeout(()=> card.classList.remove('flash'), 1200);
+  }
+}
+
+function extractYouTubeId(url){
+  // Accepts a plain YouTube link (watch/share/shorts) OR a pasted <iframe>
+  // embed snippet (YouTube's "Share > Embed" option) — pull the src out of
+  // the iframe first if that's what got pasted, then look for the video ID
+  // in whichever string we ended up with.
+  const iframeSrcMatch = url.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
+  const target = iframeSrcMatch ? iframeSrcMatch[1] : url;
+  const m = target.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+// --- Pick-a-dish modal ---
+let pickSlotKey = null;
+let dishSearchQuery = '';
+
+function openPickDishModal(slotKey){
+  pickSlotKey = slotKey;
+  dishSearchQuery = '';
+  document.getElementById('pickModalContext').innerHTML = `${t('addingTo')}: <b>${t(days[activeDay])} · ${slotContextLabel(slotKey)}</b>`;
+  document.getElementById('dishSearchInput').value = '';
+  renderDishPickList();
+  document.getElementById('pickModalOverlay').classList.add('open');
+  document.getElementById('dishSearchInput').focus();
+}
+
+function closePickDishModal(){
+  document.getElementById('pickModalOverlay').classList.remove('open');
+}
+
+function renderDishPickList(){
+  const listEl = document.getElementById('dishPickList');
+  const q = dishSearchQuery.trim().toLowerCase();
+  const matches = dishLibrary.filter(d => d.title.toLowerCase().includes(q));
+  if(matches.length === 0){
+    listEl.innerHTML = `<div class="dish-pick-empty">${t('noMatch')}</div>`;
+    return;
+  }
+  listEl.innerHTML = matches.map(d => `
+    <div class="dish-pick-item">
+      <div class="dish-pick-item-main" data-pickid="${d.id}">
+        <div class="dish-pick-title">${d.video ? '▶ ' : ''}${d.title}</div>
+        <div class="dish-pick-note">${d.note || `<em>${t('noNoteYet')}</em>`}</div>
+      </div>
+      <button class="dish-edit" data-editpickid="${d.id}" title="${t('editRecipe')}">✏️</button>
+    </div>
+  `).join('');
+  listEl.querySelectorAll('[data-pickid]').forEach(item=>{
+    item.onclick = ()=>{
+      const newDishIds = mealData[pickSlotKey].dishIds.concat([{ id: item.dataset.pickid }]);
+      writeMealSlot(pickSlotKey, { ...mealData[pickSlotKey], dishIds: newDishIds });
+      closePickDishModal();
+    };
+  });
+  listEl.querySelectorAll('[data-editpickid]').forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      openEditDishModal(btn.dataset.editpickid);
+    };
+  });
+}
+
+document.getElementById('dishSearchInput').oninput = (e)=>{
+  dishSearchQuery = e.target.value;
+  renderDishPickList();
+};
+
+document.getElementById('pickModalCancel').onclick = closePickDishModal;
+document.getElementById('pickModalOverlay').onclick = (e)=>{
+  if(e.target.id === 'pickModalOverlay') closePickDishModal();
+};
+
+document.getElementById('addNewDishLink').onclick = ()=>{
+  closePickDishModal();
+  openNewDishModal(pickSlotKey);
+};
+
+// --- New-dish modal (adds to the library, optionally also to a meal slot) ---
+let newDishSource = 'text';
+let newDishContextSlotKey = null;
+let editingDishId = null; // set by openEditDishModal; null means "adding new"
+
+function openNewDishModal(slotKeyContext){
+  editingDishId = null;
+  newDishContextSlotKey = slotKeyContext;
+  newDishSource = 'text';
+  document.getElementById('newDishModalOverlay').querySelector('h3').textContent = t('newDishTitle');
+  document.getElementById('newDishNameInput').value = '';
+  document.getElementById('newDishTextInput').value = '';
+  document.getElementById('newDishLinkInput').value = '';
+  document.querySelectorAll('#newSourceToggle button').forEach(b=>b.classList.toggle('active', b.dataset.source==='text'));
+  document.getElementById('newSourceTextWrap').style.display = '';
+  document.getElementById('newSourceLinkWrap').style.display = 'none';
+
+  const contextEl = document.getElementById('newDishContextLine');
+  if(slotKeyContext){
+    contextEl.style.display = '';
+    contextEl.innerHTML = `${t('alsoAddTo')}: <b>${t(days[activeDay])} · ${slotContextLabel(slotKeyContext)}</b>`;
+  } else {
+    contextEl.style.display = 'none';
+  }
+
+  document.getElementById('newDishModalOverlay').classList.add('open');
+}
+
+function closeNewDishModal(){
+  document.getElementById('newDishModalOverlay').classList.remove('open');
+}
+
+// Opens the same add-dish modal, pre-filled with an existing recipe's
+// current data — used both for dishes that were stored blank/incomplete
+// (missing note or video) and for correcting a typo later. Does not add
+// the dish to any meal slot; it only edits the library entry in place.
+function openEditDishModal(dishId){
+  const dish = findRecipe(dishId);
+  if(!dish) return;
+  editingDishId = dishId;
+  newDishContextSlotKey = null;
+  newDishSource = (dish.video && dish.videoId) ? 'link' : 'text';
+
+  document.getElementById('newDishModalOverlay').querySelector('h3').textContent = t('editDishTitle');
+  document.getElementById('newDishNameInput').value = dish.title || '';
+  document.getElementById('newDishTextInput').value = dish.note || '';
+  document.getElementById('newDishLinkInput').value = dish.videoId ? `https://youtu.be/${dish.videoId}` : '';
+  document.querySelectorAll('#newSourceToggle button').forEach(b=>b.classList.toggle('active', b.dataset.source===newDishSource));
+  document.getElementById('newSourceTextWrap').style.display = newDishSource==='text' ? '' : 'none';
+  document.getElementById('newSourceLinkWrap').style.display = newDishSource==='link' ? '' : 'none';
+  document.getElementById('newDishContextLine').style.display = 'none';
+
+  document.getElementById('newDishModalOverlay').classList.add('open');
+}
+
+document.querySelectorAll('#newSourceToggle button').forEach(btn=>{
+  btn.onclick = ()=>{
+    newDishSource = btn.dataset.source;
+    document.querySelectorAll('#newSourceToggle button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('newSourceTextWrap').style.display = newDishSource==='text' ? '' : 'none';
+    document.getElementById('newSourceLinkWrap').style.display = newDishSource==='link' ? '' : 'none';
+  };
+});
+
+document.getElementById('newDishCancel').onclick = closeNewDishModal;
+document.getElementById('newDishModalOverlay').onclick = (e)=>{
+  if(e.target.id === 'newDishModalOverlay') closeNewDishModal();
+};
+
+document.getElementById('addNewDishGhost').onclick = ()=> openNewDishModal(null);
+
+document.getElementById('newDishSave').onclick = ()=>{
+  const name = document.getElementById('newDishNameInput').value.trim();
+  if(!name){ document.getElementById('newDishNameInput').focus(); return; }
+
+  // Editing mutates the existing dishLibrary entry in place (same object
+  // reference every meal card already points to via findRecipe(), so any
+  // slot already showing this dish picks up the fix immediately); creating
+  // starts a fresh entry with a new id.
+  const dish = editingDishId ? findRecipe(editingDishId) : { id: 'custom_' + Date.now(), title: '', video:false, videoId:null, note:"" };
+  if(!dish){ closeNewDishModal(); return; }
+  dish.title = name;
+
+  if(newDishSource === 'text'){
+    dish.note = document.getElementById('newDishTextInput').value.trim();
+    dish.video = false;
+    dish.videoId = null;
+  } else {
+    const link = document.getElementById('newDishLinkInput').value.trim();
+    const ytId = extractYouTubeId(link);
+    if(ytId){
+      dish.video = true;
+      dish.videoId = ytId;
+      if(!dish.note) dish.note = "Linked video recipe.";
+    } else if(link){
+      dish.video = false;
+      dish.videoId = null;
+      dish.note = "Linked recipe: " + link;
+    } else {
+      dish.video = false;
+      dish.videoId = null;
+    }
+  }
+
+  if(!editingDishId){
+    dishLibrary.push(dish);
+  }
+
+  if(newDishContextSlotKey){
+    const newDishIds = mealData[newDishContextSlotKey].dishIds.concat([{ id: dish.id }]);
+    writeMealSlot(newDishContextSlotKey, { ...mealData[newDishContextSlotKey], dishIds: newDishIds });
+  }
+
+  closeNewDishModal();
+  renderMeals(); // in case the edited/added dish is already showing in a slot
+};
+
+// --- Name entry (first visit, or if this page is opened directly) ---
+function openNameModal(){
+  document.getElementById('nameInput').value = localStorage.getItem('wg-username') || '';
+  document.getElementById('nameModalOverlay').classList.add('open');
+}
+function closeNameModal(){
+  document.getElementById('nameModalOverlay').classList.remove('open');
+}
+document.getElementById('nameModalSkip').onclick = closeNameModal;
+document.getElementById('nameModalSave').onclick = ()=>{
+  const name = document.getElementById('nameInput').value.trim();
+  if(!name){ document.getElementById('nameInput').focus(); return; }
+  saveFamilyMemberName(name);
+  closeNameModal();
+};
+
+syncLangUI();
+renderDayStrip();
+applyTheme();
+if(!localStorage.getItem('wg-username')){
+  openNameModal();
+}
+initFirestoreSync();
+// GitHub Pages / mobile browsers can serve a stale cached copy of this
+// JSON after a re-upload — appending a changing query string defeats that
+// cache on every load, same fix applied in the wg-groupbuy project.
+fetch('./recipes.json?v=' + Date.now())
+  .then(r => r.json())
+  .then(recipes => {
+    dishLibrary = Array.isArray(recipes) ? recipes.filter(d => d && typeof d.id === 'string' && d.id.trim() !== '' && typeof d.title === 'string' && d.title.trim() !== '') : [];
+  })
+  .catch(err => console.error('Failed to load recipes.json', err))
+  .finally(renderMeals);
+
+// Mobile Safari/Chrome can restore this page from the back-forward cache
+// with a stale "this week" or stale meal data (e.g. after navigating to
+// index.html and back) — force a real reload in that case, same fix
+// applied in the wg-groupbuy project.
+window.addEventListener('pageshow', (event) => {
+  if(event.persisted) window.location.reload();
+});
+</script>
+</body>
+</html>
