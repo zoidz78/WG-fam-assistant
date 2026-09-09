@@ -34,18 +34,20 @@ who's speaking. Tap your name (top of the Home Hub) any time to change it.
 
 Everyone can type in whatever language they're comfortable with — English,
 Chinese, or Tagalog — message by message, no need to pick a language
-first. The app automatically detects what language a message was typed in;
-if it wasn't English, an English translation appears underneath it, since
-everyone using this understands English. An English message doesn't get a
+first. The app guesses what language a message was typed in and, if it
+wasn't English, shows an English translation underneath it, since everyone
+using this understands English. An English message doesn't get a
 translation line since there's nothing to translate. This works the same
 way for every reader, no matter which of the EN/中文/TL buttons they
 currently have selected — that toggle only changes the app's own labels
-and buttons, not the conversation itself.
+and buttons, not the conversation itself. Translation runs on a free
+public service, so there's nothing to set up or pay for.
 
-If a message shows "Translation unavailable" instead of an actual
-translation, the translation service isn't reachable at that moment (or
-hasn't been set up yet) — the original message still sends and saves
-normally either way.
+The language guess is a simple heuristic, not perfect — very short or
+unusual messages occasionally get misread as the wrong language. If a
+message shows "Translation unavailable" instead of an actual translation,
+the translation service didn't respond that time — the original message
+still sends and saves normally either way.
 
 ## Editing a recipe
 

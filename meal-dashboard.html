@@ -651,82 +651,74 @@ try {
   console.warn('Firebase not configured yet — meal plan/messages stay local-only this session.', e);
 }
 
-// TODO: paste a Google Cloud Translation API key here. Enable "Cloud
-// Translation API" in the Google Cloud console for the wg-family-assistant
-// project (same project Firebase uses), create an API key, and restrict it
-// to that one API + to this site's HTTP referrer (e.g.
-// zoidz78.github.io/*) — this key is visible in the page source, so the
-// referrer restriction is what stops anyone else from using it. Without a
-// real key here, detection/translation are skipped and messages show only
-// their original text, untranslated.
-const TRANSLATE_API_KEY = "PASTE_ME";
-
 // Everyone typing into the chat — you, your wife, the helper — can type in
 // whichever of these three languages they're comfortable with per message;
 // nothing is fixed to one "sender types Chinese, helper types Tagalog"
 // pairing. But the target is fixed and simple: everyone understands
 // English, so anything not already English gets translated to English —
 // not to all three languages, and not per-viewer.
-const GOOGLE_LANG_CODE = { en: 'en', zh: 'zh-CN', tl: 'tl' };
+//
+// Translation uses MyMemory (https://mymemory.translated.net) instead of a
+// paid Google Cloud API — it's a public, free, no-signup, no-API-key
+// translation service, generous enough for household chat volume (roughly
+// 5,000 words/day anonymously; see project-knowledge.md for how to raise
+// that with a free email registration if it's ever hit). The trade-off:
+// unlike Google's paid API, MyMemory doesn't detect language for you — you
+// have to tell it the source language — so a small local heuristic below
+// (detectLangHeuristic) guesses en/zh/tl before translating. It's not
+// perfect on very short or ambiguous text, but reliable for normal
+// sentences, and costs nothing either way.
+const MYMEMORY_LANG_CODE = { en: 'en', zh: 'zh-CN', tl: 'tl' };
 
-// Google's detector can return regional/alternate codes (zh-TW, fil) for
-// languages we only track at the en/zh/tl level — collapse those down
-// rather than treating them as a fourth, unsupported language.
-function normalizeDetectedLang(code){
-  if(!code) return null;
-  const c = code.toLowerCase();
-  if(c.startsWith('zh')) return 'zh';
-  if(c === 'tl' || c === 'fil') return 'tl';
-  if(c.startsWith('en')) return 'en';
-  return null; // something outside our three languages — treat as unknown
+// Common Tagalog function words — short, high-frequency words that rarely
+// appear in ordinary English sentences. Chinese is detected separately (by
+// script, not word list) since it doesn't share an alphabet with the other
+// two, which makes it unambiguous.
+const TAGALOG_MARKERS = new Set([
+  'ang','ng','mga','sa','ako','ikaw','siya','tayo','kami','sila','kayo',
+  'hindi','wala','opo','po','naman','lang','din','rin','kasi','ba',
+  'yung','yun','ito','iyon','pag','pala','talaga','salamat','kumusta',
+  'paano','ganito','ganyan','marunong','gusto','pwede','oo','hindi','na',
+  'may','meron','kung','para','dahil','saan','ano','sino','bakit'
+]);
+
+// Local, no-network language guess across the three app languages. Chinese
+// is detected by the presence of any CJK character (unambiguous — the
+// other two languages don't use that script). Between English and
+// Tagalog, a message counts as Tagalog if it contains at least one common
+// Tagalog function word; otherwise it's assumed English. Short or unusual
+// messages can be misclassified — there's no server-side detection to fall
+// back on with a free, keyless service — but this holds up well for
+// ordinary sentences.
+function detectLangHeuristic(text){
+  if(/[\u4e00-\u9fff]/.test(text)) return 'zh';
+  const words = text.toLowerCase().replace(/[^\p{L}\s]/gu, '').split(/\s+/).filter(Boolean);
+  const hasTagalogMarker = words.some(w => TAGALOG_MARKERS.has(w));
+  return hasTagalogMarker ? 'tl' : 'en';
 }
 
-// Detects which of the three app languages a message was typed in. Returns
-// null (rather than guessing) if no API key is configured, the call fails,
-// or the detected language isn't one of the three this app understands.
-async function detectLanguage(text){
-  if(!TRANSLATE_API_KEY || TRANSLATE_API_KEY === "PASTE_ME") return null;
-  try{
-    const res = await fetch(`https://translation.googleapis.com/language/translate/v2/detect?key=${TRANSLATE_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: text })
-    });
-    if(!res.ok) throw new Error('Detect API responded ' + res.status);
-    const data = await res.json();
-    return normalizeDetectedLang(data.data.detections[0][0].language);
-  }catch(err){
-    console.error('Language detection failed', err);
-    return null;
-  }
-}
-
-// Calls the Cloud Translation API (v2, REST) directly from the browser.
-// targetAppLang/sourceAppLang are 'en'/'zh'/'tl' (translated to Google's
-// codes internally). Returns the translated string, or null if no key is
-// configured or the call fails — callers treat null as "no translation
-// available" rather than blocking anything.
+// Calls MyMemory's translation endpoint directly from the browser — a
+// plain GET request, no key, no auth. Returns the translated string, or
+// null if the call fails or MyMemory couldn't produce a translation;
+// callers treat null as "no translation available" rather than blocking
+// anything.
 async function translateText(text, targetAppLang, sourceAppLang){
-  if(!TRANSLATE_API_KEY || TRANSLATE_API_KEY === "PASTE_ME") return null;
   try{
-    const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${TRANSLATE_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        q: text,
-        source: GOOGLE_LANG_CODE[sourceAppLang],
-        target: GOOGLE_LANG_CODE[targetAppLang],
-        format: 'text'
-      })
-    });
-    if(!res.ok) throw new Error('Translate API responded ' + res.status);
+    const langpair = `${MYMEMORY_LANG_CODE[sourceAppLang]}|${MYMEMORY_LANG_CODE[targetAppLang]}`;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('MyMemory API responded ' + res.status);
     const data = await res.json();
-    return data.data.translations[0].translatedText;
+    if(data.responseStatus !== 200 || !data.responseData || !data.responseData.translatedText){
+      throw new Error('MyMemory API returned no usable translation');
+    }
+    return data.responseData.translatedText;
   }catch(err){
     console.error('Translation request failed', err);
     return null;
   }
 }
+
 
 function getUserId(){
   let id = localStorage.getItem('wg-userid');
@@ -1260,15 +1252,14 @@ function renderMeals(){
       sendBtn.textContent = t('translating');
       // Whoever's typing (you, your wife, the helper) may write in any of
       // the three app languages message-to-message — nothing here assumes
-      // a fixed language per sender. Detect what was actually typed; if
-      // it's not already English, translate it to English (everyone reads
+      // a fixed language per sender. Guess what was actually typed (see
+      // detectLangHeuristic — no network call, always returns a guess); if
+      // it's not English, translate it to English (everyone reads
       // English), and everyone sees that same translation regardless of
-      // their own language toggle — see rendering in renderMeals(). If
-      // detection fails (no API key, or the call errors), origLang stays
-      // null and the message is stored untranslated rather than guessed at.
-      const origLang = await detectLanguage(text);
+      // their own language toggle — see rendering in renderMeals().
+      const origLang = detectLangHeuristic(text);
       let translatedEn = null;
-      if(origLang && origLang !== 'en'){
+      if(origLang !== 'en'){
         translatedEn = await translateText(text, 'en', origLang);
       }
       const newThread = threadData[slotKey].concat([{

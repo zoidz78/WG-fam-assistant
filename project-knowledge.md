@@ -260,45 +260,56 @@ Firestore, so pulling in that extra SDK would be dead weight.
   the helper regardless of the current UI language toggle (this is the same
   toggle-leaking-into-message-content bug flagged earlier in this file —
   don't reintroduce it here either).
-- **Translation is now auto-detected with a single fixed target: English**
-  — not the three-way per-viewer design tried briefly before this, and not
-  the original fixed Chinese→Tagalog assumption either. Reasoning: you
-  type English only, your wife types English or Chinese, the helper types
-  English or Tagalog — everyone already understands English, so there's no
-  need to translate into three languages or vary the target by who's
-  looking. A sent message stores `{ text, origLang, translatedEn }`:
-  - `text` — exactly what was typed, in whichever language that was.
-  - `origLang` — auto-detected via the Cloud Translation API's `/detect`
-    endpoint (`detectLanguage()`), normalized to `'en'`/`'zh'`/`'tl'`
-    (regional/alternate codes like `zh-TW` or `fil` collapse into the
-    closest of the three). `null` if detection wasn't possible (no API
-    key, or the call failed) — stored and shown untranslated rather than
-    guessed at.
-  - `translatedEn` — the English translation, fetched via one
-    `translateText()` call, **only when `origLang` is known and isn't
-    already `'en'`** (an English message never gets a translate call at
-    all — nothing to do).
-  - **Rendering is the same for every viewer** — the translated box always
-    shows `translatedEn` (or "Translation unavailable" if it's missing)
-    whenever `origLang !== 'en'`, regardless of the viewer's own EN/中文/TL
-    toggle. This deliberately does NOT vary by viewer (an earlier version
-    of this feature did, and was reverted — simpler, cheaper, and matches
-    the existing rule that message content must never depend on the UI
-    language toggle).
-  - Cost/API note: at most 2 calls per message now (1 detect + 1 translate,
-    down from up to 3) — an English message costs just the 1 detect call.
-    Trivial at household chat volume against the free tier below.
-  - **Setup** (Google Cloud Console, same `wg-family-assistant` project
-    Firebase uses): enable **Cloud Translation API** (needs billing
-    enabled on the project — free allowance is the first 500,000
-    characters/month, then paid beyond that); create an API key restricted
-    to that one API plus an **HTTP referrer restriction** for this site
-    (e.g. `zoidz78.github.io/*`) — the key sits visibly in the page source,
-    so the referrer restriction is what stops anyone else from using it;
-    then paste it into `TRANSLATE_API_KEY` near the top of
-    `meal-dashboard.html` (currently `"PASTE_ME"`). Without a real key,
-    every message is stored and shown with `origLang: null` — untranslated
-    but never broken.
+- **Translation runs on MyMemory (free, no key), not paid Google Cloud
+  Translation** — switched after deciding not to set up billing just for
+  this. MyMemory (https://mymemory.translated.net) is a public, free,
+  no-signup translation API — plain `fetch()` GET request, no key, no auth.
+  The trade-off: it doesn't detect language for you like Google's paid API
+  did, so language is now guessed locally instead (`detectLangHeuristic()`)
+  — no network call, always returns `'en'`/`'zh'`/`'tl'`:
+  - Chinese is detected by the presence of any CJK character — unambiguous,
+    since neither English nor Tagalog uses that script.
+  - Between English and Tagalog (both Latin-script), the message counts as
+    Tagalog if it contains at least one word from `TAGALOG_MARKERS` (a
+    ~40-word list of common short Tagalog function words: `ang`, `ng`,
+    `hindi`, `wala`, `po`, `kumusta`, etc.) — otherwise it's assumed
+    English.
+  - This is a heuristic, not real language detection — short or unusual
+    messages can be misclassified (a Tagalog sentence using none of the
+    listed function words would read as English). Tested against the
+    actual messages from early testing ("What's for lunch tomorrow?" → en,
+    "Marunong akong magluto ng omelet." → tl, "我不知道。有时间吗？" → zh,
+    "Kumusta ka?" → tl) and all classified correctly, but it's not
+    bulletproof — if misclassification becomes a real problem, the fix is
+    either a bigger marker word list or switching to a paid detection API.
+  - Target is still fixed at English for everyone, same reasoning as
+    before: you type English only, your wife types English or Chinese, the
+    helper types English or Tagalog — everyone already understands
+    English, so there's no need to translate into three languages or vary
+    the target by who's viewing.
+  A sent message stores `{ text, origLang, translatedEn }` — unchanged
+  shape from before, just `origLang` now comes from the local heuristic
+  instead of an API call, and `translatedEn` comes from MyMemory instead of
+  Google:
+  - `text` — exactly what was typed.
+  - `origLang` — always `'en'`, `'zh'`, or `'tl'` now (the heuristic always
+    returns a guess; it's not "unknown" the way a failed API call used to
+    be, so a `null` value should no longer appear in fresh messages).
+  - `translatedEn` — fetched via one `translateText()` call to MyMemory,
+    only when `origLang !== 'en'`. `null` if the MyMemory call fails or
+    returns nothing usable — rendering falls back to "Translation
+    unavailable" in that case, same as before.
+  - **Rendering is still the same for every viewer**, not per-viewer — the
+    translated box shows `translatedEn` whenever `origLang !== 'en'`,
+    regardless of the viewer's own EN/中文/TL toggle. (This was already the
+    design going into this change; only the translation backend changed.)
+  - **Rate limit**: MyMemory's anonymous tier is roughly 5,000 words/day
+    per IP address — trivial for household chat volume, but if it's ever
+    hit, appending `&de=<an email address>` to the request URL in
+    `translateText()` raises the anonymous limit (MyMemory's documented
+    mechanism — no account needed, just an email string in the query).
+  - No setup needed — no API key, no billing, no Google Cloud Console.
+    `translateText()`/`detectLangHeuristic()` work out of the box.
   - Old messages (the original `text_zh`/`text_tl` shape, from before any
     of this and the original hand-typed helper/you demo pairs) still
     render exactly as before — the renderer branches on whether `m.text`
