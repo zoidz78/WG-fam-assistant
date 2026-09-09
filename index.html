@@ -82,8 +82,9 @@
     background:none;
     font-family:'Karla',sans-serif;
     font-weight:700;
-    font-size:12px;
-    padding:6px 12px;
+    font-size:14px;
+    line-height:1;
+    padding:7px 9px;
     border-radius:999px;
     color:var(--ink-soft);
     cursor:pointer;
@@ -193,9 +194,9 @@
     <div class="controls">
       <button class="greeting" id="greetingBtn" style="display:none;"></button>
       <div class="theme-switch" id="themeSwitch">
-        <button class="theme-seg" data-theme-choice="light" data-i18n="themeLight">Light</button>
-        <button class="theme-seg" data-theme-choice="dark" data-i18n="themeDark">Dark</button>
-        <button class="theme-seg" data-theme-choice="auto" data-i18n="themeAuto">Auto</button>
+        <button class="theme-seg" data-theme-choice="light" data-i18n-title="themeLight">☀️</button>
+        <button class="theme-seg" data-theme-choice="dark" data-i18n-title="themeDark">🌙</button>
+        <button class="theme-seg" data-theme-choice="auto" data-i18n-title="themeAuto">🌗</button>
       </div>
       <button class="lang-btn" data-lang="en">EN</button>
       <button class="lang-btn" data-lang="zh">中文</button>
@@ -304,6 +305,9 @@ function syncLangUI(){
   });
   document.querySelectorAll('[data-i18n-ph]').forEach(elm=>{
     elm.placeholder = t(elm.dataset.i18nPh);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(elm=>{
+    elm.title = t(elm.dataset.i18nTitle);
   });
 }
 

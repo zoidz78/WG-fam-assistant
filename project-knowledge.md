@@ -163,8 +163,17 @@ Firestore, so pulling in that extra SDK would be dead weight.
   `:root` CSS vars in either page for the full light/dark token set).
 - **Light/Dark/Auto is a segmented pill control** (`.theme-switch`/`.theme-seg`),
   not a single cycling icon button — this was an explicit revision after an
-  icon-only version was tried first; match the screenshot-driven pill design if
-  rebuilding it anywhere.
+  icon-only version was tried first. **Later reverted back to icon labels**
+  (☀️/🌙/🌗) instead of the text "Light"/"Dark"/"Auto" — Tagalog's longer
+  words (Maliwanag/Madilim/Awtomatiko) were pushing the segmented control
+  wide enough to squeeze the EN/中文/TL language buttons, wrapping "中文"
+  onto two lines. The pill *shape* stayed (still three tappable segments,
+  still highlights the active one), only the label content changed from
+  text to emoji; the localized name is still set as each button's `title`
+  attribute (via `data-i18n-title`, a `syncLangUI()` sweep alongside
+  `data-i18n`/`data-i18n-ph`) for anyone hovering on desktop. If this
+  control is touched again, don't reintroduce text labels for the segments
+  — that's the whole reason for this change.
 - Kids cards: dashed border + a dedicated plum/lavender accent (`--kids-accent`)
   used consistently on all three Kids tabs and borders, distinct from the
   per-meal mustard/teal/brick used on the Adults row. Kids cards have **no
@@ -240,6 +249,52 @@ Firestore, so pulling in that extra SDK would be dead weight.
   pattern, they haven't been cross-checked here yet — flag the specific
   cases in a future session so they can be verified against this codebase
   too.**
+
+- **Sent-message "translation" no longer repeats the original text.** There's
+  still no real translation service wired in, so a message you send gets a
+  placeholder `text_tl` — but it used to be `${text} (halimbawang salin)`,
+  which just echoed your own message back, redundant with the original
+  shown right above it. It's now a fixed status line, "(Awtomatikong salin
+  — wala pang aktibong serbisyo)" — **hardcoded in Tagalog, not run through
+  `t()`**, because `text_tl` is supposed to always be the Tagalog side for
+  the helper regardless of the current UI language toggle (this is the same
+  toggle-leaking-into-message-content bug flagged earlier in this file —
+  don't reintroduce it here either).
+- **Real translation is now wired in, client-side.** Sending a message now
+  calls the Cloud Translation API (v2, REST) directly from the browser
+  (`translateText()` in `meal-dashboard.html`) to translate your Chinese
+  message to Tagalog before writing it to Firestore, instead of the fixed
+  placeholder note. The Send button shows "Translating..." while the call
+  is in flight. **Needs a real API key to actually translate** — until
+  `TRANSLATE_API_KEY` is filled in (currently `"PASTE_ME"`), or if the API
+  call fails for any reason, it silently falls back to the same placeholder
+  note as before, so a missing/broken key never blocks sending a message.
+  Setup (Google Cloud Console, same `wg-family-assistant` project Firebase
+  uses):
+  1. Enable **Cloud Translation API** for the project (billing must be
+     enabled on the project — the Basic tier's free allowance is the first
+     500,000 characters/month, then paid beyond that).
+  2. Create an API key, restrict it to **Cloud Translation API** only, and
+     add an **HTTP referrer restriction** for this site (e.g.
+     `zoidz78.github.io/*`) — this key sits in the page source and is
+     visible to anyone, so the referrer restriction is the only thing
+     stopping someone else from using it on your quota.
+  3. Paste the key into `TRANSLATE_API_KEY` in `meal-dashboard.html`.
+  This is one-directional only (Chinese → Tagalog, for messages you send)
+  — there's still no path in the UI for the helper to type a message that
+  gets tagged `from:"helper"`, so there's nothing yet that needs Tagalog →
+  Chinese translation. That would be a separate feature if ever needed.
+- **Chat bubble alignment is per-viewer too, not just the label.** Fixing
+  the "You" label (above) didn't fix alignment — a message from another
+  family member's device still rendered right-aligned like your own,
+  because alignment was keyed off `m.from === 'you'` while the label was
+  already keyed off `senderId`. Both now go through one shared
+  `isOwnMessage(m)` helper: a message gets the `.mine` CSS class (and
+  right-alignment) only on the device that actually sent it; everyone
+  else's device shows that same message left-aligned with the sender's
+  name, same as a helper message. `m.from` itself is untouched and still
+  drives the Chinese/Tagalog pairing and translation-box color — those
+  don't depend on who's viewing.
 
 ## Troubleshooting / lessons already learned
 
