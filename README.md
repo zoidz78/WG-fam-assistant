@@ -13,7 +13,7 @@ live across every device — everyone sees the same thing in real time.
 | File | Purpose |
 |---|---|
 | `index.html` | The Home Hub landing page. Reads `hub-cards.json` to know what cards to show — never hardcodes a card's data. Asks for your name on first visit. |
-| `meal-dashboard.html` | The meal planner + message thread. Reads `recipes.json` for the list of dishes the helper knows how to cook. Always shows the current week (Monday–Sunday), computed from today's date, with each day planned independently — picking a dish or chatting about Tuesday's lunch doesn't touch any other day. Has a 🗑️ button next to the bell for wiping this week's messages — see "Clearing messages" below before tapping it. |
+| `meal-dashboard.html` | The meal planner + message thread. Reads `recipes.json` for the list of dishes the helper knows how to cook. Always shows the current week (Monday–Sunday), computed from today's date, with each day planned independently — picking a dish or chatting about Tuesday's lunch doesn't touch any other day. Has a 🗑️ testing-only button next to the bell for resetting this week — see "Resetting the week" below before tapping it. |
 | `hub-cards.json` | List of cards shown on the Home Hub. Add an entry here to add a new section (e.g. chores, groceries) — no HTML/JS changes needed. |
 | `recipes.json` | **One-time seed only.** Fills the recipe library the very first time the app runs; after that the live library lives in Firestore and this file isn't read again. Add new dishes from inside the app instead — see "Adding a new recipe" below. |
 | `tagalog-markers.json` | The word/phrase list the app uses to guess whether a message is Tagalog (see "Improving Tagalog detection" below). |
@@ -83,18 +83,20 @@ without full details yet). This also works from the "choose a dish" list
 when picking a dish for a meal slot. The edit syncs live to every device —
 no need to touch `recipes.json` or re-upload anything.
 
-## Clearing messages
+## Resetting the week (testing only — will be removed)
 
-The 🗑️ button next to the bell icon on the meal dashboard deletes every
-message in every meal slot **for the current week**, after asking you to
-confirm. It's meant for testing, not everyday use — a few things worth
-knowing before tapping it:
+The 🗑️ button next to the bell icon on the meal dashboard resets **the
+current week only** back to completely blank, after asking you to confirm:
+every day's dishes, staple choice, and status, plus every message. It's a
+testing convenience, not a real feature — it'll be removed entirely before
+this app is handed off for everyday use. A few things worth knowing before
+tapping it in the meantime:
 
-- It clears the **shared, live** copy — if the helper or another family
-  member has the page open at the time, their messages disappear for them
-  too, not just on your device.
-- It doesn't touch the meal plan itself (dishes, staples, status) or any
-  other week's messages — only this week's chat.
+- It resets the **shared, live** copy — if the helper or another family
+  member has the page open at the time, their view resets too, not just
+  yours.
+- It doesn't touch other weeks, or the shared recipe library (the dishes
+  everyone can pick from) — only this week's plan and chat.
 - There's no undo.
 
 ## Adding a new recipe

@@ -98,15 +98,17 @@ collections:
   creates the nested date map automatically the first time — no need to
   pre-seed every date. This date layer replaced an earlier flat, slot-only
   shape where the day-strip tabs looked functional but silently showed
-  identical data on every day (see Troubleshooting).
+  identical data on every day (see Troubleshooting). The testing-only
+  "Reset this week" button (see below) wipes this whole doc back to `{}`
+  too, alongside `mealThreads/{weekId}`.
 - `mealThreads/{weekId}` — one doc per week, same date-then-slot nesting as
   `mealPlans`, map per slot of message arrays (`{from, text_zh, text_tl,
   unread?, senderName?}`) — mirrors groupbuy's one-doc-per-round pattern for
   `adjustments`. `senderName` is only set on `from:"you"` messages, captured
   from `localStorage['wg-username']` **at send time** (a later rename
-  doesn't rewrite chat history). The "Clear all messages" button (see
-  below) wipes this whole doc back to `{}` — every date, not just the one
-  being viewed.
+  doesn't rewrite chat history). The testing-only "Reset this week" button
+  (see below) wipes this whole doc back to `{}` — every date, not just the
+  one being viewed — along with `mealPlans/{weekId}` (see that entry above).
 - `familyMembers/{memberId}` — one doc per device, `memberId` = a random ID
   generated client-side (`crypto.randomUUID()`) and kept in
   `localStorage['wg-userid']`. Fields: `{ name, updatedAt }`. Written by the
@@ -386,17 +388,19 @@ the Firebase console, and the site is live and syncing across devices.
   drives the Chinese/Tagalog pairing and translation-box color — those
   don't depend on who's viewing.
 
-- **"Clear all messages" button (🗑️, next to the bell) — testing only.**
-  Wipes every message in every meal slot for the *current week only*
-  (`mealThreads/{weekId}`) — leaves `mealPlans` (staples, dishes, status)
-  and other weeks' message history untouched. Confirms via a native
+- **"Reset this week" button (🗑️, next to the bell) — testing only, remove
+  before "live"/deployed.** Originally only wiped messages; now resets the
+  *current week only* back to a blank slate entirely — every date's
+  dishes/staple/status (`mealPlans/{weekId}` → `{}`) **and** every message
+  (`mealThreads/{weekId}` → `{}`) — leaving other weeks and the shared
+  recipe library (`recipeLibrary/library`) untouched. Confirms via a native
   `window.confirm()` before doing anything, because **it writes straight to
-  Firestore**, so it clears the shared/live copy for every device
-  currently looking at this week, not just the one that clicked it — this
-  isn't a "clear my local view" button. Safe to leave in for now since it's
-  clearly labeled as testing-only, but worth removing (or hiding behind
-  something less discoverable) before handing this off as a finished
-  household tool, since anyone with the page open can wipe the week's
+  Firestore**, so it resets the shared/live copy for every device currently
+  looking at this week, not just the one that clicked it — this isn't a
+  "reset my local view" button. This is explicitly a testing convenience,
+  not a feature for the finished household tool — remove the button (and
+  its handler/i18n strings) entirely before handing this off as "live,"
+  since anyone with the page open can wipe an entire week's plan and
   messages for everyone with two taps.
 
 - **Unread bell/badge only ever counted `from:"helper"` messages —
@@ -490,6 +494,16 @@ the Firebase console, and the site is live and syncing across devices.
   `autoplay=1` in a dish's stored data would restart every already-playing
   video on every unrelated re-render. Don't move `autoplay=1` back into the
   dish's persisted state.
+- **A dedicated fullscreen button (`.video-fullscreen-btn`) sits on top of
+  every playing video embed**, per explicit ask — the YouTube player's own
+  fullscreen control is small and easy to miss at this card's embed size.
+  It calls `requestFullscreen()` (with vendor-prefixed fallbacks) on the
+  `<iframe>` element itself, not the player inside it — a cross-origin
+  iframe's internal player can't be reached directly from the parent page,
+  but fullscreening the iframe element achieves the same visual result.
+  `fullscreen` is listed explicitly in the iframe's `allow` attribute
+  alongside the legacy `allowfullscreen` boolean, since relying on
+  `allowfullscreen` alone isn't consistently honored across browsers.
 - **"Add a new dish" via link accepts either a plain YouTube URL or a pasted
   `<iframe>` embed snippet** — `extractYouTubeId()` checks for an
   `<iframe ... src="...">` first and pulls the ID from that if present, else

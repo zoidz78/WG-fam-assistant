@@ -337,6 +337,23 @@
   .video-embed iframe{
     position:absolute;top:0;left:0;width:100%;height:100%;border:0;
   }
+  .video-fullscreen-btn{
+    position:absolute;
+    top:8px;right:8px;
+    z-index:2;
+    width:32px;height:32px;
+    border:none;
+    border-radius:4px;
+    background:rgba(0,0,0,0.6);
+    color:#fff;
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .video-fullscreen-btn:hover{background:rgba(0,0,0,0.8);}
 
   .status-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
   .status-btn{
@@ -809,12 +826,13 @@ const i18n = {
     breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner",
     planned: "Planned", cooking: "Cooking", missing: "Missing ingredient", done: "Done",
     videoLink: "Watch recipe video",
+    fullscreenVideo: "Watch fullscreen",
     addRecipe: "+ Add a new dish", addRecipeSub: "add it to the list so it's easy to pick next time",
     sendHint: "Press Enter to send", inputPlaceholder: "Type a message...",
     translating: "Translating...",
     translationUnavailable: "Translation unavailable",
-    clearMessagesTitle: "Clear all messages (testing)",
-    clearMessagesConfirm: "Delete every message in every meal slot this week, for everyone? This can't be undone.",
+    clearMessagesTitle: "Reset this week (testing)",
+    clearMessagesConfirm: "Reset this whole week back to blank for everyone — every day's dishes, staple, status, AND every message? This can't be undone.",
     you: "You", helper: "Helper (Tagalog → 中文)",
     addDish: "+ Add dish",
     pickDishTitle: "Choose a dish",
@@ -853,12 +871,13 @@ const i18n = {
     breakfast: "早餐", lunch: "午餐", dinner: "晚餐",
     planned: "已安排", cooking: "烹饪中", missing: "食材不足", done: "已完成",
     videoLink: "观看食谱视频",
+    fullscreenVideo: "全屏观看",
     addRecipe: "+ 添加新菜", addRecipeSub: "加入清单，下次直接选用",
     sendHint: "按 Enter 发送", inputPlaceholder: "输入消息...",
     translating: "翻译中...",
     translationUnavailable: "暂无翻译",
-    clearMessagesTitle: "清空所有消息（测试用）",
-    clearMessagesConfirm: "删除本周所有餐次的全部消息，对所有人生效？此操作无法撤销。",
+    clearMessagesTitle: "重置本周（测试用）",
+    clearMessagesConfirm: "将本周恢复为空白，对所有人生效——包括每天的菜肴、主食、状态，以及全部消息？此操作无法撤销。",
     you: "你", helper: "帮佣（他加禄语 → 中文）",
     addDish: "+ 添加菜肴",
     pickDishTitle: "选择菜肴",
@@ -896,12 +915,13 @@ const i18n = {
     breakfast: "Almusal", lunch: "Tanghalian", dinner: "Hapunan",
     planned: "Nakaplano", cooking: "Niluluto", missing: "Kulang ang sangkap", done: "Tapos na",
     videoLink: "Panoorin ang recipe video",
+    fullscreenVideo: "Panoorin nang fullscreen",
     addRecipe: "+ Magdagdag ng bagong ulam", addRecipeSub: "idagdag sa listahan para madali nang piliin sa susunod",
     sendHint: "Pindutin ang Enter para magpadala", inputPlaceholder: "Mag-type ng mensahe...",
     translating: "Isinasalin...",
     translationUnavailable: "Walang available na salin",
-    clearMessagesTitle: "I-clear lahat ng mensahe (testing)",
-    clearMessagesConfirm: "Burahin ang lahat ng mensahe sa bawat meal slot ngayong linggo, para sa lahat? Hindi na ito mababawi.",
+    clearMessagesTitle: "I-reset ang linggong ito (testing)",
+    clearMessagesConfirm: "I-reset ang buong linggong ito pabalik sa blangko para sa lahat — lahat ng ulam, staple, status ng bawat araw, AT lahat ng mensahe? Hindi na ito mababawi.",
     you: "Ikaw", helper: "Katulong (Tagalog → 中文)",
     addDish: "+ Magdagdag ng ulam",
     pickDishTitle: "Pumili ng ulam",
@@ -1333,7 +1353,7 @@ function renderMeals(){
               // from scratch and would restart the video from 0:00.
               const isJustClicked = autoplayDish === `${dateIso}_${slotKey}_${idx}`;
               const src = `https://www.youtube.com/embed/${dish.videoId}?playsinline=1${isJustClicked ? '&autoplay=1' : ''}`;
-              return `<div class="video-embed"><iframe src="${src}" title="${dish.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`;
+              return `<div class="video-embed"><iframe src="${src}" title="${dish.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe><button class="video-fullscreen-btn" data-fullscreen-video title="${t('fullscreenVideo')}" aria-label="${t('fullscreenVideo')}">⛶</button></div>`;
             })()
           : `<div class="video-chip" data-playvideo="${slotKey}" data-dishidx="${idx}"><span class="dot"></span>${t('videoLink')}</div>`
       ) : '';
@@ -1394,6 +1414,24 @@ function renderMeals(){
       setVideoPlaying(dateIso, slotKey, idx);
       autoplayDish = `${dateIso}_${slotKey}_${idx}`;
       renderMeals();
+    };
+  });
+
+  // The YouTube player's own fullscreen control is tiny at this embed
+  // size and easy to miss, so there's a dedicated button on top of the
+  // video instead. Requests fullscreen on the <iframe> itself (not the
+  // player inside it — cross-origin content can't be reached directly),
+  // which is the same underlying browser API the player's own button
+  // would call; "fullscreen" is explicitly listed in the iframe's `allow`
+  // attribute (alongside the legacy `allowfullscreen` boolean) so this
+  // works consistently across browsers.
+  el.querySelectorAll('[data-fullscreen-video]').forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      const iframe = btn.closest('.video-embed')?.querySelector('iframe');
+      if(!iframe) return;
+      const request = iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen || iframe.msRequestFullscreen;
+      if(request) request.call(iframe);
     };
   });
 
@@ -1496,17 +1534,25 @@ document.addEventListener('click', (e)=>{
   }
 });
 
-// Testing-only button: wipes every message in every slot for THIS week
-// only (mealThreads/{weekId}) — does not touch mealPlans (staples, dishes,
-// status) or other weeks' message history. Writes straight to Firestore
-// (if configured), so it clears the shared/live copy for every device, not
-// just this one — the confirm() is there specifically because of that.
+// TESTING ONLY — remove this button entirely before handing the app off
+// as "live"/deployed for real household use. Resets THIS WEEK ONLY back
+// to a blank slate: every date's dishes/staple/status (mealPlans/{weekId})
+// AND every message (mealThreads/{weekId}) — does not touch other weeks'
+// data, or the shared recipe library (recipeLibrary/library). Writes
+// straight to Firestore (if configured), so it resets the shared/live copy
+// for every device, not just this one — the confirm() is there
+// specifically because of that.
 document.getElementById('clearMessagesBtn').onclick = ()=>{
   if(!window.confirm(t('clearMessagesConfirm'))) return;
+  mealData = {};
   threadData = {};
+  if(mealPlanRef){
+    setDoc(mealPlanRef, {}).catch(err => console.error('Failed to reset meal plan in Firestore', err));
+  }
   if(mealThreadRef){
     setDoc(mealThreadRef, {}).catch(err => console.error('Failed to clear messages in Firestore', err));
   }
+  renderDayStrip();
   renderMeals();
 };
 
