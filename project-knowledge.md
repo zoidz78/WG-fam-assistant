@@ -34,7 +34,7 @@ handled the analogous case before improvising.
 | `index.html` | Home Hub landing page. Fetches `hub-cards.json` and renders one real card per entry — no placeholder/ghost card anymore (removed per explicit ask). If the fetch fails or returns nothing usable, falls back to a hardcoded Meals-only card (`FALLBACK_HUB_CARDS`) so the hub is never blank — the one deliberate exception to "never hardcode a card's data," kept in sync with `hub-cards.json`'s meals entry. |
 | `hub-cards.json` | List of Home Hub cards: `{id, href, icon, text: {en, zh, tl: {tab, title, desc}}}`. Add an entry to add a new section — no HTML/JS change needed. |
 | `meal-dashboard.html` | The meal planner + message thread. Fetches `recipes.json` at boot. Computes "this week" (Monday–Sunday) from the real current date every load — see "This week is always live" below. |
-| `recipes.json` | The shared recipe library: `{id, title, note, video, videoId}` per dish. `meal-dashboard.html`'s meal slots store only a recipe `id` (see Firestore schema below) and resolve title/note/video against this file at render time — single source of truth, no duplicated copies per slot. |
+| `recipes.json` | **One-time seed only** for the recipe library — the live, editable copy now lives in Firestore (`recipeLibrary/library`, see Firestore schema below) and syncs across devices. This file is only read the very first time that Firestore doc doesn't exist yet, or as a same-tab fallback if Firebase isn't configured. `{id, title, note, video, videoId}` per dish; meal slots store only a recipe `id`, resolved against the live library at render time — single source of truth, no duplicated copies per slot. |
 | `tagalog-markers.json` | `{words: [...], phrases: [...]}` — the word/phrase list `detectLangHeuristic()` checks a message against to guess Tagalog vs. English (see Messages & translation below). Fetched at boot with the same cache-busting pattern as `recipes.json`; add a word or phrase here to fix a message that isn't getting detected/translated correctly, no code change needed. |
 | `firestore-rules.md` | Firestore security rules for `mealPlans`/`mealThreads`/`familyMembers` (open read/write) — **live**, already applied in the Firebase project this app uses. |
 | `README.md` | User-facing docs (English) for a non-technical maintainer — how to add a recipe / a hub card, how to deploy. |
@@ -49,23 +49,26 @@ of the `<script>`), and derives `weekId` (Monday's ISO date, e.g. `"2026-09-08"`
 not go back to a hardcoded `dayNums` array or `todayIndex` constant** — that was
 the mockup-era shortcut this was built to replace, per an explicit user ask.
 
-## Architecture: what's static JSON vs. what's (planned) Firestore
+## Architecture: what's static JSON vs. what's Firestore
 
 Two kinds of data, deliberately split the same way `wg-groupbuy` splits static
 `data-<date>.json` files from live `paidStatus`/`adjustments` Firestore
 collections:
 
-- **Static, repo-committed JSON** (`recipes.json`, `hub-cards.json`,
-  `tagalog-markers.json`) — changes rarely (someone teaches the helper a new
-  dish, a new Home Hub section gets added, or a real message turns out to
-  need a new marker word/phrase), edited by hand and re-uploaded to GitHub.
-  Fetched at boot; a missing/failed fetch should degrade gracefully (see
-  `.catch()` on each fetch — `tagalog-markers.json` falls back to a small
-  hardcoded word/phrase list baked into `meal-dashboard.html` itself), not
-  break the page.
+- **Static, repo-committed JSON** (`hub-cards.json`, `tagalog-markers.json`)
+  — changes rarely (a new Home Hub section gets added, or a real message
+  turns out to need a new marker word/phrase), edited by hand and
+  re-uploaded to GitHub. Fetched at boot; a missing/failed fetch should
+  degrade gracefully (see `.catch()` on each fetch — `tagalog-markers.json`
+  falls back to a small hardcoded word/phrase list baked into
+  `meal-dashboard.html` itself), not break the page. `recipes.json` used to
+  live in this bucket too, but **no longer does** — see the recipe library
+  note under Live, cross-device state below; it's now only a one-time seed
+  file, not something you'd routinely hand-edit and re-upload.
 - **Live, cross-device state** — staple picks, which recipe is assigned to each
-  meal slot, status (planned/cooking/missing/done), and the message threads.
-  This changes constantly through the week and needs to sync across every
+  meal slot, status (planned/cooking/missing/done), the message threads, and
+  (as of the latest change) **the recipe library itself** — title, note, and
+  video link per dish. All of this changes and needs to sync across every
   family member's device in real time — Firestore. **Wired up and live**
   (both pages import the Firebase modular SDK and call `onSnapshot`/`setDoc`/
   `updateDoc` against `mealPlans/{weekId}` and `mealThreads/{weekId}`) — the
@@ -109,8 +112,21 @@ collections:
   `localStorage['wg-userid']`. Fields: `{ name, updatedAt }`. Written by the
   name-entry modal (see below); not yet read anywhere else, but it's there so
   a future page (e.g. a family-member picker) doesn't need a schema change.
+- `recipeLibrary/library` — a **single fixed doc** (not per-week like the
+  other two), one top-level field per dish keyed by recipe id:
+  `{ [dishId]: { title, note, video, videoId } }`. Seeded once from
+  `recipes.json` the first time this doc doesn't exist (`initRecipeLibrarySync()`
+  in `meal-dashboard.html`); after that, `recipes.json` is never read from
+  again this session — Firestore is the live source of truth. Editing or
+  adding a dish (`writeDish()`) writes a dot-path update using the dish id
+  as the field name (e.g. `"century_congee.videoId"` — no literal dots
+  allowed in a dish id for this reason, which snake_case ids already
+  satisfy), so two people editing *different* dishes at the same time never
+  clobber each other. A dish with no usable `title` is dropped by
+  `sanitizeDish()` rather than rendering a blank card, same defensive
+  philosophy as `sanitizeSlot()`.
 
-`firestore-rules.md` matches all three collection names — keep them in sync
+`firestore-rules.md` matches all four collection names — keep them in sync
 if any change.
 
 ### Name entry (built)
@@ -136,14 +152,20 @@ Firestore, so pulling in that extra SDK would be dead weight. Firestore
 Database is enabled and `firestore-rules.md`'s rules block is published in
 the Firebase console, and the site is live and syncing across devices.
 
-**Still needed right now:** the `mealPlans`/`mealThreads` schema just
-changed to nest by date (see Firestore schema above) — re-upload both
-edited HTML files to GitHub for the live site to pick this up. Existing
-data written under the old flat (slot-only) shape won't be read by the new
-date-aware code; if there's anything in the live `mealPlans`/`mealThreads`
-docs worth keeping, migrate it by hand in the Firebase console before
-re-uploading, otherwise it'll just look like every day is empty (which,
-functionally, matches how an untouched day already renders).
+**Still needed right now:**
+1. The `mealPlans`/`mealThreads` schema changed to nest by date (see
+   Firestore schema above) — existing data written under the old flat
+   (slot-only) shape won't be read by the new date-aware code; if there's
+   anything in the live `mealPlans`/`mealThreads` docs worth keeping,
+   migrate it by hand in the Firebase console before re-uploading,
+   otherwise it'll just look like every day is empty (which, functionally,
+   matches how an untouched day already renders).
+2. A new `recipeLibrary` collection was added — re-publish
+   `firestore-rules.md`'s updated rules block in Firebase console →
+   Firestore Database → Rules, or writes to it will be rejected by the
+   default deny-all rules.
+3. Re-upload `meal-dashboard.html` (and `index.html`, if it changed) to
+   GitHub for the live site to pick all of this up.
 
 ## Cross-page conventions already established
 
@@ -240,10 +262,12 @@ functionally, matches how an untouched day already renders).
   dish already sitting in a meal slot updates immediately. A recipe with a
   blank note shows "No note yet — tap ✏️ to add one" instead of empty space,
   so incomplete entries (e.g. `hainan_chicken_rice`'s missing `videoId`) are
-  visibly flagged rather than silently blank. Like "add a new dish", this
-  only lasts the browser session unless also hand-edited into `recipes.json`
-  — no Firestore backing for the recipe library itself, by design (see
-  Architecture above).
+  visibly flagged rather than silently blank. **Originally this only lasted
+  the browser session unless also hand-edited into `recipes.json`** — fixed
+  by wiring `writeDish()` up to `recipeLibrary/library` in Firestore (see
+  Firestore schema above), reported after a video-link fix made on one
+  device wasn't showing up on another. Every add/edit now syncs live to
+  every device, same as the rest of the app.
 - **Stale-cache fix, same as wg-groupbuy**: both pages now send
   `Cache-Control: no-cache` / `Pragma: no-cache` / `Expires: 0` meta tags,
   append a `?v=Date.now()` cache-busting query string to the `hub-cards.json`

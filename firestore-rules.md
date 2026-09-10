@@ -34,6 +34,18 @@ service cloud.firestore {
     match /familyMembers/{memberId} {
       allow read, write: if true;
     }
+
+    // Stores the shared recipe library — a single fixed doc ("library"),
+    // one top-level field per dish keyed by recipe id: { title, note,
+    // video, videoId }. Seeded once from recipes.json the first time this
+    // doc doesn't exist; after that, editing or adding a dish from the app
+    // (the ✏️ button, or "+ Add a new dish") writes straight here and
+    // syncs live to every device — recipes.json is no longer the ongoing
+    // source of truth once this doc exists. Open read/write, same trust
+    // model as the other collections.
+    match /recipeLibrary/{docId} {
+      allow read, write: if true;
+    }
   }
 }
 ```

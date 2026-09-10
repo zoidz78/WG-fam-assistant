@@ -15,9 +15,9 @@ live across every device — everyone sees the same thing in real time.
 | `index.html` | The Home Hub landing page. Reads `hub-cards.json` to know what cards to show — never hardcodes a card's data. Asks for your name on first visit. |
 | `meal-dashboard.html` | The meal planner + message thread. Reads `recipes.json` for the list of dishes the helper knows how to cook. Always shows the current week (Monday–Sunday), computed from today's date, with each day planned independently — picking a dish or chatting about Tuesday's lunch doesn't touch any other day. Has a 🗑️ button next to the bell for wiping this week's messages — see "Clearing messages" below before tapping it. |
 | `hub-cards.json` | List of cards shown on the Home Hub. Add an entry here to add a new section (e.g. chores, groceries) — no HTML/JS changes needed. |
-| `recipes.json` | The shared recipe library — every dish the helper knows how to cook, with its cooking note and an optional video. Add an entry here to teach a new recipe. |
+| `recipes.json` | **One-time seed only.** Fills the recipe library the very first time the app runs; after that the live library lives in Firestore and this file isn't read again. Add new dishes from inside the app instead — see "Adding a new recipe" below. |
 | `tagalog-markers.json` | The word/phrase list the app uses to guess whether a message is Tagalog (see "Improving Tagalog detection" below). |
-| `firestore-rules.md` | Firestore security rules for the live, cross-device parts of the app (staples, dish picks, status, messages, saved names). **Live** — already applied in the Firebase project this app uses. |
+| `firestore-rules.md` | Firestore security rules for the live, cross-device parts of the app (staples, dish picks, status, messages, saved names, the recipe library). **Live** — already applied in the Firebase project this app uses. |
 | `project-knowledge.md` | Technical notes for whoever's editing this project's code (not needed for everyday use — see below). |
 
 ## Your name
@@ -80,10 +80,8 @@ should only come up for less common vocabulary or expressions.
 Every dish in the meal plan has a ✏️ button next to it — tap it to fix or
 fill in its cooking note or video link (handy for dishes that were added
 without full details yet). This also works from the "choose a dish" list
-when picking a dish for a meal slot. Like adding a brand-new dish from
-inside the app, an edit made this way only lasts for your current browser
-session — to make it permanent for everyone, edit `recipes.json` directly
-(see below) and re-upload.
+when picking a dish for a meal slot. The edit syncs live to every device —
+no need to touch `recipes.json` or re-upload anything.
 
 ## Clearing messages
 
@@ -101,19 +99,24 @@ knowing before tapping it:
 
 ## Adding a new recipe
 
-Open `recipes.json` and add an entry:
+The easiest way is from inside the app — the "+ Add a new dish" button at
+the bottom of the meal dashboard. It syncs live to every device, same as
+editing an existing dish.
+
+`recipes.json` is only used **once**, to fill the recipe list the very
+first time the app runs (before anyone's added anything). After that it's
+not read again, so hand-editing it later won't do anything unless you're
+setting up a fresh copy of this app from scratch. If you are doing that,
+the format is:
 
 ```json
 { "id": "unique_snake_case_id", "title": "Dish Name", "note": "Cooking instructions", "video": true, "videoId": "YOUTUBE_VIDEO_ID" }
 ```
 
-- `id` must be unique — this is what a week's plan references.
+- `id` must be unique, and can't contain a `.` — this is what a week's plan
+  references, and also the field name used to store the dish.
 - Set `"video": false, "videoId": null` if there's no video.
 - `videoId` is just the 11-character YouTube ID (the part after `v=` or `youtu.be/`) — not a full link.
-
-You can also add a recipe from inside the app itself (the "+ Add a new dish"
-button), but that only lasts for your current browser session — to make a
-new recipe permanent for everyone, add it to this file and re-upload.
 
 ## Adding a new Home Hub card
 

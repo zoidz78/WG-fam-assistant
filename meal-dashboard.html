@@ -942,10 +942,11 @@ const staples = [
   {id:"noodles", key:"stapleNoodles"}
 ];
 
-// Dishes the helper already knows how to cook. Loaded from recipes.json at
-// boot (instead of hardcoded) — picking from here is how a dish gets added
-// to a meal slot; see openNewDishModal/newDishSave for how one gets added
-// to this list. Meal slots store only a recipe id (see mealData/writeMealSlot below),
+// Dishes the helper already knows how to cook — now synced live across
+// devices via Firestore (recipeLibrary/library), not just loaded once from
+// recipes.json. Picking from here is how a dish gets added to a meal slot;
+// see openNewDishModal/newDishSave for how one gets added to this list.
+// Meal slots store only a recipe id (see mealData/writeMealSlot below),
 // resolved against this array at render time via findRecipe() — single
 // source of truth, no duplicated title/note/video copies per slot.
 let dishLibrary = [];
@@ -981,6 +982,35 @@ const statusOrder = ["planned","cooking","missing","done"];
 // than a second source of truth.
 const mealPlanRef = db ? doc(db, 'mealPlans', weekId) : null;
 const mealThreadRef = db ? doc(db, 'mealThreads', weekId) : null;
+
+// recipeLibrary/library: a single fixed doc, one top-level field per dish
+// keyed by recipe id — { [dishId]: { title, note, video, videoId } }. Not
+// scoped to a week like the other two; the recipe library is shared
+// forever, not per-week. Editing or adding a dish writes a dot-path field
+// update (e.g. "century_congee.videoId") so two people editing DIFFERENT
+// dishes at the same time never clobber each other, same reasoning as the
+// mealPlans date/slot dot-paths above. `recipes.json` is now only a
+// one-time seed — used the very first time this doc doesn't exist yet, and
+// as a same-tab fallback if Firestore isn't configured — not the ongoing
+// source of truth once the library is live (see initRecipeLibrarySync()).
+const recipeLibraryRef = db ? doc(db, 'recipeLibrary', 'library') : null;
+
+// Guards against a corrupted or partially-written recipe doc, same
+// defensive philosophy as sanitizeSlot() below. A dish with no usable
+// title is dropped entirely rather than showing a blank card.
+function sanitizeDish(id, raw){
+  if(!raw || typeof raw !== 'object') return null;
+  const title = (typeof raw.title === 'string' && raw.title.trim() !== '') ? raw.title.trim() : null;
+  if(!title) return null;
+  return {
+    id,
+    title,
+    note: typeof raw.note === 'string' ? raw.note : '',
+    video: !!raw.video,
+    videoId: (typeof raw.videoId === 'string' && raw.videoId.trim() !== '') ? raw.videoId.trim() : null
+  };
+}
+
 
 function activeDateIso(){ return isoDate(weekDates[activeDay]); }
 
@@ -1082,6 +1112,71 @@ async function initFirestoreSync(){
     });
     renderMeals();
   }, err => console.error('mealThreads subscription failed', err));
+}
+
+// Loads the recipe library. Always fetches recipes.json first — used
+// immediately as a fallback render (something shows before Firestore
+// responds, or forever if Firestore isn't configured) and, the very first
+// time this app runs, as the seed data written into Firestore so the live
+// library doesn't start empty. After that, recipeLibrary/library in
+// Firestore is the real source of truth and recipes.json is no longer
+// read from again this session.
+async function initRecipeLibrarySync(){
+  let seedRecipes = [];
+  try{
+    // GitHub Pages / mobile browsers can serve a stale cached copy of this
+    // JSON after a re-upload — appending a changing query string defeats
+    // that cache on every load, same fix applied in the wg-groupbuy project.
+    const r = await fetch('./recipes.json?v=' + Date.now());
+    const recipes = await r.json();
+    seedRecipes = Array.isArray(recipes) ? recipes.filter(d => d && typeof d.id === 'string' && d.id.trim() !== '' && typeof d.title === 'string' && d.title.trim() !== '') : [];
+  }catch(err){
+    console.error('Failed to load recipes.json', err);
+  }
+  dishLibrary = seedRecipes;
+  renderMeals();
+
+  if(!db || !recipeLibraryRef) return; // Firebase not configured — recipes.json stays the whole story this session; edits won't persist or sync.
+
+  try{
+    const snap = await getDoc(recipeLibraryRef);
+    if(!snap.exists()){
+      const seedMap = Object.fromEntries(seedRecipes.map(d => [d.id, {
+        title: d.title, note: d.note || '', video: !!d.video, videoId: d.videoId || null
+      }]));
+      await setDoc(recipeLibraryRef, seedMap);
+    }
+  }catch(err){
+    console.error('Failed to initialize recipe library in Firestore', err);
+    return;
+  }
+
+  onSnapshot(recipeLibraryRef, snap => {
+    if(!snap.exists()) return;
+    const data = snap.data();
+    const synced = Object.entries(data).map(([id, raw]) => sanitizeDish(id, raw)).filter(Boolean);
+    if(synced.length){
+      dishLibrary = synced;
+      renderMeals();
+    }
+  }, err => console.error('recipeLibrary subscription failed', err));
+}
+
+// Adds or updates one dish. Updates the local mirror immediately so the UI
+// feels instant; the onSnapshot listener above reconciles shortly after
+// with whatever Firestore actually confirms (same pattern as
+// writeMealSlot/writeThread). The Firestore write only touches this one
+// dish's field (dot-path-free here since the dish id itself is the
+// top-level field), so editing two different dishes at once from two
+// devices never clobbers either edit.
+function writeDish(dish){
+  const idx = dishLibrary.findIndex(d => d.id === dish.id);
+  if(idx === -1) dishLibrary.push(dish); else dishLibrary[idx] = dish;
+  if(recipeLibraryRef){
+    updateDoc(recipeLibraryRef, {
+      [dish.id]: { title: dish.title, note: dish.note || '', video: !!dish.video, videoId: dish.videoId || null }
+    }).catch(err => console.error('Failed to save recipe to Firestore', err));
+  }
 }
 
 // Field-path updates (e.g. "2026-09-10.lunch") only touch that one date's
@@ -1649,7 +1744,9 @@ document.getElementById('newDishSave').onclick = ()=>{
   // Editing mutates the existing dishLibrary entry in place (same object
   // reference every meal card already points to via findRecipe(), so any
   // slot already showing this dish picks up the fix immediately); creating
-  // starts a fresh entry with a new id.
+  // starts a fresh entry with a new id. Either way, writeDish() below is
+  // what actually syncs it to Firestore for every device — this used to
+  // be a bare local push with no persistence at all.
   const dish = editingDishId ? findRecipe(editingDishId) : { id: 'custom_' + Date.now(), title: '', video:false, videoId:null, note:"" };
   if(!dish){ closeNewDishModal(); return; }
   dish.title = name;
@@ -1675,9 +1772,7 @@ document.getElementById('newDishSave').onclick = ()=>{
     }
   }
 
-  if(!editingDishId){
-    dishLibrary.push(dish);
-  }
+  writeDish(dish);
 
   if(newDishContextSlotKey){
     const dateIso = activeDateIso();
@@ -1713,16 +1808,7 @@ if(!localStorage.getItem('wg-username')){
   openNameModal();
 }
 initFirestoreSync();
-// GitHub Pages / mobile browsers can serve a stale cached copy of this
-// JSON after a re-upload — appending a changing query string defeats that
-// cache on every load, same fix applied in the wg-groupbuy project.
-fetch('./recipes.json?v=' + Date.now())
-  .then(r => r.json())
-  .then(recipes => {
-    dishLibrary = Array.isArray(recipes) ? recipes.filter(d => d && typeof d.id === 'string' && d.id.trim() !== '' && typeof d.title === 'string' && d.title.trim() !== '') : [];
-  })
-  .catch(err => console.error('Failed to load recipes.json', err))
-  .finally(renderMeals);
+initRecipeLibrarySync();
 
 // Same cache-busting fetch pattern as recipes.json/hub-cards.json. A
 // missing/failed fetch or malformed file just leaves the small hardcoded
