@@ -35,7 +35,7 @@ handled the analogous case before improvising.
 | `hub-cards.json` | List of Home Hub cards: `{id, href, icon, text: {en, zh, tl: {tab, title, desc}}}`. Add an entry to add a new section — no HTML/JS change needed. |
 | `meal-dashboard.html` | The meal planner + message thread. Fetches `recipes.json` at boot. Computes "this week" (Monday–Sunday) from the real current date every load — see "This week is always live" below. |
 | `recipes.json` | The shared recipe library: `{id, title, note, video, videoId}` per dish. `meal-dashboard.html`'s meal slots store only a recipe `id` (see Firestore schema below) and resolve title/note/video against this file at render time — single source of truth, no duplicated copies per slot. |
-| `firestore-rules.md` | Firestore security rules for `mealPlans`/`mealThreads` (open read/write, scoped to just those two collections) — **designed, not wired yet**, see Setup below. |
+| `firestore-rules.md` | Firestore security rules for `mealPlans`/`mealThreads`/`familyMembers` (open read/write) — **live**, already applied in the Firebase project this app uses. |
 | `README.md` | User-facing docs (English) for a non-technical maintainer — how to add a recipe / a hub card, how to deploy. |
 | `project-knowledge.md` | This file. |
 
@@ -62,34 +62,44 @@ collections:
 - **Live, cross-device state** — staple picks, which recipe is assigned to each
   meal slot, status (planned/cooking/missing/done), and the message threads.
   This changes constantly through the week and needs to sync across every
-  family member's device in real time — Firestore. **The code is wired up**
+  family member's device in real time — Firestore. **Wired up and live**
   (both pages import the Firebase modular SDK and call `onSnapshot`/`setDoc`/
-  `updateDoc` against `mealPlans/{weekId}` and `mealThreads/{weekId}`), but
-  the `firebaseConfig` object in both `index.html` and `meal-dashboard.html`
-  is still a `"PASTE_ME"` placeholder — **a real Firebase project needs to be
-  created and its config pasted into both files** before any of this actually
-  syncs (see Setup below). Until then everything degrades gracefully to
-  local-only, in-memory state for that single page load.
+  `updateDoc` against `mealPlans/{weekId}` and `mealThreads/{weekId}`) — the
+  `firebaseConfig` object in both `index.html` and `meal-dashboard.html` has
+  the real `wg-family-assistant` project's values pasted in (identical in
+  both, as required — see Setup below).
 
-### Firestore schema (code wired, project not created yet)
+### Firestore schema (wired and live)
 
 - `mealPlans/{weekId}` — one doc per week, `weekId` = that week's Monday ISO
   date (computed in-page as the `weekId` constant, same formula duplicated in
-  `index.html` as `currentWeekId()` for the badge). Fields: a map per meal
-  slot (`breakfast`, `breakfast_kids`, `lunch`, `lunch_kids`, `dinner`,
-  `dinner_kids`) of `{ staple?, dishIds: [{id}], status }`. Kids slots omit
-  `staple` (no staple/rice selector for kids cards, by design — see Design
-  conventions). `dishIds` holds recipe **references** (`id` into
+  `index.html` as `currentWeekId()` for the badge). Fields: a map keyed by
+  **date** (`"YYYY-MM-DD"`, one of that week's 7 dates), each holding a map
+  per meal slot (`breakfast`, `breakfast_kids`, `lunch`, `lunch_kids`,
+  `dinner`, `dinner_kids`) of `{ staple?, dishIds: [{id}], status }`. Kids
+  slots omit `staple` (no staple/rice selector for kids cards, by design —
+  see Design conventions). `dishIds` holds recipe **references** (`id` into
   `recipes.json`), not embedded copies. **`videoPlaying` is deliberately NOT
   in this schema** — it's transient per-viewer UI state, kept in a
-  page-local `videoPlayingState` map keyed `"slotKey::dishIndex"`, never
-  written to Firestore (persisting it would restart every viewer's video
-  player on any unrelated change to the doc).
-- `mealThreads/{weekId}` — one doc per week, map per slot of message arrays
-  (`{from, text_zh, text_tl, unread?, senderName?}`) — mirrors groupbuy's
-  one-doc-per-round pattern for `adjustments`. `senderName` is only set on
-  `from:"you"` messages, captured from `localStorage['wg-username']` **at
-  send time** (a later rename doesn't rewrite chat history).
+  page-local `videoPlayingState` map keyed `"dateIso::slotKey::dishIndex"`,
+  never written to Firestore (persisting it would restart every viewer's
+  video player on any unrelated change to the doc). **A date only appears in
+  the map once something has actually been saved against it** — an untouched
+  day has no key at all; `peekDayPlan()`/`peekDayThreads()` render a missing
+  date as a fully empty day. Writes use a Firestore dot-path field update
+  (e.g. `updateDoc(mealPlanRef, {"2026-09-10.lunch": newSlotData})`), which
+  creates the nested date map automatically the first time — no need to
+  pre-seed every date. This date layer replaced an earlier flat, slot-only
+  shape where the day-strip tabs looked functional but silently showed
+  identical data on every day (see Troubleshooting).
+- `mealThreads/{weekId}` — one doc per week, same date-then-slot nesting as
+  `mealPlans`, map per slot of message arrays (`{from, text_zh, text_tl,
+  unread?, senderName?}`) — mirrors groupbuy's one-doc-per-round pattern for
+  `adjustments`. `senderName` is only set on `from:"you"` messages, captured
+  from `localStorage['wg-username']` **at send time** (a later rename
+  doesn't rewrite chat history). The "Clear all messages" button (see
+  below) wipes this whole doc back to `{}` — every date, not just the one
+  being viewed.
 - `familyMembers/{memberId}` — one doc per device, `memberId` = a random ID
   generated client-side (`crypto.randomUUID()`) and kept in
   `localStorage['wg-userid']`. Fields: `{ name, updatedAt }`. Written by the
@@ -114,24 +124,22 @@ before naming yourself prompts for it first.
 
 ### Setup — Firebase project config: DONE
 
-The `wg-family-assistant` Firebase project's config is now pasted into both
+The `wg-family-assistant` Firebase project's config is pasted into both
 `index.html` and `meal-dashboard.html` (identical in both, as required —
 they must point at the same Firestore project). `getAnalytics` was
 deliberately left out — this app doesn't use Firebase Analytics, only
-Firestore, so pulling in that extra SDK would be dead weight.
+Firestore, so pulling in that extra SDK would be dead weight. Firestore
+Database is enabled and `firestore-rules.md`'s rules block is published in
+the Firebase console, and the site is live and syncing across devices.
 
-**Still needed before this actually syncs:**
-1. Confirm Firestore Database is enabled for this project in the Firebase
-   Console (Build → Firestore Database → Create database, if not already
-   done).
-2. Paste `firestore-rules.md`'s rules block into Firestore Database → Rules
-   → publish. Without this, reads/writes will be rejected by the default
-   rules.
-3. Re-upload both edited HTML files to GitHub.
-4. Confirm cross-device sync: open the dashboard on two devices/tabs, change
-   a status or send a message on one, watch it appear on the other. Also
-   confirm the Home Hub's badge count updates live, and that a name entered
-   on one device shows up correctly labeled on another.
+**Still needed right now:** the `mealPlans`/`mealThreads` schema just
+changed to nest by date (see Firestore schema above) — re-upload both
+edited HTML files to GitHub for the live site to pick this up. Existing
+data written under the old flat (slot-only) shape won't be read by the new
+date-aware code; if there's anything in the live `mealPlans`/`mealThreads`
+docs worth keeping, migrate it by hand in the Firebase console before
+re-uploading, otherwise it'll just look like every day is empty (which,
+functionally, matches how an untouched day already renders).
 
 ## Cross-page conventions already established
 
@@ -360,15 +368,18 @@ Firestore, so pulling in that extra SDK would be dead weight.
   classic flexbox bug: `.msg-input input` had `flex:1` but no `min-width:0`,
   so a flex child's default `min-width:auto` stopped it from shrinking
   below its own content width, pushing the Send button past the edge of
-  the card instead of the input just getting narrower. Fixed by adding
-  `min-width:0`, and separately made the button itself a fixed 38×38px
-  icon button (a "➤" arrow, localized `send` string moved to `title`/
-  `aria-label` instead of visible text) so it can never grow wide enough to
-  cause this again regardless of content. The send logic itself was
-  extracted into `sendMessageForSlot(slotKey)` so both the button's
-  `onclick` and a new `Enter` keydown listener on the message input call
-  the same code — pressing Enter now sends (Shift+Enter is left alone,
-  though a single-line `<input>` has no newline to insert regardless).
+  the card instead of the input just getting narrower. First fix was
+  `min-width:0` plus a fixed 38×38px icon button ("➤"); **the button was
+  later removed entirely per explicit ask** (still overlapping the
+  on-screen keyboard on mobile even at a fixed size) — now there's no Send
+  button at all, just the input and a small italic "press Enter to send"
+  hint underneath (`.send-hint`, localized as `sendHint`). The send logic
+  lives in `sendMessageForSlot(slotKey)`, called only from the `Enter`
+  keydown listener on the message input (Shift+Enter is left alone, though
+  a single-line `<input>` has no newline to insert regardless); the input
+  is disabled during the translation `await` to prevent a double-send, then
+  a fresh (enabled, focused) input is created when `renderMeals()` rebuilds
+  the card right after.
 
 - **Notification popover could render partly off-screen to the left.** Its
   CSS positioned it with `right:0` relative to the bell button itself — a
@@ -385,6 +396,19 @@ Firestore, so pulling in that extra SDK would be dead weight.
   popover itself can never be wider than the viewport regardless.
 
 ## Troubleshooting / lessons already learned
+
+- **The day-strip used to be purely cosmetic.** `mealData`/`threadData` were
+  flat, keyed only by meal slot for the whole week, so clicking Mon/Tue/
+  Wed/... re-rendered the exact same dishes/status/thread every time —
+  nothing was actually keyed by date. Fixed by nesting Firestore's
+  `mealPlans`/`mealThreads` docs (and their local mirrors) under
+  `[dateIso][slotKey]` (see Firestore schema above): an untouched date has
+  no entry and renders empty via `peekDayPlan()`/`peekDayThreads()`; only
+  `writeMealSlot()`/`writeThread()` (called from an actual add/edit/send)
+  persist a date, which also drives the small dot shown on a day-tab that
+  has data (`dayHasData()`). Don't flatten this back to slot-only keys —
+  and note this means any messages/plan data written under the old flat
+  shape won't show up anymore (see Setup above).
 
 - **Home Hub showed only the ghost placeholder, no Meals card** — reported
   once after the Firebase/name-entry changes landed; root cause wasn't

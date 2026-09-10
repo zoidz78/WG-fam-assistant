@@ -5,9 +5,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Stores the week's meal plan: staples, dish-recipe references (by id,
+    // Stores the week's meal plan, nested by date (one of that week's 7
+    // ISO dates, e.g. "2026-09-10") then by meal slot (breakfast/lunch/
+    // dinner x adults/kids): staples, dish-recipe references (by id,
     // resolved against recipes.json), and status (planned/cooking/missing/
-    // done) for each meal slot (breakfast/lunch/dinner x adults/kids).
+    // done). A date only appears once something's actually been saved
+    // against it — untouched days have no key.
     // Doc ID = that week's Monday date (e.g. "2026-09-08"), computed by the
     // dashboard from the real current date. Open read/write so the
     // dashboard can sync meal plan changes in real time for all viewers.
@@ -15,8 +18,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
-    // Stores the message thread (you <-> helper) for each meal slot within
-    // a week. Doc ID = that week's Monday date, same as mealPlans.
+    // Stores the message thread (you <-> helper), nested by date then meal
+    // slot within a week. Doc ID = that week's Monday date, same as
+    // mealPlans. The "Clear all messages" testing button wipes this whole
+    // doc back to {} (every date at once), not just the current day.
     match /mealThreads/{weekId} {
       allow read, write: if true;
     }

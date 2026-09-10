@@ -13,7 +13,7 @@ live across every device — everyone sees the same thing in real time.
 | File | Purpose |
 |---|---|
 | `index.html` | The Home Hub landing page. Reads `hub-cards.json` to know what cards to show — never hardcodes a card's data. Asks for your name on first visit. |
-| `meal-dashboard.html` | The meal planner + message thread. Reads `recipes.json` for the list of dishes the helper knows how to cook. Always shows the current week (Monday–Sunday), computed from today's date. Has a 🗑️ button next to the bell for wiping this week's messages — see "Clearing messages" below before tapping it. |
+| `meal-dashboard.html` | The meal planner + message thread. Reads `recipes.json` for the list of dishes the helper knows how to cook. Always shows the current week (Monday–Sunday), computed from today's date, with each day planned independently — picking a dish or chatting about Tuesday's lunch doesn't touch any other day. Has a 🗑️ button next to the bell for wiping this week's messages — see "Clearing messages" below before tapping it. |
 | `hub-cards.json` | List of cards shown on the Home Hub. Add an entry here to add a new section (e.g. chores, groceries) — no HTML/JS changes needed. |
 | `recipes.json` | The shared recipe library — every dish the helper knows how to cook, with its cooking note and an optional video. Add an entry here to teach a new recipe. |
 | `firestore-rules.md` | Firestore security rules for the live, cross-device parts of the app (staples, dish picks, status, messages, saved names). **Live** — already applied in the Firebase project this app uses. |
@@ -32,8 +32,8 @@ who's speaking. Tap your name (top of the Home Hub) any time to change it.
 
 ## Messages & translation
 
-Type your message and either press **Enter** or tap the ➤ button to send —
-no need to reach for the button every time.
+Type your message and press **Enter** to send — there's a small reminder
+under the box, and no separate button to tap.
 
 Everyone can type in whatever language they're comfortable with — English,
 Chinese, or Tagalog — message by message, no need to pick a language

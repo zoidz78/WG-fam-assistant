@@ -431,8 +431,14 @@ function subscribeMealsBadge(){
   onSnapshot(doc(db, 'mealThreads', currentWeekId()), snap => {
     if(!snap.exists()) { paintMealsBadge(0); return; }
     const data = snap.data();
-    const total = Object.values(data).reduce((sum, arr) =>
-      sum + (Array.isArray(arr) ? arr.filter(m => m.unread && !isMine(m)).length : 0), 0);
+    // Doc is now nested by date (one of the week's 7 ISO dates) then by
+    // meal slot — sum unread across every date's slots, not just a flat
+    // slot map. An untouched date simply isn't a key in the doc.
+    const total = Object.values(data).reduce((daySum, dayData) => {
+      if(!dayData || typeof dayData !== 'object') return daySum;
+      return daySum + Object.values(dayData).reduce((sum, arr) =>
+        sum + (Array.isArray(arr) ? arr.filter(m => m.unread && !isMine(m)).length : 0), 0);
+    }, 0);
     paintMealsBadge(total);
   }, err => console.error('Failed to subscribe to mealThreads badge', err));
 }
