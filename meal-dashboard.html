@@ -155,6 +155,7 @@
     position:absolute;
     top:42px;right:0;
     width:260px;
+    max-width:calc(100vw - 16px);
     background:var(--paper);
     border:1px solid var(--line);
     border-radius:6px;
@@ -1349,7 +1350,25 @@ document.getElementById('clearMessagesBtn').onclick = ()=>{
 
 function openNotifPopover(){
   renderNotifPopover();
-  document.getElementById('notifPopover').classList.add('open');
+  const popover = document.getElementById('notifPopover');
+  const bell = document.getElementById('bellIcon');
+  // Default CSS (right:0, relative to the bell) assumes the bell sits near
+  // the right edge of the header — no longer true now the header also has
+  // theme icons and the clear-messages button competing for space, so on a
+  // packed/narrow screen the bell can end up far enough left that a
+  // 260px-wide popover overflows past the left edge of the viewport with
+  // no way to scroll to it. Re-measure and clamp every time it opens
+  // instead of trusting a fixed CSS offset.
+  popover.style.left = '';
+  popover.style.right = '0';
+  popover.classList.add('open');
+  const bellRect = bell.getBoundingClientRect();
+  const popRect = popover.getBoundingClientRect();
+  const margin = 8;
+  let desiredLeft = bellRect.right - popRect.width; // default: right-aligned under the bell
+  desiredLeft = Math.max(margin, Math.min(desiredLeft, window.innerWidth - popRect.width - margin));
+  popover.style.left = `${desiredLeft - bellRect.left}px`; // relative to the bell, its offsetParent
+  popover.style.right = 'auto';
 }
 
 function closeNotifPopover(){

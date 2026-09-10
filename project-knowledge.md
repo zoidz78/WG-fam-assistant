@@ -370,6 +370,20 @@ Firestore, so pulling in that extra SDK would be dead weight.
   the same code — pressing Enter now sends (Shift+Enter is left alone,
   though a single-line `<input>` has no newline to insert regardless).
 
+- **Notification popover could render partly off-screen to the left.** Its
+  CSS positioned it with `right:0` relative to the bell button itself — a
+  260px-wide popover anchored that way assumes the bell sits near the right
+  edge of the header, which stopped being reliably true once the header
+  also grew theme icons and the clear-messages button. On a packed/narrow
+  screen, `bellRect.right - popoverWidth` could land well left of the
+  viewport's own left edge, with no way to scroll to the cut-off part.
+  Fixed in `openNotifPopover()`: it now measures the bell and popover with
+  `getBoundingClientRect()` every time it opens and clamps the computed
+  position to stay within `8px` of either viewport edge, converting back to
+  a position relative to the bell (its `offsetParent`) before applying it.
+  The CSS also gained `max-width: calc(100vw - 16px)` as a backstop so the
+  popover itself can never be wider than the viewport regardless.
+
 ## Troubleshooting / lessons already learned
 
 - **Home Hub showed only the ghost placeholder, no Meals card** — reported
