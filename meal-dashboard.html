@@ -552,7 +552,7 @@
       <div class="theme-switch" id="themeSwitch">
         <button class="theme-seg" data-theme-choice="light" data-i18n-title="themeLight">☀️</button>
         <button class="theme-seg" data-theme-choice="dark" data-i18n-title="themeDark">🌙</button>
-        <button class="theme-seg" data-theme-choice="auto" data-i18n-title="themeAuto">🌗</button>
+        <button class="theme-seg" data-theme-choice="auto" data-i18n-title="themeAuto">🖥️</button>
       </div>
       <div class="bell" id="bellIcon">🔔<span class="count" id="bellCount" style="display:none">0</span>
         <div class="notif-popover" id="notifPopover"></div>
@@ -673,30 +673,55 @@ try {
 // sentences, and costs nothing either way.
 const MYMEMORY_LANG_CODE = { en: 'en', zh: 'zh-CN', tl: 'tl' };
 
-// Common Tagalog function words — short, high-frequency words that rarely
-// appear in ordinary English sentences. Chinese is detected separately (by
-// script, not word list) since it doesn't share an alphabet with the other
-// two, which makes it unambiguous.
-const TAGALOG_MARKERS = new Set([
+// Common Tagalog function words/phrases — short, high-frequency words that
+// rarely appear in ordinary English sentences. Chinese is detected
+// separately (by script, not word list) since it doesn't share an
+// alphabet with the other two, which makes it unambiguous.
+//
+// Loaded from tagalog-markers.json (fetched at boot, same cache-busting
+// pattern as recipes.json/hub-cards.json) — a combination of the
+// stopwords-iso project's official Tagalog stopword list (147 words,
+// https://github.com/stopwords-iso/stopwords-tl, MIT licensed) plus our
+// own curated colloquial/texting words the formal list doesn't cover
+// (polite particles like po/opo, casual particles like daw/raw/din/rin,
+// greetings like salamat/kumusta). `phrases` are short multi-word phrases
+// checked as substrings against the whole message rather than token by
+// token — splitting "walang anuman" into single words would either miss
+// it or match words too generic on their own. These two Sets start with a
+// small hardcoded fallback so detection still works if the fetch fails;
+// see project-knowledge.md for how to add to the JSON file.
+let tagalogMarkerWords = new Set([
   'ang','ng','mga','sa','ako','ikaw','siya','tayo','kami','sila','kayo',
   'hindi','wala','opo','po','naman','lang','din','rin','kasi','ba',
-  'yung','yun','ito','iyon','pag','pala','talaga','salamat','kumusta',
-  'paano','ganito','ganyan','marunong','gusto','pwede','oo','hindi','na',
-  'may','meron','kung','para','dahil','saan','ano','sino','bakit'
+  'yung','yun','ito','iyon','may','meron','mayroon','salamat','kumusta'
 ]);
+let tagalogMarkerPhrases = ['walang anuman', 'kumusta ka', 'salamat po'];
 
 // Local, no-network language guess across the three app languages. Chinese
 // is detected by the presence of any CJK character (unambiguous — the
 // other two languages don't use that script). Between English and
 // Tagalog, a message counts as Tagalog if it contains at least one common
-// Tagalog function word; otherwise it's assumed English. Short or unusual
-// messages can be misclassified — there's no server-side detection to fall
-// back on with a free, keyless service — but this holds up well for
-// ordinary sentences.
+// Tagalog function word (or one of the short marker phrases as a whole);
+// otherwise it's assumed English. Short or unusual messages can still be
+// misclassified — there's no server-side detection to fall back on with a
+// free, keyless service — but this holds up well for ordinary sentences.
+//
+// One real miss this caught: "Mayroon kaming isda at bok choy." went
+// untranslated because "kaming" isn't itself in the marker list — it's the
+// pronoun "kami" plus the "-ng" linking particle (same pattern turns
+// "tayo" into "tayong", "sila" into "silang"). Stripping a trailing "ng"
+// and checking THAT against the marker list catches this whole family of
+// inflected pronouns without needing to enumerate every linked form by
+// hand — and it's safe against false positives, since an English word
+// like "morning" stripped to "morni" simply isn't a marker either way.
 function detectLangHeuristic(text){
   if(/[\u4e00-\u9fff]/.test(text)) return 'zh';
-  const words = text.toLowerCase().replace(/[^\p{L}\s]/gu, '').split(/\s+/).filter(Boolean);
-  const hasTagalogMarker = words.some(w => TAGALOG_MARKERS.has(w));
+  const lower = text.toLowerCase();
+  if(tagalogMarkerPhrases.some(p => lower.includes(p))) return 'tl';
+  const words = lower.replace(/[^\p{L}\s]/gu, '').split(/\s+/).filter(Boolean);
+  const hasTagalogMarker = words.some(w =>
+    tagalogMarkerWords.has(w) || (w.endsWith('ng') && tagalogMarkerWords.has(w.slice(0, -2)))
+  );
   return hasTagalogMarker ? 'tl' : 'en';
 }
 
@@ -1698,6 +1723,22 @@ fetch('./recipes.json?v=' + Date.now())
   })
   .catch(err => console.error('Failed to load recipes.json', err))
   .finally(renderMeals);
+
+// Same cache-busting fetch pattern as recipes.json/hub-cards.json. A
+// missing/failed fetch or malformed file just leaves the small hardcoded
+// fallback list in place (see tagalogMarkerWords/tagalogMarkerPhrases
+// above) — detection still works, just with fewer words to match against.
+fetch('./tagalog-markers.json?v=' + Date.now())
+  .then(r => r.json())
+  .then(data => {
+    if(data && Array.isArray(data.words) && data.words.length){
+      tagalogMarkerWords = new Set(data.words.map(w => String(w).toLowerCase()));
+    }
+    if(data && Array.isArray(data.phrases) && data.phrases.length){
+      tagalogMarkerPhrases = data.phrases.map(p => String(p).toLowerCase());
+    }
+  })
+  .catch(err => console.error('Failed to load tagalog-markers.json — using built-in fallback list', err));
 
 // Mobile Safari/Chrome can restore this page from the back-forward cache
 // with a stale "this week" or stale meal data (e.g. after navigating to

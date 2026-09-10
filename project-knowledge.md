@@ -35,6 +35,7 @@ handled the analogous case before improvising.
 | `hub-cards.json` | List of Home Hub cards: `{id, href, icon, text: {en, zh, tl: {tab, title, desc}}}`. Add an entry to add a new section — no HTML/JS change needed. |
 | `meal-dashboard.html` | The meal planner + message thread. Fetches `recipes.json` at boot. Computes "this week" (Monday–Sunday) from the real current date every load — see "This week is always live" below. |
 | `recipes.json` | The shared recipe library: `{id, title, note, video, videoId}` per dish. `meal-dashboard.html`'s meal slots store only a recipe `id` (see Firestore schema below) and resolve title/note/video against this file at render time — single source of truth, no duplicated copies per slot. |
+| `tagalog-markers.json` | `{words: [...], phrases: [...]}` — the word/phrase list `detectLangHeuristic()` checks a message against to guess Tagalog vs. English (see Messages & translation below). Fetched at boot with the same cache-busting pattern as `recipes.json`; add a word or phrase here to fix a message that isn't getting detected/translated correctly, no code change needed. |
 | `firestore-rules.md` | Firestore security rules for `mealPlans`/`mealThreads`/`familyMembers` (open read/write) — **live**, already applied in the Firebase project this app uses. |
 | `README.md` | User-facing docs (English) for a non-technical maintainer — how to add a recipe / a hub card, how to deploy. |
 | `project-knowledge.md` | This file. |
@@ -54,11 +55,14 @@ Two kinds of data, deliberately split the same way `wg-groupbuy` splits static
 `data-<date>.json` files from live `paidStatus`/`adjustments` Firestore
 collections:
 
-- **Static, repo-committed JSON** (`recipes.json`, `hub-cards.json`) — changes
-  rarely (someone teaches the helper a new dish, or a new Home Hub section gets
-  added), edited by hand and re-uploaded to GitHub. Fetched at boot; a missing/
-  failed fetch should degrade gracefully (see `.catch()` on both fetches),
-  not break the page.
+- **Static, repo-committed JSON** (`recipes.json`, `hub-cards.json`,
+  `tagalog-markers.json`) — changes rarely (someone teaches the helper a new
+  dish, a new Home Hub section gets added, or a real message turns out to
+  need a new marker word/phrase), edited by hand and re-uploaded to GitHub.
+  Fetched at boot; a missing/failed fetch should degrade gracefully (see
+  `.catch()` on each fetch — `tagalog-markers.json` falls back to a small
+  hardcoded word/phrase list baked into `meal-dashboard.html` itself), not
+  break the page.
 - **Live, cross-device state** — staple picks, which recipe is assigned to each
   meal slot, status (planned/cooking/missing/done), and the message threads.
   This changes constantly through the week and needs to sync across every
@@ -172,16 +176,19 @@ functionally, matches how an untouched day already renders).
 - **Light/Dark/Auto is a segmented pill control** (`.theme-switch`/`.theme-seg`),
   not a single cycling icon button — this was an explicit revision after an
   icon-only version was tried first. **Later reverted back to icon labels**
-  (☀️/🌙/🌗) instead of the text "Light"/"Dark"/"Auto" — Tagalog's longer
+  (☀️/🌙/🖥️) instead of the text "Light"/"Dark"/"Auto" — Tagalog's longer
   words (Maliwanag/Madilim/Awtomatiko) were pushing the segmented control
   wide enough to squeeze the EN/中文/TL language buttons, wrapping "中文"
   onto two lines. The pill *shape* stayed (still three tappable segments,
   still highlights the active one), only the label content changed from
   text to emoji; the localized name is still set as each button's `title`
   attribute (via `data-i18n-title`, a `syncLangUI()` sweep alongside
-  `data-i18n`/`data-i18n-ph`) for anyone hovering on desktop. If this
-  control is touched again, don't reintroduce text labels for the segments
-  — that's the whole reason for this change.
+  `data-i18n`/`data-i18n-ph`) for anyone hovering on desktop. The Auto icon
+  was originally a half-moon/sun (🌗) and was swapped to a computer (🖥️) per
+  explicit ask, since "system default" reads more clearly as a device icon
+  than as a lunar phase. If this control is touched again, don't
+  reintroduce text labels for the segments — that's the whole reason for
+  this change.
 - Kids cards: dashed border + a dedicated plum/lavender accent (`--kids-accent`)
   used consistently on all three Kids tabs and borders, distinct from the
   per-meal mustard/teal/brick used on the Adults row. Kids cards have **no
@@ -278,18 +285,39 @@ functionally, matches how an untouched day already renders).
   - Chinese is detected by the presence of any CJK character — unambiguous,
     since neither English nor Tagalog uses that script.
   - Between English and Tagalog (both Latin-script), the message counts as
-    Tagalog if it contains at least one word from `TAGALOG_MARKERS` (a
-    ~40-word list of common short Tagalog function words: `ang`, `ng`,
-    `hindi`, `wala`, `po`, `kumusta`, etc.) — otherwise it's assumed
-    English.
+    Tagalog if it contains at least one word from `tagalogMarkerWords` or one
+    of the short `tagalogMarkerPhrases` as a substring of the whole message.
+    Both are loaded from `tagalog-markers.json` at boot (206 words — the
+    stopwords-iso project's official 147-word Tagalog stopword list plus our
+    own curated colloquial/texting words like `po`, `daw`, `salamat`,
+    `kumusta` that a formal stopword list wouldn't include — plus 19 short
+    phrases like `"walang anuman"` or `"kumusta ka"` that only make sense
+    checked as a unit, not split into individual words). If the fetch fails,
+    a small hardcoded fallback set baked into `meal-dashboard.html` is used
+    instead — detection still works, just with fewer words to match against.
+    A word is also checked with a trailing `"ng"` stripped off before
+    matching (`kaming`→`kami`, `tayong`→`tayo`, `silang`→`sila`), since
+    Tagalog's `-ng` linking particle attaches straight onto pronouns and
+    this covers that whole family without enumerating every linked form by
+    hand — safe against false positives, since a stripped English word like
+    `"morning"` → `"morni"` isn't a marker either way. Otherwise the message
+    is assumed English. **A real miss this caught:** "Mayroon kaming isda at
+    bok choy." went completely untranslated (no marker word matched even
+    though it's Tagalog) until `mayroon` was added and the `-ng` stripping
+    was added for `kaming` — this is also what prompted pulling in the full
+    stopwords-iso list rather than continuing to hand-maintain a short one.
+    If another real message goes untranslated, the fix is almost always
+    adding the missing word/phrase to `tagalog-markers.json` (no code
+    change needed), not a bug in the translation call itself.
   - This is a heuristic, not real language detection — short or unusual
-    messages can be misclassified (a Tagalog sentence using none of the
-    listed function words would read as English). Tested against the
+    messages can still be misclassified (a Tagalog sentence using none of
+    the listed words/phrases, in none of their handled inflected forms,
+    would read as English). Tested against the
     actual messages from early testing ("What's for lunch tomorrow?" → en,
     "Marunong akong magluto ng omelet." → tl, "我不知道。有时间吗？" → zh,
     "Kumusta ka?" → tl) and all classified correctly, but it's not
     bulletproof — if misclassification becomes a real problem, the fix is
-    either a bigger marker word list or switching to a paid detection API.
+    adding to `tagalog-markers.json` or switching to a paid detection API.
   - Target is still fixed at English for everyone, same reasoning as
     before: you type English only, your wife types English or Chinese, the
     helper types English or Tagalog — everyone already understands

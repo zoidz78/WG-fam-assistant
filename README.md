@@ -16,6 +16,7 @@ live across every device — everyone sees the same thing in real time.
 | `meal-dashboard.html` | The meal planner + message thread. Reads `recipes.json` for the list of dishes the helper knows how to cook. Always shows the current week (Monday–Sunday), computed from today's date, with each day planned independently — picking a dish or chatting about Tuesday's lunch doesn't touch any other day. Has a 🗑️ button next to the bell for wiping this week's messages — see "Clearing messages" below before tapping it. |
 | `hub-cards.json` | List of cards shown on the Home Hub. Add an entry here to add a new section (e.g. chores, groceries) — no HTML/JS changes needed. |
 | `recipes.json` | The shared recipe library — every dish the helper knows how to cook, with its cooking note and an optional video. Add an entry here to teach a new recipe. |
+| `tagalog-markers.json` | The word/phrase list the app uses to guess whether a message is Tagalog (see "Improving Tagalog detection" below). |
 | `firestore-rules.md` | Firestore security rules for the live, cross-device parts of the app (staples, dish picks, status, messages, saved names). **Live** — already applied in the Firebase project this app uses. |
 | `project-knowledge.md` | Technical notes for whoever's editing this project's code (not needed for everyday use — see below). |
 
@@ -50,7 +51,29 @@ The language guess is a simple heuristic, not perfect — very short or
 unusual messages occasionally get misread as the wrong language. If a
 message shows "Translation unavailable" instead of an actual translation,
 the translation service didn't respond that time — the original message
-still sends and saves normally either way.
+still sends and saves normally either way. If a Tagalog message shows up
+with no translation at all (rather than "Translation unavailable"), that
+usually means it didn't contain a word the app recognizes as Tagalog —
+see "Improving Tagalog detection" below to fix it.
+
+## Improving Tagalog detection
+
+If a real message goes untranslated because the app guessed it was
+English, open `tagalog-markers.json` and add the missing word (to
+`"words"`) or short phrase (to `"phrases"`) — no other change needed. This
+file already carries a large base list of common Tagalog words, so this
+should only come up for less common vocabulary or expressions.
+
+```json
+{ "words": ["...", "bagongsalita"], "phrases": ["...", "isang bagong parirala"] }
+```
+
+- Add single words to `"words"` in lowercase — the app checks each word in
+  a message against this list (also trying the word with a trailing "ng"
+  removed, to catch pronouns like "kaming"/"tayong"/"silang").
+- Add short multi-word expressions to `"phrases"` instead — these are
+  matched as a whole against the full message, so a phrase like "walang
+  anuman" belongs here, not split into two separate words.
 
 ## Editing a recipe
 
