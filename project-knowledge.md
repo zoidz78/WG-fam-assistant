@@ -103,12 +103,16 @@ collections:
   too, alongside `mealThreads/{weekId}`.
 - `mealThreads/{weekId}` — one doc per week, same date-then-slot nesting as
   `mealPlans`, map per slot of message arrays (`{from, text_zh, text_tl,
-  unread?, senderName?}`) — mirrors groupbuy's one-doc-per-round pattern for
+  readBy?, senderName?}`) — mirrors groupbuy's one-doc-per-round pattern for
   `adjustments`. `senderName` is only set on `from:"you"` messages, captured
   from `localStorage['wg-username']` **at send time** (a later rename
-  doesn't rewrite chat history). The testing-only "Reset this week" button
-  (see below) wipes this whole doc back to `{}` — every date, not just the
-  one being viewed — along with `mealPlans/{weekId}` (see that entry above).
+  doesn't rewrite chat history). `readBy` is an array of viewer ids
+  (`getUserId()`'s `localStorage['wg-userid']`) accumulated onto a message
+  as each person actually reads it — **not** a single shared "unread"
+  boolean; see Troubleshooting for why that was a real bug. The testing-only
+  "Reset this week" button (see below) wipes this whole doc back to `{}` —
+  every date, not just the one being viewed — along with `mealPlans/{weekId}`
+  (see that entry above).
 - `familyMembers/{memberId}` — one doc per device, `memberId` = a random ID
   generated client-side (`crypto.randomUUID()`) and kept in
   `localStorage['wg-userid']`. Fields: `{ name, updatedAt }`. Written by the
@@ -136,8 +140,16 @@ if any change.
 Both `index.html` and `meal-dashboard.html` show a first-visit modal asking
 "What's your name?" if `localStorage['wg-username']` is unset (skippable).
 Saving writes to `localStorage` immediately and, if Firestore is configured,
-upserts `familyMembers/{wg-userid}`. The Home Hub shows a small "Hi, {name}"
-button (tap to reopen the modal and change it) next to the theme switch.
+upserts `familyMembers/{wg-userid}`. **Both pages** show a small "Hi, {name}"
+button (tap to reopen the modal and change it) next to the theme switch —
+originally only the Home Hub had this, replicated onto `meal-dashboard.html`
+per explicit ask ("any and all cards"). **Any future page added to this app
+(chores, groceries, etc.) needs the same greeting button**, not just the
+name-entry modal — copy `index.html`'s `.greeting`/`.greeting b` CSS, the
+`<button class="greeting" id="greetingBtn" style="display:none;">` markup
+(placed first inside the header's controls row), the `greetingHi` i18n key
+in all three languages, and `renderGreeting()` (called at boot, after
+saving a name, and after a language switch — it's language-dependent text).
 The saved name is what now shows instead of the generic "You" label on a
 sent chat message in `meal-dashboard.html` — see `senderName` above. If a
 user reaches the meal dashboard directly (bookmarked, skipping the hub) with
@@ -193,6 +205,26 @@ the Firebase console, and the site is live and syncing across devices.
 
 ## Design conventions already established (don't relitigate unless asked)
 
+- **Meal cards collapse to a compact row by default** (per explicit ask —
+  6 always-fully-expanded cards per day, each with a staple row, dish list,
+  status buttons, and a whole thread, was too heavy). Every card starts
+  collapsed to just its tab header plus either a thin "+ Add dish" prompt
+  (`slotHasData()` false — no dish, default staple/status, no messages) or
+  a compact one-line summary (dish name(s), a colored status pill) once
+  it's actually been used. **The one exception: a card with an unread
+  message auto-expands on load**, so a message from the helper or another
+  family member is never missed without opening anything. Tapping the tab
+  (which doubles as a toggle button — cursor:pointer, a `▸`/`▾` chevron) or
+  the collapsed summary row itself expands/collapses a card into the full
+  view. Expand state is tracked in `cardExpandState`, keyed
+  `` `${dateIso}::${slotKey}` `` (same UI-only, never-synced-to-Firestore
+  pattern as `videoPlayingState`) — once a card is explicitly toggled open
+  or closed this session, that choice sticks even if you switch days and
+  come back to it; before any explicit toggle, `isCardExpanded()` falls
+  back to "has an unread message" as the default. Don't move this state
+  into Firestore — it's meant to be per-viewer, not shared (two people
+  looking at the same day shouldn't have their card open/closed state
+  forced to match).
 - Warm parchment aesthetic: dotted background, Fraunces serif headers, Karla
   sans body, dashed dividers — same visual language as `wg-groupbuy`'s
   receipt-style dashboard, adapted to a softer household-app palette (see
@@ -452,6 +484,32 @@ the Firebase console, and the site is live and syncing across devices.
   popover itself can never be wider than the viewport regardless.
 
 ## Troubleshooting / lessons already learned
+
+- **"Unread" was a single shared boolean on the message — one device
+  marking it read marked it read for every device.** `unread: true` was
+  set once at send time and flipped to `false` in Firestore by whoever
+  first read it (tapping a notification, or — once card-collapse landed —
+  simply expanding the card). Since that field lives in the shared
+  `mealThreads` doc, the flip synced to every viewer immediately: someone
+  could open a message on their phone, and it would silently disappear
+  from the bell/badge on everyone else's device too, even though they'd
+  never actually seen it — the exact bug report that prompted this fix.
+  Replaced with `readBy`, an array of viewer ids (`getUserId()`) that a
+  message accumulates as each person actually reads it —
+  `isUnreadForMe(m)` (in both `meal-dashboard.html` and, as `isMine`'s
+  sibling, `index.html`'s badge subscriber) only returns true if *my*
+  id isn't in that list yet, so my read state and your read state are
+  now genuinely independent even though they live in the same synced
+  document. Marking-as-read now happens in three places, all via
+  `markThreadReadForMe()`: tapping a notification popover item, manually
+  expanding a collapsed card, and sending a reply into a thread (replying
+  implies you've seen what's already there). Legacy messages from before
+  this fix have no `readBy` field, so they read as unread-for-everyone
+  until each person's device actually opens them — a one-time bump the
+  first time this code runs against old data, not a bug. **Don't go back
+  to a single shared `unread` flag** — any "mark as read" action must only
+  ever add to a message's own `readBy` list, never overwrite the read
+  state for a viewer other than the one performing the action.
 
 - **The day-strip used to be purely cosmetic.** `mealData`/`threadData` were
   flat, keyed only by meal slot for the whole week, so clicking Mon/Tue/

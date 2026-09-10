@@ -196,7 +196,7 @@
       <div class="theme-switch" id="themeSwitch">
         <button class="theme-seg" data-theme-choice="light" data-i18n-title="themeLight">☀️</button>
         <button class="theme-seg" data-theme-choice="dark" data-i18n-title="themeDark">🌙</button>
-        <button class="theme-seg" data-theme-choice="auto" data-i18n-title="themeAuto">🌗</button>
+        <button class="theme-seg" data-theme-choice="auto" data-i18n-title="themeAuto">🖥️</button>
       </div>
       <button class="lang-btn" data-lang="en">EN</button>
       <button class="lang-btn" data-lang="zh">中文</button>
@@ -428,6 +428,17 @@ function subscribeMealsBadge(){
     if(!m.senderId) return true;
     return m.senderId === getUserId();
   }
+  // Mirrors meal-dashboard.html's isUnreadForMe() — "unread" used to be a
+  // single shared boolean on the message, so one device marking it read
+  // marked it read for every device, and a real message could get missed
+  // entirely by someone who never saw it. Now each message tracks who's
+  // read it (`readBy`, an array of viewer ids); a message only stops
+  // counting toward THIS badge once this device's id is in that list.
+  function isUnreadForMe(m){
+    if(isMine(m)) return false;
+    const readBy = Array.isArray(m.readBy) ? m.readBy : [];
+    return !readBy.includes(getUserId());
+  }
   onSnapshot(doc(db, 'mealThreads', currentWeekId()), snap => {
     if(!snap.exists()) { paintMealsBadge(0); return; }
     const data = snap.data();
@@ -437,7 +448,7 @@ function subscribeMealsBadge(){
     const total = Object.values(data).reduce((daySum, dayData) => {
       if(!dayData || typeof dayData !== 'object') return daySum;
       return daySum + Object.values(dayData).reduce((sum, arr) =>
-        sum + (Array.isArray(arr) ? arr.filter(m => m.unread && !isMine(m)).length : 0), 0);
+        sum + (Array.isArray(arr) ? arr.filter(isUnreadForMe).length : 0), 0);
     }, 0);
     paintMealsBadge(total);
   }, err => console.error('Failed to subscribe to mealThreads badge', err));

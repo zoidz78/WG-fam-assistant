@@ -13,12 +13,38 @@ live across every device — everyone sees the same thing in real time.
 | File | Purpose |
 |---|---|
 | `index.html` | The Home Hub landing page. Reads `hub-cards.json` to know what cards to show — never hardcodes a card's data. Asks for your name on first visit. |
-| `meal-dashboard.html` | The meal planner + message thread. Reads `recipes.json` for the list of dishes the helper knows how to cook. Always shows the current week (Monday–Sunday), computed from today's date, with each day planned independently — picking a dish or chatting about Tuesday's lunch doesn't touch any other day. Has a 🗑️ testing-only button next to the bell for resetting this week — see "Resetting the week" below before tapping it. |
+| `meal-dashboard.html` | The meal planner + message thread. Reads `recipes.json` for the list of dishes the helper knows how to cook. Always shows the current week (Monday–Sunday), computed from today's date, with each day planned independently — picking a dish or chatting about Tuesday's lunch doesn't touch any other day. Meal cards start collapsed to keep the page short — see "Meal cards" below. Has a 🗑️ testing-only button next to the bell for resetting this week — see "Resetting the week" below before tapping it. |
 | `hub-cards.json` | List of cards shown on the Home Hub. Add an entry here to add a new section (e.g. chores, groceries) — no HTML/JS changes needed. |
 | `recipes.json` | **One-time seed only.** Fills the recipe library the very first time the app runs; after that the live library lives in Firestore and this file isn't read again. Add new dishes from inside the app instead — see "Adding a new recipe" below. |
 | `tagalog-markers.json` | The word/phrase list the app uses to guess whether a message is Tagalog (see "Improving Tagalog detection" below). |
 | `firestore-rules.md` | Firestore security rules for the live, cross-device parts of the app (staples, dish picks, status, messages, saved names, the recipe library). **Live** — already applied in the Firebase project this app uses. |
 | `project-knowledge.md` | Technical notes for whoever's editing this project's code (not needed for everyday use — see below). |
+
+## Meal cards
+
+Each meal card (Breakfast/Lunch/Dinner × Adults/Kids) starts **collapsed**
+to keep the page short — you'll see the colored header plus either a
+"+ Add dish" prompt (nothing planned yet) or a one-line summary (the dish
+name and its status) once something's there. Tap the header, or the
+summary line itself, to open it up and see the full card — staple choice,
+dishes, status buttons, and the message thread.
+
+A card with a new, unread message opens **automatically**, so you never
+miss something the helper (or another family member) said without having
+to open anything yourself. Once you open or close a card, it stays that
+way for the rest of your visit — switch to another day and back, and it
+remembers what you had open.
+
+## Notifications
+
+The bell icon and its badge count, and the notification dot next to a
+message, only track what **you personally** haven't read yet. If your
+spouse already opened a message on their phone, it can still show as new
+for you until you've actually opened it yourself, and vice versa —
+everyone's "unread" is tracked separately, even though you're all looking
+at the same shared conversation. A message counts as read for you the
+moment you open its card, tap it from the notification list, or reply in
+that thread.
 
 ## Your name
 
@@ -29,7 +55,9 @@ than one person is chatting with the helper, it's clear who said what. Your
 own messages sit on the right side of the thread; everyone else's (the
 helper's, or another family member's) sit on the left — that's per-device,
 so what shows as "your" side depends on which phone/browser you're on, not
-who's speaking. Tap your name (top of the Home Hub) any time to change it.
+who's speaking. Tap your name — the small "Hi, {name}" button in the header
+— any time to change it, on the Home Hub or from inside What's Cooking;
+either page will also ask if you open it directly without a name set yet.
 
 ## Messages & translation
 
@@ -75,13 +103,18 @@ should only come up for less common vocabulary or expressions.
   matched as a whole against the full message, so a phrase like "walang
   anuman" belongs here, not split into two separate words.
 
-## Editing a recipe
+## Recipes: editing and watching videos
 
 Every dish in the meal plan has a ✏️ button next to it — tap it to fix or
 fill in its cooking note or video link (handy for dishes that were added
 without full details yet). This also works from the "choose a dish" list
 when picking a dish for a meal slot. The edit syncs live to every device —
 no need to touch `recipes.json` or re-upload anything.
+
+If a dish has a video, tapping "Watch recipe video" plays it right in the
+card. It's a small embed, so there's a ⛶ button in the corner of the video
+for a proper fullscreen view — easier to hit than YouTube's own small
+fullscreen control at that size.
 
 ## Resetting the week (testing only — will be removed)
 

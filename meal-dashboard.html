@@ -189,6 +189,8 @@
     border-radius:3px;
   }
   .lang-btn.active{background:var(--teal);color:var(--paper);border-color:var(--teal);}
+  .greeting{font-size:13px;color:var(--ink-soft);cursor:pointer;border:none;background:none;font-family:'Karla',sans-serif;padding:0;margin-right:6px;}
+  .greeting b{color:var(--teal);}
 
   /* Day strip */
   .day-strip{display:flex;gap:2px;overflow-x:auto;border-bottom:2px solid var(--ink);margin-bottom:26px;padding-bottom:0;}
@@ -241,7 +243,9 @@
     padding:5px 14px;
     color:var(--paper);
     border-radius:0 0 4px 0;
+    cursor:pointer;
   }
+  .tab-chevron{font-size:9px;opacity:0.85;}
   .card .tab .badge{
     background:var(--paper);
     color:var(--brick);
@@ -257,6 +261,48 @@
   .card.lunch .tab{background:var(--teal);}
   .card.dinner .tab{background:var(--brick);}
   .card.kids .tab{background:var(--kids-accent);}
+
+  /* Collapsed-card summary row (shown instead of the full staple/dish/
+     status/thread body when a card isn't expanded) — a compact one-liner
+     for a slot with data, or a thin "+ Add" prompt for an empty one. */
+  .card-summary{
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .card-summary:hover .summary-dishes{color:var(--teal);}
+  .card-summary .summary-dishes{
+    font-size:13.5px;
+    color:var(--ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    flex:1;
+    min-width:0;
+  }
+  .card-summary.empty{
+    color:var(--ink-soft);
+    font-weight:700;
+    font-size:12.5px;
+  }
+  .card-summary .add-plus{margin-right:3px;}
+  .status-pill{
+    font-family:'Karla',sans-serif;
+    font-size:11px;
+    font-weight:700;
+    padding:3px 9px;
+    border-radius:20px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink-soft);
+    flex:0 0 auto;
+  }
+  .status-pill.planned{background:var(--teal-soft);color:var(--teal);border-color:var(--teal);}
+  .status-pill.cooking{background:var(--mustard-soft);color:var(--cooking-text);border-color:var(--mustard);}
+  .status-pill.missing{background:var(--brick-soft);color:var(--brick);border-color:var(--brick);}
+  .status-pill.done{background:var(--moss-soft);color:var(--done-text);border-color:var(--moss);}
 
   .card-body{padding:14px 16px 16px;}
   .recipe-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin:0 0 3px;line-height:1.25;}
@@ -566,6 +612,7 @@
       <h1 data-i18n="title">What's Cooking</h1>
     </div>
     <div class="langs">
+      <button class="greeting" id="greetingBtn" style="display:none;"></button>
       <div class="theme-switch" id="themeSwitch">
         <button class="theme-seg" data-theme-choice="light" data-i18n-title="themeLight">☀️</button>
         <button class="theme-seg" data-theme-choice="dark" data-i18n-title="themeDark">🌙</button>
@@ -786,6 +833,42 @@ function chatLabelFor(m){
   if(m.from === 'helper') return t('helper');
   return isOwnMessage(m) ? t('you') : (m.senderName || t('you'));
 }
+
+// "Unread" used to be a single shared boolean on the message itself,
+// flipped to false in Firestore the moment ANY device marked it read —
+// which meant one person opening a message marked it read for every
+// other device too, so a real message could get missed entirely by
+// someone who never actually saw it. Fixed by tracking who's read each
+// message individually: `readBy` is an array of viewer ids
+// (getUserId()) accumulated onto the message, and a message only counts
+// as unread for a given viewer if their id isn't in that list yet — same
+// live-synced field, just per-viewer instead of global. Legacy messages
+// from before this fix have no `readBy` field, so they default to unread
+// for everyone until each person's device actually reads them (a one-time
+// bump the first time this code runs against old data, not a bug).
+function isUnreadForMe(m){
+  if(isOwnMessage(m)) return false;
+  const readBy = Array.isArray(m.readBy) ? m.readBy : [];
+  return !readBy.includes(getUserId());
+}
+
+// Marks every not-yet-read (by me) message in this slot as read by me —
+// appends my id to each message's `readBy` array rather than touching any
+// other viewer's read state. Only writes to Firestore if something
+// actually changed, so viewing an already-fully-read thread is a no-op.
+function markThreadReadForMe(dateIso, slotKey){
+  const userId = getUserId();
+  let changed = false;
+  const newThread = peekDayThreads(dateIso)[slotKey].map(m=>{
+    if(isOwnMessage(m)) return m;
+    const readBy = Array.isArray(m.readBy) ? m.readBy : [];
+    if(readBy.includes(userId)) return m;
+    changed = true;
+    return { ...m, readBy: [...readBy, userId] };
+  });
+  if(changed) writeThread(dateIso, slotKey, newThread);
+}
+
 function saveFamilyMemberName(name){
   localStorage.setItem('wg-username', name);
   if(!db) return;
@@ -860,11 +943,11 @@ const i18n = {
     nameModalSub: "So messages you send show who sent them, instead of just \"You\".",
     nameModalPh: "e.g. Mom, Dad, Effendy...",
     skip: "Skip for now", save: "Save",
+    greetingHi: "Hi, ",
     editRecipe: "Edit recipe",
     editDishTitle: "Edit dish",
-    noNoteYet: "No note yet — tap ✏️ to add one"
-  },
-  zh: {
+    noNoteYet: "No note yet — tap ✏️ to add one",
+    noDishYet: "Nothing planned yet"
     kicker: "本周餐单", title: "今天吃什么",
     backToHub: "家庭中心",
     Mon: "周一", Tue: "周二", Wed: "周三", Thu: "周四", Fri: "周五", Sat: "周六", Sun: "周日",
@@ -905,11 +988,11 @@ const i18n = {
     nameModalSub: "这样你发的消息会显示是谁发的，而不只是「你」。",
     nameModalPh: "例如：妈妈、爸爸、Effendy...",
     skip: "暂时跳过", save: "保存",
+    greetingHi: "你好，",
     editRecipe: "编辑食谱",
     editDishTitle: "编辑菜肴",
-    noNoteYet: "还没有说明——点 ✏️ 添加"
-  },
-  tl: {
+    noNoteYet: "还没有说明——点 ✏️ 添加",
+    noDishYet: "还没有安排"
     kicker: "Mga pagkain ngayong linggo", title: "Ano ang Lutuin",
     backToHub: "Home Hub",
     breakfast: "Almusal", lunch: "Tanghalian", dinner: "Hapunan",
@@ -949,11 +1032,11 @@ const i18n = {
     nameModalSub: "Para makita kung sino ang nagpadala ng mensahe mo, hindi lang \"You\".",
     nameModalPh: "hal. Mommy, Daddy, Effendy...",
     skip: "Laktawan muna", save: "I-save",
+    greetingHi: "Hi, ",
     editRecipe: "I-edit ang recipe",
     editDishTitle: "I-edit ang ulam",
-    noNoteYet: "Wala pang tala — pindutin ang ✏️ para magdagdag"
-  }
-};
+    noNoteYet: "Wala pang tala — pindutin ang ✏️ para magdagdag",
+    noDishYet: "Wala pang plano"
 
 const staples = [
   {id:"none", key:"stapleNone"},
@@ -1077,6 +1160,35 @@ function dayHasData(dateIso){ return !!mealData[dateIso] || !!threadData[dateIso
 let videoPlayingState = {};
 function isVideoPlaying(dateIso, slotKey, idx){ return !!videoPlayingState[`${dateIso}::${slotKey}::${idx}`]; }
 function setVideoPlaying(dateIso, slotKey, idx){ videoPlayingState[`${dateIso}::${slotKey}::${idx}`] = true; }
+
+// Per-day-and-slot "is this card expanded" state — UI-only, never written
+// to Firestore, same reasoning as videoPlayingState above. Once a card is
+// explicitly toggled open or closed this session, that choice sticks
+// (switch days and come back, it remembers); before any explicit toggle,
+// a card with an unread message defaults open so nothing's missed, and
+// everything else defaults collapsed to keep the page short.
+let cardExpandState = {};
+function cardExpandKey(dateIso, slotKey){ return `${dateIso}::${slotKey}`; }
+function isCardExpanded(dateIso, slotKey, hasUnread){
+  const key = cardExpandKey(dateIso, slotKey);
+  return Object.prototype.hasOwnProperty.call(cardExpandState, key) ? cardExpandState[key] : hasUnread;
+}
+function toggleCardExpand(dateIso, slotKey, hasUnread){
+  const key = cardExpandKey(dateIso, slotKey);
+  cardExpandState[key] = !isCardExpanded(dateIso, slotKey, hasUnread);
+}
+
+// A slot counts as "has data" — and shows a compact one-line summary
+// instead of a thin "+ Add dish" prompt when collapsed — the moment
+// anything's actually been set on it: a dish added, staple changed off
+// the default, status moved off "planned", or a message sent.
+function slotHasData(slotKey, data, messages){
+  if(data.dishIds.length > 0) return true;
+  if(data.status !== 'planned') return true;
+  if(!isKidsSlot(slotKey) && data.staple !== 'none') return true;
+  if(messages.length > 0) return true;
+  return false;
+}
 
 async function initFirestoreSync(){
   if(!db) return; // Firebase not configured yet — stays local-only this session.
@@ -1217,7 +1329,7 @@ function writeThread(dateIso, slotKey, newMessages){
 }
 
 function unreadForMeal(dateIso, slotKey){
-  return peekDayThreads(dateIso)[slotKey].filter(m => !isOwnMessage(m) && m.unread).length;
+  return peekDayThreads(dateIso)[slotKey].filter(isUnreadForMe).length;
 }
 
 // Spans the whole visible week, not just the active day — a message left
@@ -1283,96 +1395,121 @@ function renderMeals(){
   el.innerHTML = '';
   mealSlots.forEach(slotKey=>{
     const data = dayPlan[slotKey];
+    const messages = dayThreads[slotKey];
+    const unreadCount = unreadForMeal(dateIso, slotKey);
+    const hasData = slotHasData(slotKey, data, messages);
+    const expanded = isCardExpanded(dateIso, slotKey, unreadCount > 0);
     const card = document.createElement('div');
     card.className = 'card ' + slotType(slotKey) + (isKidsSlot(slotKey) ? ' kids' : '');
     card.id = 'mealcard-' + slotKey;
 
-    let threadHtml = dayThreads[slotKey].map(m=>{
-      // "mine" (alignment) is per-viewer: only true on the device that sent
-      // it. "from" (translation-box color) stays tied to which side of the
-      // conversation the message belongs to, regardless of who's looking.
-      const mine = isOwnMessage(m);
-      const whoLabel = chatLabelFor(m);
-      let primary, secondary;
-      if(typeof m.text === 'string'){
-        // Current message shape: original text as actually typed, in
-        // whichever of the three app languages that was (auto-detected at
-        // send time — nobody is assumed to type in a fixed language).
-        // Translation target is fixed to English for everyone, same as
-        // `translatedEn` was computed at send time — this does NOT depend
-        // on the viewer's own EN/中文/TL toggle (that toggle is UI copy
-        // only; see the note on `text_tl` further up about not letting it
-        // leak into message content).
-        primary = m.text;
-        if(m.origLang && m.origLang !== 'en'){
-          secondary = m.translatedEn || t('translationUnavailable');
-        } else {
-          secondary = null; // already English, or language unknown — nothing to show
-        }
+    let bodyHtml;
+    if(!expanded){
+      // Collapsed: a compact one-liner for a slot with something on it, or
+      // a thin "+ Add" prompt for one that's still empty — either way,
+      // clicking it (or the tab above) expands into the full card below.
+      if(hasData){
+        const dishNames = data.dishIds.map(entry=>{
+          const dish = findRecipe(entry.id);
+          return dish ? dish.title : `⚠️ ${entry.id}`;
+        }).join(', ');
+        const stapleLabel = (!isKidsSlot(slotKey) && data.staple !== 'none')
+          ? t(staples.find(s => s.id === data.staple).key) : '';
+        const summaryText = dishNames || stapleLabel || t('noDishYet');
+        bodyHtml = `
+          <div class="card-summary" data-togglecard="${slotKey}">
+            <div class="summary-dishes">${summaryText}</div>
+            <span class="status-pill ${data.status}">${t(data.status)}</span>
+          </div>
+        `;
       } else {
-        // Legacy shape (messages sent before language auto-detection
-        // existed, plus the original hand-typed helper/you demo pairs) —
-        // keep the old fixed Chinese/Tagalog pairing so they keep
-        // rendering exactly as before rather than breaking.
-        primary = m.from === 'helper' ? (m.text_tl||m.text_zh) : (m.text_zh||m.text_tl);
-        secondary = m.from === 'helper' ? m.text_zh : m.text_tl;
+        bodyHtml = `<div class="card-summary empty" data-togglecard="${slotKey}"><span class="add-plus">+</span> ${t('addDish')}</div>`;
       }
-      return `<div class="msg ${m.from}${mine ? ' mine' : ''}">
-        <div class="who">${m.unread ? '<span class="unread-dot"></span>' : ''}${whoLabel}</div>
-        <div class="bubble">${primary}</div>
-        ${secondary ? `<div class="translated">${secondary}</div>` : ''}
-      </div>`;
-    }).join('');
+    } else {
+      let threadHtml = messages.map(m=>{
+        // "mine" (alignment) is per-viewer: only true on the device that sent
+        // it. "from" (translation-box color) stays tied to which side of the
+        // conversation the message belongs to, regardless of who's looking.
+        const mine = isOwnMessage(m);
+        const whoLabel = chatLabelFor(m);
+        let primary, secondary;
+        if(typeof m.text === 'string'){
+          // Current message shape: original text as actually typed, in
+          // whichever of the three app languages that was (auto-detected at
+          // send time — nobody is assumed to type in a fixed language).
+          // Translation target is fixed to English for everyone, same as
+          // `translatedEn` was computed at send time — this does NOT depend
+          // on the viewer's own EN/中文/TL toggle (that toggle is UI copy
+          // only; see the note on `text_tl` further up about not letting it
+          // leak into message content).
+          primary = m.text;
+          if(m.origLang && m.origLang !== 'en'){
+            secondary = m.translatedEn || t('translationUnavailable');
+          } else {
+            secondary = null; // already English, or language unknown — nothing to show
+          }
+        } else {
+          // Legacy shape (messages sent before language auto-detection
+          // existed, plus the original hand-typed helper/you demo pairs) —
+          // keep the old fixed Chinese/Tagalog pairing so they keep
+          // rendering exactly as before rather than breaking.
+          primary = m.from === 'helper' ? (m.text_tl||m.text_zh) : (m.text_zh||m.text_tl);
+          secondary = m.from === 'helper' ? m.text_zh : m.text_tl;
+        }
+        return `<div class="msg ${m.from}${mine ? ' mine' : ''}">
+          <div class="who">${isUnreadForMe(m) ? '<span class="unread-dot"></span>' : ''}${whoLabel}</div>
+          <div class="bubble">${primary}</div>
+          ${secondary ? `<div class="translated">${secondary}</div>` : ''}
+        </div>`;
+      }).join('');
 
-    const stapleHtml = isKidsSlot(slotKey) ? '' : staples.map(s=>
-      `<button class="staple-btn ${data.staple===s.id?'selected':''}" data-mealtype="${slotKey}" data-staple="${s.id}">${t(s.key)}</button>`
-    ).join('');
+      const stapleHtml = isKidsSlot(slotKey) ? '' : staples.map(s=>
+        `<button class="staple-btn ${data.staple===s.id?'selected':''}" data-mealtype="${slotKey}" data-staple="${s.id}">${t(s.key)}</button>`
+      ).join('');
 
-    const dishesHtml = data.dishIds.map((entry, idx)=>{
-      const dish = findRecipe(entry.id);
-      if(!dish){
-        // A slot referencing a recipe id that's missing from recipes.json
-        // (hand-edited data drifting) — degrade to a visible warning
-        // instead of throwing, same defensive pattern as the groupbuy
-        // dashboard's missing-product-key guard.
+      const dishesHtml = data.dishIds.map((entry, idx)=>{
+        const dish = findRecipe(entry.id);
+        if(!dish){
+          // A slot referencing a recipe id that's missing from recipes.json
+          // (hand-edited data drifting) — degrade to a visible warning
+          // instead of throwing, same defensive pattern as the groupbuy
+          // dashboard's missing-product-key guard.
+          return `<div class="dish">
+            <div class="dish-head">
+              <div class="recipe-title">⚠️ ${entry.id}</div>
+              <button class="dish-remove" data-removedish="${slotKey}" data-dishidx="${idx}">✕</button>
+            </div>
+            <p class="recipe-note">Recipe not found — check recipes.json</p>
+          </div>`;
+        }
+        const videoBlock = dish.video ? (
+          dish.videoId && isVideoPlaying(dateIso, slotKey, idx)
+            ? (()=>{
+                // Only autoplay the instant the chip was just clicked
+                // (autoplayDish, cleared right after this render pass) —
+                // otherwise any later re-render (language switch, status
+                // change, sending a message, etc.) rebuilds this iframe
+                // from scratch and would restart the video from 0:00.
+                const isJustClicked = autoplayDish === `${dateIso}_${slotKey}_${idx}`;
+                const src = `https://www.youtube.com/embed/${dish.videoId}?playsinline=1${isJustClicked ? '&autoplay=1' : ''}`;
+                return `<div class="video-embed"><iframe src="${src}" title="${dish.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe><button class="video-fullscreen-btn" data-fullscreen-video title="${t('fullscreenVideo')}" aria-label="${t('fullscreenVideo')}">⛶</button></div>`;
+              })()
+            : `<div class="video-chip" data-playvideo="${slotKey}" data-dishidx="${idx}"><span class="dot"></span>${t('videoLink')}</div>`
+        ) : '';
         return `<div class="dish">
           <div class="dish-head">
-            <div class="recipe-title">⚠️ ${entry.id}</div>
-            <button class="dish-remove" data-removedish="${slotKey}" data-dishidx="${idx}">✕</button>
+            <div class="recipe-title">${dish.title}</div>
+            <div class="dish-head-actions">
+              <button class="dish-edit" data-editdish="${dish.id}" title="${t('editRecipe')}">✏️</button>
+              <button class="dish-remove" data-removedish="${slotKey}" data-dishidx="${idx}">✕</button>
+            </div>
           </div>
-          <p class="recipe-note">Recipe not found — check recipes.json</p>
+          <p class="recipe-note">${dish.note || `<em>${t('noNoteYet')}</em>`}</p>
+          ${videoBlock}
         </div>`;
-      }
-      const videoBlock = dish.video ? (
-        dish.videoId && isVideoPlaying(dateIso, slotKey, idx)
-          ? (()=>{
-              // Only autoplay the instant the chip was just clicked
-              // (autoplayDish, cleared right after this render pass) —
-              // otherwise any later re-render (language switch, status
-              // change, sending a message, etc.) rebuilds this iframe
-              // from scratch and would restart the video from 0:00.
-              const isJustClicked = autoplayDish === `${dateIso}_${slotKey}_${idx}`;
-              const src = `https://www.youtube.com/embed/${dish.videoId}?playsinline=1${isJustClicked ? '&autoplay=1' : ''}`;
-              return `<div class="video-embed"><iframe src="${src}" title="${dish.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe><button class="video-fullscreen-btn" data-fullscreen-video title="${t('fullscreenVideo')}" aria-label="${t('fullscreenVideo')}">⛶</button></div>`;
-            })()
-          : `<div class="video-chip" data-playvideo="${slotKey}" data-dishidx="${idx}"><span class="dot"></span>${t('videoLink')}</div>`
-      ) : '';
-      return `<div class="dish">
-        <div class="dish-head">
-          <div class="recipe-title">${dish.title}</div>
-          <div class="dish-head-actions">
-            <button class="dish-edit" data-editdish="${dish.id}" title="${t('editRecipe')}">✏️</button>
-            <button class="dish-remove" data-removedish="${slotKey}" data-dishidx="${idx}">✕</button>
-          </div>
-        </div>
-        <p class="recipe-note">${dish.note || `<em>${t('noNoteYet')}</em>`}</p>
-        ${videoBlock}
-      </div>`;
-    }).join('');
+      }).join('');
 
-    card.innerHTML = `
-      <span class="tab">${slotTabLabel(slotKey)}${unreadForMeal(dateIso, slotKey) > 0 ? `<span class="badge">${unreadForMeal(dateIso, slotKey)}</span>` : ''}</span>
-      <div class="card-body">
+      bodyHtml = `
         ${isKidsSlot(slotKey) ? '' : `<div class="staple-row">${stapleHtml}</div>`}
         ${dishesHtml}
         <button class="add-dish-btn" data-addto="${slotKey}" data-i18n="addDish">${t('addDish')}</button>
@@ -1386,9 +1523,28 @@ function renderMeals(){
           </div>
           <div class="send-hint">${t('sendHint')}</div>
         </div>
-      </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <span class="tab" data-togglecard="${slotKey}">${slotTabLabel(slotKey)}${unreadCount > 0 ? `<span class="badge">${unreadCount}</span>` : ''}<span class="tab-chevron">${expanded ? '▾' : '▸'}</span></span>
+      <div class="card-body">${bodyHtml}</div>
     `;
     el.appendChild(card);
+  });
+
+  el.querySelectorAll('[data-togglecard]').forEach(elm=>{
+    elm.onclick = ()=>{
+      const slotKey = elm.dataset.togglecard;
+      const wasExpanded = isCardExpanded(dateIso, slotKey, unreadForMeal(dateIso, slotKey) > 0);
+      toggleCardExpand(dateIso, slotKey, unreadForMeal(dateIso, slotKey) > 0);
+      if(!wasExpanded){
+        // Opening a card counts as reading it, for me — same per-viewer
+        // readBy tracking as the notification popover uses.
+        markThreadReadForMe(dateIso, slotKey);
+      }
+      renderMeals();
+    };
   });
 
   el.querySelectorAll('.status-btn').forEach(btn=>{
@@ -1472,10 +1628,18 @@ function renderMeals(){
     if(origLang !== 'en'){
       translatedEn = await translateText(text, 'en', origLang);
     }
+    const userId = getUserId();
     const newThread = dayThreads[slotKey].concat([{
-      from:"you", text, origLang, translatedEn, unread: true,
-      senderId: getUserId(), senderName: localStorage.getItem('wg-username')
-    }]);
+      from:"you", text, origLang, translatedEn,
+      senderId: userId, senderName: localStorage.getItem('wg-username')
+    }]).map(m => {
+      // Replying implies you've seen everything already in the thread —
+      // stamp your id onto any prior message not already marked read by
+      // you, in the same write as the new message itself.
+      if(isOwnMessage(m)) return m;
+      const readBy = Array.isArray(m.readBy) ? m.readBy : [];
+      return readBy.includes(userId) ? m : { ...m, readBy: [...readBy, userId] };
+    });
     writeThread(dateIso, slotKey, newThread); // triggers renderMeals(), which rebuilds a fresh input
     const freshInput = document.querySelector(`[data-input="${slotKey}"]`);
     if(freshInput) freshInput.focus();
@@ -1518,6 +1682,7 @@ document.querySelectorAll('.lang-btn').forEach(btn=>{
     applyTheme();
     renderDayStrip();
     renderMeals();
+    renderGreeting();
   };
 });
 
@@ -1589,7 +1754,7 @@ function renderNotifPopover(){
   weekDates.forEach((d, dayIdx)=>{
     const dateIso = isoDate(d);
     mealSlots.forEach(slotKey=>{
-      const unreadMsgs = peekDayThreads(dateIso)[slotKey].filter(m => !isOwnMessage(m) && m.unread);
+      const unreadMsgs = peekDayThreads(dateIso)[slotKey].filter(isUnreadForMe);
       if(unreadMsgs.length === 0) return;
       const latest = unreadMsgs[unreadMsgs.length - 1];
       const text = typeof latest.text === 'string' ? latest.text : (latest.text_zh || latest.text_tl);
@@ -1618,8 +1783,11 @@ function renderNotifPopover(){
 }
 
 function jumpToMealThread(dateIso, slotKey){
-  const newThread = peekDayThreads(dateIso)[slotKey].map(m => !isOwnMessage(m) ? { ...m, unread: false } : m);
-  writeThread(dateIso, slotKey, newThread);
+  markThreadReadForMe(dateIso, slotKey);
+  // Marking it read just now would otherwise take away the "auto-expand
+  // if unread" default before we even scroll to it — force it open
+  // explicitly so tapping a notification always reveals the message.
+  cardExpandState[cardExpandKey(dateIso, slotKey)] = true;
   closeNotifPopover();
   const dayIdx = weekDates.findIndex(d => isoDate(d) === dateIso);
   if(dayIdx !== -1) activeDay = dayIdx;
@@ -1832,6 +2000,21 @@ document.getElementById('newDishSave').onclick = ()=>{
 };
 
 // --- Name entry (first visit, or if this page is opened directly) ---
+// Same "Hi, {name}" button/behavior as index.html's Home Hub — tap it any
+// time to reopen the modal and change your name. Kept in sync manually
+// since the two pages don't share a script file (same pattern as
+// isOwnMessage/isMine and the badge-counting logic).
+function renderGreeting(){
+  const btn = document.getElementById('greetingBtn');
+  const name = localStorage.getItem('wg-username');
+  if(name){
+    btn.style.display = '';
+    btn.innerHTML = `${t('greetingHi')}<b>${name}</b>`;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
 function openNameModal(){
   document.getElementById('nameInput').value = localStorage.getItem('wg-username') || '';
   document.getElementById('nameModalOverlay').classList.add('open');
@@ -1839,17 +2022,20 @@ function openNameModal(){
 function closeNameModal(){
   document.getElementById('nameModalOverlay').classList.remove('open');
 }
+document.getElementById('greetingBtn').onclick = openNameModal;
 document.getElementById('nameModalSkip').onclick = closeNameModal;
 document.getElementById('nameModalSave').onclick = ()=>{
   const name = document.getElementById('nameInput').value.trim();
   if(!name){ document.getElementById('nameInput').focus(); return; }
   saveFamilyMemberName(name);
+  renderGreeting();
   closeNameModal();
 };
 
 syncLangUI();
 renderDayStrip();
 applyTheme();
+renderGreeting();
 if(!localStorage.getItem('wg-username')){
   openNameModal();
 }
