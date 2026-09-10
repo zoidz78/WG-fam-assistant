@@ -31,7 +31,7 @@ handled the analogous case before improvising.
 
 | File | Purpose |
 |---|---|
-| `index.html` | Home Hub landing page. Fetches `hub-cards.json` and renders one real card per entry — no placeholder/ghost card anymore (removed per explicit ask). If the fetch fails or returns nothing usable, falls back to a hardcoded Meals-only card (`FALLBACK_HUB_CARDS`) so the hub is never blank — the one deliberate exception to "never hardcode a card's data," kept in sync with `hub-cards.json`'s meals entry. |
+| `index.html` | Home Hub landing page. Fetches `hub-cards.json` and renders one real card per entry (plus a hardcoded dashed "ghost" placeholder card, always last). |
 | `hub-cards.json` | List of Home Hub cards: `{id, href, icon, text: {en, zh, tl: {tab, title, desc}}}`. Add an entry to add a new section — no HTML/JS change needed. |
 | `meal-dashboard.html` | The meal planner + message thread. Fetches `recipes.json` at boot. Computes "this week" (Monday–Sunday) from the real current date every load — see "This week is always live" below. |
 | `recipes.json` | The shared recipe library: `{id, title, note, video, videoId}` per dish. `meal-dashboard.html`'s meal slots store only a recipe `id` (see Firestore schema below) and resolve title/note/video against this file at render time — single source of truth, no duplicated copies per slot. |
@@ -62,76 +62,56 @@ collections:
 - **Live, cross-device state** — staple picks, which recipe is assigned to each
   meal slot, status (planned/cooking/missing/done), and the message threads.
   This changes constantly through the week and needs to sync across every
-  family member's device in real time — Firestore. **The code is wired up**
-  (both pages import the Firebase modular SDK and call `onSnapshot`/`setDoc`/
-  `updateDoc` against `mealPlans/{weekId}` and `mealThreads/{weekId}`), but
-  the `firebaseConfig` object in both `index.html` and `meal-dashboard.html`
-  is still a `"PASTE_ME"` placeholder — **a real Firebase project needs to be
-  created and its config pasted into both files** before any of this actually
-  syncs (see Setup below). Until then everything degrades gracefully to
-  local-only, in-memory state for that single page load.
+  family member's device in real time — the reason for Firestore. **Not wired
+  up yet** — there's no Firebase project for this app. Today it's plain
+  in-memory JS state (`mealData`), reset on every page reload, but already
+  **shaped exactly like the future Firestore documents** (see schema below) so
+  wiring it in later is a mechanical swap of local mutation → `onSnapshot`/
+  `setDoc`, not a redesign.
 
-### Firestore schema (code wired, project not created yet)
+### Firestore schema (designed, not yet wired)
 
 - `mealPlans/{weekId}` — one doc per week, `weekId` = that week's Monday ISO
-  date (computed in-page as the `weekId` constant, same formula duplicated in
-  `index.html` as `currentWeekId()` for the badge). Fields: a map per meal
-  slot (`breakfast`, `breakfast_kids`, `lunch`, `lunch_kids`, `dinner`,
-  `dinner_kids`) of `{ staple?, dishIds: [{id}], status }`. Kids slots omit
-  `staple` (no staple/rice selector for kids cards, by design — see Design
-  conventions). `dishIds` holds recipe **references** (`id` into
-  `recipes.json`), not embedded copies. **`videoPlaying` is deliberately NOT
-  in this schema** — it's transient per-viewer UI state, kept in a
-  page-local `videoPlayingState` map keyed `"slotKey::dishIndex"`, never
-  written to Firestore (persisting it would restart every viewer's video
-  player on any unrelated change to the doc).
-- `mealThreads/{weekId}` — one doc per week, map per slot of message arrays
-  (`{from, text_zh, text_tl, unread?, senderName?}`) — mirrors groupbuy's
-  one-doc-per-round pattern for `adjustments`. `senderName` is only set on
-  `from:"you"` messages, captured from `localStorage['wg-username']` **at
-  send time** (a later rename doesn't rewrite chat history).
-- `familyMembers/{memberId}` — one doc per device, `memberId` = a random ID
-  generated client-side (`crypto.randomUUID()`) and kept in
-  `localStorage['wg-userid']`. Fields: `{ name, updatedAt }`. Written by the
-  name-entry modal (see below); not yet read anywhere else, but it's there so
-  a future page (e.g. a family-member picker) doesn't need a schema change.
+  date (already computed in-page as the `weekId` constant). Fields: a map
+  keyed by **date** (`"YYYY-MM-DD"`, one of that week's 7 dates), each holding
+  a map per meal slot (`breakfast`, `breakfast_kids`, `lunch`, `lunch_kids`,
+  `dinner`, `dinner_kids`) of `{ staple?, dishIds: [{id, videoPlaying}],
+  status }`. Kids slots omit `staple` (no staple/rice selector for kids cards,
+  by design — see Design conventions). `dishIds` holds recipe **references**
+  (`id` into `recipes.json`), not embedded copies — matches the in-memory
+  shape already used by `mealPlansByDate` today. **A date only appears in the
+  map once something has actually been saved against it** — an untouched day
+  has no key at all, not an empty placeholder; the dashboard renders a
+  missing date as a fully empty day via `peekDayData()`. This date layer was
+  added after an earlier version kept one flat set of 6 slots for the whole
+  week — the day-strip tabs looked functional but silently showed identical
+  data on every day (see Troubleshooting).
+- `mealThreads/{weekId}` — one doc per week, same date-then-slot nesting as
+  `mealPlans`, map per slot of message arrays (`{from, text_zh, text_tl,
+  unread?}`) — mirrors groupbuy's one-doc-per-round pattern for `adjustments`
+  (plenty of headroom at this household's scale).
 
-`firestore-rules.md` matches all three collection names — keep them in sync
-if any change.
+`firestore-rules.md` already matches these two collection names — keep them in
+sync if either changes.
 
-### Name entry (built)
+### Setup — wiring Firestore in for real (do this in a future session, once a Firebase project exists)
 
-Both `index.html` and `meal-dashboard.html` show a first-visit modal asking
-"What's your name?" if `localStorage['wg-username']` is unset (skippable).
-Saving writes to `localStorage` immediately and, if Firestore is configured,
-upserts `familyMembers/{wg-userid}`. The Home Hub shows a small "Hi, {name}"
-button (tap to reopen the modal and change it) next to the theme switch.
-The saved name is what now shows instead of the generic "You" label on a
-sent chat message in `meal-dashboard.html` — see `senderName` above. If a
-user reaches the meal dashboard directly (bookmarked, skipping the hub) with
-no name set yet, the same modal appears there too, and sending a message
-before naming yourself prompts for it first.
-
-### Setup — Firebase project config: DONE
-
-The `wg-family-assistant` Firebase project's config is now pasted into both
-`index.html` and `meal-dashboard.html` (identical in both, as required —
-they must point at the same Firestore project). `getAnalytics` was
-deliberately left out — this app doesn't use Firebase Analytics, only
-Firestore, so pulling in that extra SDK would be dead weight.
-
-**Still needed before this actually syncs:**
-1. Confirm Firestore Database is enabled for this project in the Firebase
-   Console (Build → Firestore Database → Create database, if not already
-   done).
-2. Paste `firestore-rules.md`'s rules block into Firestore Database → Rules
-   → publish. Without this, reads/writes will be rejected by the default
-   rules.
-3. Re-upload both edited HTML files to GitHub.
-4. Confirm cross-device sync: open the dashboard on two devices/tabs, change
-   a status or send a message on one, watch it appear on the other. Also
-   confirm the Home Hub's badge count updates live, and that a name entered
-   on one device shows up correctly labeled on another.
+1. **New Firebase project** (or ask whether to reuse the `wg-groupbuy` one —
+   don't assume either way, confirm with the user first). console.firebase.google.com
+   → create project → enable Firestore Database.
+2. Paste the project's `firebaseConfig` into `meal-dashboard.html` (apiKey,
+   authDomain, projectId, storageBucket, messagingSenderId, appId) — these
+   aren't secrets, access control comes from the security rules, not from
+   hiding the config.
+3. Apply `firestore-rules.md` in Firebase console → Firestore Database → Rules.
+4. Swap `mealData`'s local mutations (`mealData[slotKey].status = ...`, etc.)
+   for `setDoc`/`updateDoc` calls against `mealPlans/{weekId}`, and subscribe
+   with `onSnapshot` instead of reading the in-memory object directly — the
+   shape is already correct, this is the mechanical part.
+5. Update the "unread" badge plumbing (see below) to read the live count from
+   `mealThreads` instead of the `localStorage` stand-in.
+6. Confirm cross-device sync by opening the dashboard in two tabs/devices and
+   checking a change in one shows up in the other.
 
 ## Cross-page conventions already established
 
@@ -140,13 +120,15 @@ Firestore, so pulling in that extra SDK would be dead weight.
   across `index.html` and `meal-dashboard.html` via the same `localStorage`
   keys — picking either on one page carries to the other. Any new page added
   to this app should read/write the same two keys, not invent its own.
-- **Unread-messages badge**: `index.html` subscribes directly to this week's
-  `mealThreads/{weekId}` doc (`subscribeMealsBadge()`) and counts unread
-  helper messages across all slots itself — no more `localStorage`
-  stand-in. This means the badge is live across devices, not just within one
-  browser, and needs no page to have been opened first. If Firestore isn't
-  configured yet (placeholder `firebaseConfig`), the badge simply doesn't
-  show — no seeded fallback count anymore.
+- **Unread-messages badge**: `meal-dashboard.html` writes its live total
+  unread-helper-message count to `localStorage['wg-meals-unread']` every time
+  the bell updates (see `renderBell()`). `index.html` reads that key to show a
+  red app-icon-style badge on the top-left corner of the Meals card — this is
+  a **`localStorage` stand-in**, not a real shared backend; it only reflects
+  reality if the meal dashboard has been opened in that same browser at some
+  point. If `index.html` is opened standalone/fresh, it falls back to a seeded
+  default of `2` purely so the badge concept is visible in a demo — replace
+  this fallback logic once the badge is Firestore-driven for real.
 - **Notification badge is on the card itself** (top-left, overlapping the
   corner like an iOS app icon), not a bell icon on the Home Hub — that was an
   explicit design choice. The badge lives in a `.hub-card-wrap` div *without*
@@ -163,17 +145,8 @@ Firestore, so pulling in that extra SDK would be dead weight.
   `:root` CSS vars in either page for the full light/dark token set).
 - **Light/Dark/Auto is a segmented pill control** (`.theme-switch`/`.theme-seg`),
   not a single cycling icon button — this was an explicit revision after an
-  icon-only version was tried first. **Later reverted back to icon labels**
-  (☀️/🌙/🌗) instead of the text "Light"/"Dark"/"Auto" — Tagalog's longer
-  words (Maliwanag/Madilim/Awtomatiko) were pushing the segmented control
-  wide enough to squeeze the EN/中文/TL language buttons, wrapping "中文"
-  onto two lines. The pill *shape* stayed (still three tappable segments,
-  still highlights the active one), only the label content changed from
-  text to emoji; the localized name is still set as each button's `title`
-  attribute (via `data-i18n-title`, a `syncLangUI()` sweep alongside
-  `data-i18n`/`data-i18n-ph`) for anyone hovering on desktop. If this
-  control is touched again, don't reintroduce text labels for the segments
-  — that's the whole reason for this change.
+  icon-only version was tried first; match the screenshot-driven pill design if
+  rebuilding it anywhere.
 - Kids cards: dashed border + a dedicated plum/lavender accent (`--kids-accent`)
   used consistently on all three Kids tabs and borders, distinct from the
   per-meal mustard/teal/brick used on the Adults row. Kids cards have **no
@@ -181,6 +154,11 @@ Firestore, so pulling in that extra SDK would be dead weight.
   "🧒 {Meal} · Kids" vs. the adult tab's "{Meal} · Adults" — both audiences are
   labeled explicitly, not just the Kids one, per an explicit "make it obvious
   which is for which" ask.
+- Message input has **no Send button** — Enter/Return sends, with a small
+  italic "press Enter to send" hint under the field instead (explicit
+  revision: the button was overlapping the on-screen keyboard on mobile).
+  The input is refocused after sending since `renderMeals()` rebuilds the
+  whole card and would otherwise drop focus mid-conversation.
 - Chat-style message thread: helper (received) messages are left-aligned, your
   (sent) messages are right-aligned, both capped at `max-width:85%` so the
   alignment is visible even when a line wraps to two lines. **The original
@@ -206,196 +184,19 @@ Firestore, so pulling in that extra SDK would be dead weight.
   `localStorage`-persisted — a value other than the HTML's hardcoded default
   needs that sweep to run before the user ever clicks anything).
 
-## Latest round of fixes (chat labels, recipe editing, caching, null-guards)
-
-- **Chat label is per-viewer, not per-sender.** A message you send always
-  shows "You" on your own device; the same message shows your actual name
-  on anyone else's device. This needed a `senderId` (the sending device's
-  `wg-userid`) stored on every `from:"you"` message alongside `senderName`;
-  rendering compares `senderId` against the *viewing* device's own
-  `getUserId()` (see `chatLabelFor()`) rather than trusting a fixed label.
-  Messages saved before this field existed have no `senderId` and fall back
-  to "You" for everyone (previous behavior), not a guess.
-- **Recipes can now be edited from the UI**, not just added. A ✏️ button
-  sits next to a dish's ✕ remove button on the meal card, and next to each
-  entry in the "choose a dish" list (`openEditDishModal()`) — both open the
-  same add-dish modal pre-filled with that recipe's current title/note/video,
-  now titled "Edit dish". Saving mutates the existing `dishLibrary` entry in
-  place (same object every card already points to via `findRecipe()`), so a
-  dish already sitting in a meal slot updates immediately. A recipe with a
-  blank note shows "No note yet — tap ✏️ to add one" instead of empty space,
-  so incomplete entries (e.g. `hainan_chicken_rice`'s missing `videoId`) are
-  visibly flagged rather than silently blank. Like "add a new dish", this
-  only lasts the browser session unless also hand-edited into `recipes.json`
-  — no Firestore backing for the recipe library itself, by design (see
-  Architecture above).
-- **Stale-cache fix, same as wg-groupbuy**: both pages now send
-  `Cache-Control: no-cache` / `Pragma: no-cache` / `Expires: 0` meta tags,
-  append a `?v=Date.now()` cache-busting query string to the `hub-cards.json`
-  and `recipes.json` fetches (GitHub Pages' CDN can otherwise serve a stale
-  copy for a while after a re-upload), and force a real reload on
-  `pageshow` when `event.persisted` is true (mobile back-forward-cache
-  restoring a stale page after navigating between the hub and the
-  dashboard and back).
-- **Null/blank hardening, same defensive pattern as wg-groupbuy's
-  missing-product-key guard**: an incoming `mealPlans` doc is run through
-  `sanitizeSlot()` (drops dish entries with no usable `id`, falls back to a
-  valid `status`/`staple` if the stored value is missing or garbage) instead
-  of being trusted as-is; incoming `mealThreads` messages are filtered to
-  ones that actually have a `from` and some text; `recipes.json` and
-  `hub-cards.json` entries missing their required fields are dropped at
-  fetch time rather than reaching the renderer. **If there were other
-  specific null/blank bugs found in the wg-groupbuy project beyond this
-  pattern, they haven't been cross-checked here yet — flag the specific
-  cases in a future session so they can be verified against this codebase
-  too.**
-
-- **Sent-message "translation" no longer repeats the original text.** There's
-  still no real translation service wired in, so a message you send gets a
-  placeholder `text_tl` — but it used to be `${text} (halimbawang salin)`,
-  which just echoed your own message back, redundant with the original
-  shown right above it. It's now a fixed status line, "(Awtomatikong salin
-  — wala pang aktibong serbisyo)" — **hardcoded in Tagalog, not run through
-  `t()`**, because `text_tl` is supposed to always be the Tagalog side for
-  the helper regardless of the current UI language toggle (this is the same
-  toggle-leaking-into-message-content bug flagged earlier in this file —
-  don't reintroduce it here either).
-- **Translation runs on MyMemory (free, no key), not paid Google Cloud
-  Translation** — switched after deciding not to set up billing just for
-  this. MyMemory (https://mymemory.translated.net) is a public, free,
-  no-signup translation API — plain `fetch()` GET request, no key, no auth.
-  The trade-off: it doesn't detect language for you like Google's paid API
-  did, so language is now guessed locally instead (`detectLangHeuristic()`)
-  — no network call, always returns `'en'`/`'zh'`/`'tl'`:
-  - Chinese is detected by the presence of any CJK character — unambiguous,
-    since neither English nor Tagalog uses that script.
-  - Between English and Tagalog (both Latin-script), the message counts as
-    Tagalog if it contains at least one word from `TAGALOG_MARKERS` (a
-    ~40-word list of common short Tagalog function words: `ang`, `ng`,
-    `hindi`, `wala`, `po`, `kumusta`, etc.) — otherwise it's assumed
-    English.
-  - This is a heuristic, not real language detection — short or unusual
-    messages can be misclassified (a Tagalog sentence using none of the
-    listed function words would read as English). Tested against the
-    actual messages from early testing ("What's for lunch tomorrow?" → en,
-    "Marunong akong magluto ng omelet." → tl, "我不知道。有时间吗？" → zh,
-    "Kumusta ka?" → tl) and all classified correctly, but it's not
-    bulletproof — if misclassification becomes a real problem, the fix is
-    either a bigger marker word list or switching to a paid detection API.
-  - Target is still fixed at English for everyone, same reasoning as
-    before: you type English only, your wife types English or Chinese, the
-    helper types English or Tagalog — everyone already understands
-    English, so there's no need to translate into three languages or vary
-    the target by who's viewing.
-  A sent message stores `{ text, origLang, translatedEn }` — unchanged
-  shape from before, just `origLang` now comes from the local heuristic
-  instead of an API call, and `translatedEn` comes from MyMemory instead of
-  Google:
-  - `text` — exactly what was typed.
-  - `origLang` — always `'en'`, `'zh'`, or `'tl'` now (the heuristic always
-    returns a guess; it's not "unknown" the way a failed API call used to
-    be, so a `null` value should no longer appear in fresh messages).
-  - `translatedEn` — fetched via one `translateText()` call to MyMemory,
-    only when `origLang !== 'en'`. `null` if the MyMemory call fails or
-    returns nothing usable — rendering falls back to "Translation
-    unavailable" in that case, same as before.
-  - **Rendering is still the same for every viewer**, not per-viewer — the
-    translated box shows `translatedEn` whenever `origLang !== 'en'`,
-    regardless of the viewer's own EN/中文/TL toggle. (This was already the
-    design going into this change; only the translation backend changed.)
-  - **Rate limit**: MyMemory's anonymous tier is roughly 5,000 words/day
-    per IP address — trivial for household chat volume, but if it's ever
-    hit, appending `&de=<an email address>` to the request URL in
-    `translateText()` raises the anonymous limit (MyMemory's documented
-    mechanism — no account needed, just an email string in the query).
-  - No setup needed — no API key, no billing, no Google Cloud Console.
-    `translateText()`/`detectLangHeuristic()` work out of the box.
-  - Old messages (the original `text_zh`/`text_tl` shape, from before any
-    of this and the original hand-typed helper/you demo pairs) still
-    render exactly as before — the renderer branches on whether `m.text`
-    exists.
-- **Chat bubble alignment is per-viewer too, not just the label.** Fixing
-  the "You" label (above) didn't fix alignment — a message from another
-  family member's device still rendered right-aligned like your own,
-  because alignment was keyed off `m.from === 'you'` while the label was
-  already keyed off `senderId`. Both now go through one shared
-  `isOwnMessage(m)` helper: a message gets the `.mine` CSS class (and
-  right-alignment) only on the device that actually sent it; everyone
-  else's device shows that same message left-aligned with the sender's
-  name, same as a helper message. `m.from` itself is untouched and still
-  drives the Chinese/Tagalog pairing and translation-box color — those
-  don't depend on who's viewing.
-
-- **"Clear all messages" button (🗑️, next to the bell) — testing only.**
-  Wipes every message in every meal slot for the *current week only*
-  (`mealThreads/{weekId}`) — leaves `mealPlans` (staples, dishes, status)
-  and other weeks' message history untouched. Confirms via a native
-  `window.confirm()` before doing anything, because **it writes straight to
-  Firestore**, so it clears the shared/live copy for every device
-  currently looking at this week, not just the one that clicked it — this
-  isn't a "clear my local view" button. Safe to leave in for now since it's
-  clearly labeled as testing-only, but worth removing (or hiding behind
-  something less discoverable) before handing this off as a finished
-  household tool, since anyone with the page open can wipe the week's
-  messages for everyone with two taps.
-
-- **Unread bell/badge only ever counted `from:"helper"` messages —
-  meaningless once real people all send as `"you"`.** Two bugs compounded:
-  the send handler never set `unread: true` on a new message at all, and
-  every unread-counting site (`unreadForMeal()`, the notification popover,
-  `jumpToMealThread()`'s mark-as-read, and the Home Hub's
-  `subscribeMealsBadge()`) filtered on the hardcoded `from === 'helper'`
-  role. Since the multi-user redesign means your wife and the helper also
-  send as `from:"you"` (just with their own `senderName`), none of that
-  ever matched — the bell and Home Hub badge would never have lit up for
-  anything anyone actually typed. Fixed by: (1) setting `unread: true` on
-  every newly sent message, and (2) switching every counting/marking site
-  to `!isOwnMessage(m)` instead of `from === 'helper'` — "unread" now means
-  "not sent by this device," which is what actually matters once anyone
-  can be on either side of a conversation. `index.html`'s badge duplicates
-  an `isMine()` check matching `isOwnMessage()` exactly (the two pages
-  don't share a script file) — **keep them in sync if either changes**.
-
-- **Send button was getting squeezed off-screen** on narrower viewports —
-  classic flexbox bug: `.msg-input input` had `flex:1` but no `min-width:0`,
-  so a flex child's default `min-width:auto` stopped it from shrinking
-  below its own content width, pushing the Send button past the edge of
-  the card instead of the input just getting narrower. Fixed by adding
-  `min-width:0`, and separately made the button itself a fixed 38×38px
-  icon button (a "➤" arrow, localized `send` string moved to `title`/
-  `aria-label` instead of visible text) so it can never grow wide enough to
-  cause this again regardless of content. The send logic itself was
-  extracted into `sendMessageForSlot(slotKey)` so both the button's
-  `onclick` and a new `Enter` keydown listener on the message input call
-  the same code — pressing Enter now sends (Shift+Enter is left alone,
-  though a single-line `<input>` has no newline to insert regardless).
-
-- **Notification popover could render partly off-screen to the left.** Its
-  CSS positioned it with `right:0` relative to the bell button itself — a
-  260px-wide popover anchored that way assumes the bell sits near the right
-  edge of the header, which stopped being reliably true once the header
-  also grew theme icons and the clear-messages button. On a packed/narrow
-  screen, `bellRect.right - popoverWidth` could land well left of the
-  viewport's own left edge, with no way to scroll to the cut-off part.
-  Fixed in `openNotifPopover()`: it now measures the bell and popover with
-  `getBoundingClientRect()` every time it opens and clamps the computed
-  position to stay within `8px` of either viewport edge, converting back to
-  a position relative to the bell (its `offsetParent`) before applying it.
-  The CSS also gained `max-width: calc(100vw - 16px)` as a backstop so the
-  popover itself can never be wider than the viewport regardless.
-
 ## Troubleshooting / lessons already learned
 
-- **Home Hub showed only the ghost placeholder, no Meals card** — reported
-  once after the Firebase/name-entry changes landed; root cause wasn't
-  pinned down with certainty (no console access to the live failure), but
-  the fix applied either way: the ghost/placeholder card was removed
-  entirely per explicit request, and `hub-cards.json` fetch failing or
-  returning nothing usable now falls back to a hardcoded Meals-only card
-  (`FALLBACK_HUB_CARDS` in `index.html`) instead of silently leaving the
-  grid empty. If a blank-hub report ever recurs, checking the browser
-  console on the live page for a fetch/CORS/404 error is the next step.
-
+- **The day-strip used to be purely cosmetic.** The first version of the
+  in-memory meal state was a single flat set of 6 meal slots for the whole
+  week, so clicking Mon/Tue/Wed/... re-rendered the exact same dishes/status/
+  thread every time — nothing was actually keyed by date. Fixed by nesting
+  state under `mealPlansByDate[dateIso][slotKey]` (see Firestore schema
+  above): an untouched date has no entry and renders empty via
+  `peekDayData()`; only `getOrCreateDayData()` (called from an actual add/
+  edit/send) persists a date, which also drives the small dot shown on a
+  day-tab that has data (`dayHasData()`). Today's date is pre-seeded with
+  demo content so the app opens with something planned; every other day
+  starts genuinely empty. Don't flatten this back to slot-only keys.
 - **YouTube embeds require an `http://`/`https://` origin.** Opening any of
   these pages via `file://` (double-click) makes YouTube's iframe player throw
   "Error 153 / Video player configuration error" for **every** video,
