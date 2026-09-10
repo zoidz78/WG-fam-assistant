@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Meal Plan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -114,8 +117,9 @@
     background:none;
     font-family:'Karla',sans-serif;
     font-weight:700;
-    font-size:12px;
-    padding:6px 12px;
+    font-size:14px;
+    line-height:1;
+    padding:7px 9px;
     border-radius:999px;
     color:var(--ink-soft);
     cursor:pointer;
@@ -129,6 +133,8 @@
     border-radius:3px;
     display:flex;align-items:center;justify-content:center;
     font-size:16px;
+    font-family:inherit;
+    color:inherit;
     cursor:pointer;
     margin-right:4px;
   }
@@ -149,6 +155,7 @@
     position:absolute;
     top:42px;right:0;
     width:260px;
+    max-width:calc(100vw - 16px);
     background:var(--paper);
     border:1px solid var(--line);
     border-radius:6px;
@@ -199,10 +206,6 @@
   }
   .day-tab .num{display:block;font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink);}
   .day-tab.today::after{content:'today';position:absolute;top:-2px;right:6px;font-size:9px;letter-spacing:0.04em;color:var(--brick);}
-  /* Shown once a day has actually had something saved to it (a dish added,
-     staple/status changed, or a message sent) — see mealPlansByDate /
-     dayHasData() in the script. An untouched day shows no dot. */
-  .day-tab.has-data .num::after{content:'';display:block;width:5px;height:5px;border-radius:50%;background:var(--teal);margin:3px auto 0;}
   .day-tab.active{
     background:var(--paper);
     color:var(--teal);
@@ -281,6 +284,12 @@
     background:none;border:none;color:var(--ink-soft);
     font-size:15px;cursor:pointer;line-height:1;padding:2px;
   }
+  .dish-edit{
+    background:none;border:none;color:var(--ink-soft);
+    font-size:13px;cursor:pointer;line-height:1;padding:2px;margin-right:2px;
+  }
+  .dish-edit:hover, .dish-remove:hover{color:var(--teal);}
+  .dish-head-actions{display:flex;align-items:flex-start;flex:0 0 auto;}
 
   .add-dish-btn{
     width:100%;
@@ -345,7 +354,7 @@
 
   .thread{border-top:1px dashed var(--line);padding-top:10px;}
   .msg{margin-bottom:8px;display:flex;flex-direction:column;align-items:flex-start;}
-  .msg.you{align-items:flex-end;}
+  .msg.mine{align-items:flex-end;}
   .msg .bubble{
     display:inline-block;
     max-width:85%;
@@ -372,6 +381,7 @@
   .msg-input{display:flex;gap:6px;margin-top:10px;}
   .msg-input input{
     flex:1;
+    min-width:0;
     border:1px solid var(--line);
     border-radius:3px;
     padding:7px 9px;
@@ -381,12 +391,21 @@
     color:var(--ink);
   }
   .msg-input input::placeholder{color:var(--ink-soft);}
-  .send-hint{
-    font-size:11px;
-    font-style:italic;
-    color:var(--ink-soft);
-    text-align:right;
-    margin-top:4px;
+  .msg-input button{
+    flex:0 0 auto;
+    width:38px;
+    height:38px;
+    border:1px solid var(--teal);
+    background:var(--teal);
+    color:var(--paper);
+    font-size:16px;
+    line-height:1;
+    padding:0;
+    border-radius:3px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
   }
 
   .add-recipe{
@@ -495,7 +514,9 @@
     padding:10px 12px;
     border-bottom:1px solid var(--line);
     cursor:pointer;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
   }
+  .dish-pick-item-main{flex:1;min-width:0;}
   .dish-pick-item:last-child{border-bottom:none;}
   .dish-pick-item:hover{background:var(--teal-soft);}
   .dish-pick-title{font-family:'Fraunces',serif;font-size:14.5px;font-weight:600;margin-bottom:2px;}
@@ -534,13 +555,14 @@
     </div>
     <div class="langs">
       <div class="theme-switch" id="themeSwitch">
-        <button class="theme-seg" data-theme-choice="light" data-i18n="themeLight">Light</button>
-        <button class="theme-seg" data-theme-choice="dark" data-i18n="themeDark">Dark</button>
-        <button class="theme-seg" data-theme-choice="auto" data-i18n="themeAuto">Auto</button>
+        <button class="theme-seg" data-theme-choice="light" data-i18n-title="themeLight">☀️</button>
+        <button class="theme-seg" data-theme-choice="dark" data-i18n-title="themeDark">🌙</button>
+        <button class="theme-seg" data-theme-choice="auto" data-i18n-title="themeAuto">🌗</button>
       </div>
       <div class="bell" id="bellIcon">🔔<span class="count" id="bellCount" style="display:none">0</span>
         <div class="notif-popover" id="notifPopover"></div>
       </div>
+      <button class="bell" id="clearMessagesBtn" data-i18n-title="clearMessagesTitle">🗑️</button>
       <button class="lang-btn active" data-lang="en">EN</button>
       <button class="lang-btn" data-lang="zh">中文</button>
       <button class="lang-btn" data-lang="tl">TL</button>
@@ -601,7 +623,139 @@
   </div>
 </div>
 
-<script>
+<div class="modal-overlay" id="nameModalOverlay">
+  <div class="modal">
+    <h3 data-i18n="nameModalTitle">What's your name?</h3>
+    <div class="hint" data-i18n="nameModalSub">So messages you send show who sent them, instead of just "You".</div>
+    <input type="text" id="nameInput" style="margin-top:10px;" data-i18n-ph="nameModalPh">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="nameModalSkip" data-i18n="skip">Skip for now</button>
+      <button class="btn-save" id="nameModalSave" data-i18n="save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// TODO: paste this app's Firebase project config here — must match the
+// config pasted into index.html so both pages talk to the same Firestore
+// project. See index.html for where to find these values.
+const firebaseConfig = {
+  apiKey: "AIzaSyA6GjU443-D-M2ADE6reI7wBZYuYERTsSU",
+  authDomain: "wg-family-assistant.firebaseapp.com",
+  projectId: "wg-family-assistant",
+  storageBucket: "wg-family-assistant.firebasestorage.app",
+  messagingSenderId: "220482684013",
+  appId: "1:220482684013:web:27fca12be8fe9bfbd52b64"
+};
+let db = null;
+try {
+  db = getFirestore(initializeApp(firebaseConfig));
+} catch (e) {
+  console.warn('Firebase not configured yet — meal plan/messages stay local-only this session.', e);
+}
+
+// Everyone typing into the chat — you, your wife, the helper — can type in
+// whichever of these three languages they're comfortable with per message;
+// nothing is fixed to one "sender types Chinese, helper types Tagalog"
+// pairing. But the target is fixed and simple: everyone understands
+// English, so anything not already English gets translated to English —
+// not to all three languages, and not per-viewer.
+//
+// Translation uses MyMemory (https://mymemory.translated.net) instead of a
+// paid Google Cloud API — it's a public, free, no-signup, no-API-key
+// translation service, generous enough for household chat volume (roughly
+// 5,000 words/day anonymously; see project-knowledge.md for how to raise
+// that with a free email registration if it's ever hit). The trade-off:
+// unlike Google's paid API, MyMemory doesn't detect language for you — you
+// have to tell it the source language — so a small local heuristic below
+// (detectLangHeuristic) guesses en/zh/tl before translating. It's not
+// perfect on very short or ambiguous text, but reliable for normal
+// sentences, and costs nothing either way.
+const MYMEMORY_LANG_CODE = { en: 'en', zh: 'zh-CN', tl: 'tl' };
+
+// Common Tagalog function words — short, high-frequency words that rarely
+// appear in ordinary English sentences. Chinese is detected separately (by
+// script, not word list) since it doesn't share an alphabet with the other
+// two, which makes it unambiguous.
+const TAGALOG_MARKERS = new Set([
+  'ang','ng','mga','sa','ako','ikaw','siya','tayo','kami','sila','kayo',
+  'hindi','wala','opo','po','naman','lang','din','rin','kasi','ba',
+  'yung','yun','ito','iyon','pag','pala','talaga','salamat','kumusta',
+  'paano','ganito','ganyan','marunong','gusto','pwede','oo','hindi','na',
+  'may','meron','kung','para','dahil','saan','ano','sino','bakit'
+]);
+
+// Local, no-network language guess across the three app languages. Chinese
+// is detected by the presence of any CJK character (unambiguous — the
+// other two languages don't use that script). Between English and
+// Tagalog, a message counts as Tagalog if it contains at least one common
+// Tagalog function word; otherwise it's assumed English. Short or unusual
+// messages can be misclassified — there's no server-side detection to fall
+// back on with a free, keyless service — but this holds up well for
+// ordinary sentences.
+function detectLangHeuristic(text){
+  if(/[\u4e00-\u9fff]/.test(text)) return 'zh';
+  const words = text.toLowerCase().replace(/[^\p{L}\s]/gu, '').split(/\s+/).filter(Boolean);
+  const hasTagalogMarker = words.some(w => TAGALOG_MARKERS.has(w));
+  return hasTagalogMarker ? 'tl' : 'en';
+}
+
+// Calls MyMemory's translation endpoint directly from the browser — a
+// plain GET request, no key, no auth. Returns the translated string, or
+// null if the call fails or MyMemory couldn't produce a translation;
+// callers treat null as "no translation available" rather than blocking
+// anything.
+async function translateText(text, targetAppLang, sourceAppLang){
+  try{
+    const langpair = `${MYMEMORY_LANG_CODE[sourceAppLang]}|${MYMEMORY_LANG_CODE[targetAppLang]}`;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('MyMemory API responded ' + res.status);
+    const data = await res.json();
+    if(data.responseStatus !== 200 || !data.responseData || !data.responseData.translatedText){
+      throw new Error('MyMemory API returned no usable translation');
+    }
+    return data.responseData.translatedText;
+  }catch(err){
+    console.error('Translation request failed', err);
+    return null;
+  }
+}
+
+
+function getUserId(){
+  let id = localStorage.getItem('wg-userid');
+  if(!id){
+    id = (crypto.randomUUID ? crypto.randomUUID() : 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+    localStorage.setItem('wg-userid', id);
+  }
+  return id;
+}
+// True only on the device that actually sent this message — used for both
+// the "You" label and right-alignment, so a message from any other family
+// member's device (or the helper) reads the same way theirs does: their
+// name (or "Helper"), left-aligned, never mistaken for your own message.
+function isOwnMessage(m){
+  if(m.from !== 'you') return false;
+  if(!m.senderId) return true; // legacy message saved before senderId existed
+  return m.senderId === getUserId();
+}
+function chatLabelFor(m){
+  if(m.from === 'helper') return t('helper');
+  return isOwnMessage(m) ? t('you') : (m.senderName || t('you'));
+}
+function saveFamilyMemberName(name){
+  localStorage.setItem('wg-username', name);
+  if(!db) return;
+  setDoc(doc(db, 'familyMembers', getUserId()), { name, updatedAt: Date.now() }, { merge: true })
+    .catch(err => console.error('Failed to save name to Firestore', err));
+}
+
 const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 // "This week" is computed for real (Monday-start) instead of hardcoded, so
@@ -636,7 +790,11 @@ const i18n = {
     planned: "Planned", cooking: "Cooking", missing: "Missing ingredient", done: "Done",
     videoLink: "Watch recipe video",
     addRecipe: "+ Add a new dish", addRecipeSub: "add it to the list so it's easy to pick next time",
-    sendHint: "Press Enter to send", inputPlaceholder: "Type a message...",
+    send: "Send", inputPlaceholder: "Type a message...",
+    translating: "Translating...",
+    translationUnavailable: "Translation unavailable",
+    clearMessagesTitle: "Clear all messages (testing)",
+    clearMessagesConfirm: "Delete every message in every meal slot this week, for everyone? This can't be undone.",
     you: "You", helper: "Helper (Tagalog → 中文)",
     addDish: "+ Add dish",
     pickDishTitle: "Choose a dish",
@@ -659,7 +817,14 @@ const i18n = {
     themeLight: "Light", themeDark: "Dark", themeAuto: "Auto",
     noNewMessages: "No new messages",
     kids: "Kids",
-    adults: "Adults"
+    adults: "Adults",
+    nameModalTitle: "What's your name?",
+    nameModalSub: "So messages you send show who sent them, instead of just \"You\".",
+    nameModalPh: "e.g. Mom, Dad, Effendy...",
+    skip: "Skip for now", save: "Save",
+    editRecipe: "Edit recipe",
+    editDishTitle: "Edit dish",
+    noNoteYet: "No note yet — tap ✏️ to add one"
   },
   zh: {
     kicker: "本周餐单", title: "今天吃什么",
@@ -669,7 +834,11 @@ const i18n = {
     planned: "已安排", cooking: "烹饪中", missing: "食材不足", done: "已完成",
     videoLink: "观看食谱视频",
     addRecipe: "+ 添加新菜", addRecipeSub: "加入清单，下次直接选用",
-    sendHint: "按 Enter 发送", inputPlaceholder: "输入消息...",
+    send: "发送", inputPlaceholder: "输入消息...",
+    translating: "翻译中...",
+    translationUnavailable: "暂无翻译",
+    clearMessagesTitle: "清空所有消息（测试用）",
+    clearMessagesConfirm: "删除本周所有餐次的全部消息，对所有人生效？此操作无法撤销。",
     you: "你", helper: "帮佣（他加禄语 → 中文）",
     addDish: "+ 添加菜肴",
     pickDishTitle: "选择菜肴",
@@ -692,7 +861,14 @@ const i18n = {
     themeLight: "浅色", themeDark: "深色", themeAuto: "自动",
     noNewMessages: "没有新消息",
     kids: "儿童",
-    adults: "成人"
+    adults: "成人",
+    nameModalTitle: "你的名字是？",
+    nameModalSub: "这样你发的消息会显示是谁发的，而不只是「你」。",
+    nameModalPh: "例如：妈妈、爸爸、Effendy...",
+    skip: "暂时跳过", save: "保存",
+    editRecipe: "编辑食谱",
+    editDishTitle: "编辑菜肴",
+    noNoteYet: "还没有说明——点 ✏️ 添加"
   },
   tl: {
     kicker: "Mga pagkain ngayong linggo", title: "Ano ang Lutuin",
@@ -701,7 +877,11 @@ const i18n = {
     planned: "Nakaplano", cooking: "Niluluto", missing: "Kulang ang sangkap", done: "Tapos na",
     videoLink: "Panoorin ang recipe video",
     addRecipe: "+ Magdagdag ng bagong ulam", addRecipeSub: "idagdag sa listahan para madali nang piliin sa susunod",
-    sendHint: "Pindutin ang Enter para magpadala", inputPlaceholder: "Mag-type ng mensahe...",
+    send: "Ipadala", inputPlaceholder: "Mag-type ng mensahe...",
+    translating: "Isinasalin...",
+    translationUnavailable: "Walang available na salin",
+    clearMessagesTitle: "I-clear lahat ng mensahe (testing)",
+    clearMessagesConfirm: "Burahin ang lahat ng mensahe sa bawat meal slot ngayong linggo, para sa lahat? Hindi na ito mababawi.",
     you: "Ikaw", helper: "Katulong (Tagalog → 中文)",
     addDish: "+ Magdagdag ng ulam",
     pickDishTitle: "Pumili ng ulam",
@@ -724,7 +904,14 @@ const i18n = {
     themeLight: "Maliwanag", themeDark: "Madilim", themeAuto: "Awtomatiko",
     noNewMessages: "Walang bagong mensahe",
     kids: "Mga Bata",
-    adults: "Matatanda"
+    adults: "Matatanda",
+    nameModalTitle: "Ano ang pangalan mo?",
+    nameModalSub: "Para makita kung sino ang nagpadala ng mensahe mo, hindi lang \"You\".",
+    nameModalPh: "hal. Mommy, Daddy, Effendy...",
+    skip: "Laktawan muna", save: "I-save",
+    editRecipe: "I-edit ang recipe",
+    editDishTitle: "I-edit ang ulam",
+    noNoteYet: "Wala pang tala — pindutin ang ✏️ para magdagdag"
   }
 };
 
@@ -738,102 +925,11 @@ const staples = [
 // Dishes the helper already knows how to cook. Loaded from recipes.json at
 // boot (instead of hardcoded) — picking from here is how a dish gets added
 // to a meal slot; see openNewDishModal/newDishSave for how one gets added
-// to this list. Meal slots store only a recipe id (see mealPlansByDate below),
+// to this list. Meal slots store only a recipe id (see mealData below),
 // resolved against this array at render time via findRecipe() — single
 // source of truth, no duplicated title/note/video copies per slot.
 let dishLibrary = [];
 function findRecipe(id){ return dishLibrary.find(d => d.id === id); }
-
-// --- Per-day meal data --------------------------------------------------
-// Each date ("YYYY-MM-DD") gets its own independent set of 6 meal slots
-// (breakfast/lunch/dinner x adults/kids) — dishes, staple, status, and
-// messages picked for Wednesday must never show up on Thursday's card.
-// A date is only added to mealPlansByDate once something is actually
-// saved against it (a dish added, staple/status changed, or a message
-// sent); until then it renders as a fully empty day via peekDayData().
-// This replaces an earlier version where mealData was a single flat set
-// of 6 slots shared by the whole week — the day-strip tabs looked
-// functional but silently showed identical content on every day. Don't
-// go back to that flat shape.
-let mealPlansByDate = {};
-
-function emptySlot(isKids){
-  return isKids
-    ? { dishIds: [], status: "planned", thread: [] }
-    : { staple: "none", dishIds: [], status: "planned", thread: [] };
-}
-
-function emptyDay(){
-  return {
-    breakfast: emptySlot(false),
-    lunch: emptySlot(false),
-    dinner: emptySlot(false),
-    breakfast_kids: emptySlot(true),
-    lunch_kids: emptySlot(true),
-    dinner_kids: emptySlot(true)
-  };
-}
-
-// Read-only accessor for rendering — never creates or persists an entry,
-// so simply looking at an untouched day doesn't make it "have data".
-function peekDayData(dateIso){
-  return mealPlansByDate[dateIso] || emptyDay();
-}
-
-// Mutating accessor — materializes (and keeps) the day's data the first
-// time something is actually written to it. Every place that changes a
-// staple/status/dish/message must go through this, not peekDayData().
-function getOrCreateDayData(dateIso){
-  if(!mealPlansByDate[dateIso]) mealPlansByDate[dateIso] = emptyDay();
-  return mealPlansByDate[dateIso];
-}
-
-function dayHasData(dateIso){
-  return !!mealPlansByDate[dateIso];
-}
-
-function activeDateIso(){ return isoDate(weekDates[activeDay]); }
-
-// Seed today's date with the original demo content, so the app opens
-// with "today" already planned while every other day in the week starts
-// genuinely empty.
-(function seedToday(){
-  mealPlansByDate[isoDate(todayDate)] = {
-    breakfast: {
-      staple: "white",
-      dishIds: [
-        { id: "century_congee", videoPlaying:false }
-      ],
-      status: "done",
-      thread: [
-        {from:"helper", text_tl:"Wala pong century egg sa fridge.", text_zh:"冰箱里没有皮蛋。", unread:true},
-      ]
-    },
-    lunch: {
-      staple: "white",
-      dishIds: [
-        { id: "hainan_chicken_rice", videoPlaying:false }
-      ],
-      status: "cooking",
-      thread: []
-    },
-    dinner: {
-      staple: "white",
-      dishIds: [
-        { id: "tomato_egg", videoPlaying:false },
-        { id: "steamed_fish", videoPlaying:false }
-      ],
-      status: "missing",
-      thread: [
-        {from:"helper", text_tl:"Ubos na po ang toyo, may extra po ba?", text_zh:"酱油用完了，还有多的吗？", unread:true},
-        {from:"you", text_zh:"有的,在储藏室第二层。", text_tl:"Meron, nasa ikalawang istante ng storeroom."}
-      ]
-    },
-    breakfast_kids: emptySlot(true),
-    lunch_kids: emptySlot(true),
-    dinner_kids: emptySlot(true)
-  };
-})();
 
 // Each meal type gets an adult card and a paired Kids card right after it
 // (same shape, own staple/dishes/status/thread) so the helper can be told
@@ -850,18 +946,103 @@ function slotContextLabel(slotKey){ return t(slotType(slotKey)) + (isKidsSlot(sl
 
 const statusOrder = ["planned","cooking","missing","done"];
 
-function unreadForMeal(dateIso, slotKey){
-  return peekDayData(dateIso)[slotKey].thread.filter(m => m.from === 'helper' && m.unread).length;
+// --- Firestore-backed state ---
+// mealPlans/{weekId}: { [slotKey]: { staple?, dishIds:[{id}], status } }
+// mealThreads/{weekId}: { [slotKey]: [{from, text_zh, text_tl, unread?, senderName?}] }
+// Both are mirrored locally into mealData / threadData; every user action
+// writes straight to Firestore and the onSnapshot listener below re-renders
+// from whatever comes back (including the echo of our own write), so this
+// stays a thin mirror rather than a second source of truth.
+const mealPlanRef = db ? doc(db, 'mealPlans', weekId) : null;
+const mealThreadRef = db ? doc(db, 'mealThreads', weekId) : null;
+
+function blankSlot(slotKey){
+  return isKidsSlot(slotKey) ? { dishIds: [], status: 'planned' } : { staple: 'none', dishIds: [], status: 'planned' };
 }
 
-// Spans the whole visible week, not just the active day — a message left
-// on Monday's breakfast should still count toward the bell even while
-// looking at Friday.
+// Guards against a corrupted or partially-written Firestore doc (a field
+// saved as null, a dishIds entry missing its id, an out-of-range status
+// string from hand-edited data) — same null/blank defensiveness applied in
+// the wg-groupbuy project's missing-product-key handling. Without this, a
+// single bad field in the doc would throw partway through renderMeals()
+// and blank the whole page instead of just that one slot.
+function sanitizeSlot(slotKey, raw){
+  const base = blankSlot(slotKey);
+  if(!raw || typeof raw !== 'object') return base;
+  const dishIds = Array.isArray(raw.dishIds)
+    ? raw.dishIds.filter(d => d && typeof d.id === 'string' && d.id.trim() !== '')
+    : [];
+  const status = statusOrder.includes(raw.status) ? raw.status : base.status;
+  const slot = { ...base, dishIds, status };
+  if(!isKidsSlot(slotKey)){
+    slot.staple = (typeof raw.staple === 'string' && raw.staple.trim() !== '') ? raw.staple : base.staple;
+  }
+  return slot;
+}
+let mealData = Object.fromEntries(mealSlots.map(k => [k, blankSlot(k)]));
+let threadData = Object.fromEntries(mealSlots.map(k => [k, []]));
+
+// videoPlaying is transient UI-only state (which embed is currently
+// showing) — it must never be written to Firestore, or every viewer's
+// player would restart on someone else's unrelated change. Keyed by
+// "slotKey::dishIndex", reset whenever that slot's dish list changes shape.
+let videoPlayingState = {};
+function isVideoPlaying(slotKey, idx){ return !!videoPlayingState[`${slotKey}::${idx}`]; }
+function setVideoPlaying(slotKey, idx){ videoPlayingState[`${slotKey}::${idx}`] = true; }
+
+async function initFirestoreSync(){
+  if(!db) return; // Firebase not configured yet — stays local-only this session.
+  try{
+    const planSnap = await getDoc(mealPlanRef);
+    if(!planSnap.exists()){
+      await setDoc(mealPlanRef, Object.fromEntries(mealSlots.map(k => [k, blankSlot(k)])));
+    }
+    const threadSnap = await getDoc(mealThreadRef);
+    if(!threadSnap.exists()){
+      await setDoc(mealThreadRef, Object.fromEntries(mealSlots.map(k => [k, []])));
+    }
+  }catch(err){
+    console.error('Failed to initialize this week\'s Firestore docs', err);
+    return;
+  }
+  onSnapshot(mealPlanRef, snap => {
+    if(!snap.exists()) return;
+    const data = snap.data();
+    mealSlots.forEach(k => { mealData[k] = sanitizeSlot(k, data[k]); });
+    renderMeals();
+  }, err => console.error('mealPlans subscription failed', err));
+  onSnapshot(mealThreadRef, snap => {
+    if(!snap.exists()) return;
+    const data = snap.data();
+    mealSlots.forEach(k => {
+      const raw = Array.isArray(data[k]) ? data[k] : [];
+      // Drop any entry missing the fields the renderer needs — a hand-edited
+      // or partially-written doc shouldn't be able to blank the whole thread.
+      // Accepts either shape: new messages carry `text` (+ origLang/
+      // translations), older ones carry text_zh/text_tl.
+      threadData[k] = raw.filter(m => m && (m.from === 'you' || m.from === 'helper') && (m.text || m.text_zh || m.text_tl));
+    });
+    renderMeals();
+  }, err => console.error('mealThreads subscription failed', err));
+}
+
+function writeMealSlot(slotKey, newSlotData){
+  mealData[slotKey] = newSlotData;
+  if(mealPlanRef) updateDoc(mealPlanRef, { [slotKey]: newSlotData }).catch(err => console.error('Failed to save meal plan change', err));
+  renderMeals();
+}
+function writeThread(slotKey, newMessages){
+  threadData[slotKey] = newMessages;
+  if(mealThreadRef) updateDoc(mealThreadRef, { [slotKey]: newMessages }).catch(err => console.error('Failed to save message', err));
+  renderMeals();
+}
+
+function unreadForMeal(slotKey){
+  return threadData[slotKey].filter(m => !isOwnMessage(m) && m.unread).length;
+}
+
 function totalUnread(){
-  return weekDates.reduce((sum, d) => {
-    const dateIso = isoDate(d);
-    return sum + mealSlots.reduce((s2, slotKey) => s2 + unreadForMeal(dateIso, slotKey), 0);
-  }, 0);
+  return mealSlots.reduce((sum, slotKey) => sum + unreadForMeal(slotKey), 0);
 }
 
 function renderBell(){
@@ -869,9 +1050,6 @@ function renderBell(){
   const countEl = document.getElementById('bellCount');
   countEl.textContent = total;
   countEl.style.display = total > 0 ? 'flex' : 'none';
-  // Mirrored to localStorage so other pages (e.g. the Home Hub) can show
-  // a badge on the Meals card without needing a real shared backend.
-  localStorage.setItem('wg-meals-unread', String(total));
 }
 
 function t(key){ return i18n[currentLang][key] || key; }
@@ -901,9 +1079,8 @@ function renderDayStrip(){
   const el = document.getElementById('dayStrip');
   el.innerHTML = '';
   days.forEach((d,i)=>{
-    const dateIso = isoDate(weekDates[i]);
     const tab = document.createElement('div');
-    tab.className = 'day-tab' + (i===activeDay?' active':'') + (i===todayIndex?' today':'') + (dayHasData(dateIso) ? ' has-data' : '');
+    tab.className = 'day-tab' + (i===activeDay?' active':'') + (i===todayIndex?' today':'');
     tab.innerHTML = `${t(d)}<span class="num">${dayNums[i]}</span>`;
     tab.onclick = ()=>{ activeDay = i; renderDayStrip(); renderMeals(); };
     el.appendChild(tab);
@@ -913,26 +1090,46 @@ function renderDayStrip(){
 let autoplayDish = null;
 
 function renderMeals(){
-  const dateIso = activeDateIso();
-  const dayData = peekDayData(dateIso);
   const el = document.getElementById('mealArea');
   el.innerHTML = '';
   mealSlots.forEach(slotKey=>{
-    const data = dayData[slotKey];
+    const data = mealData[slotKey];
     const card = document.createElement('div');
     card.className = 'card ' + slotType(slotKey) + (isKidsSlot(slotKey) ? ' kids' : '');
     card.id = 'mealcard-' + slotKey;
 
-    let threadHtml = data.thread.map(m=>{
-      const mine = m.from === 'you';
-      // Each message keeps the language it was actually written in as
-      // primary, regardless of the EN/中文/TL toggle (which only affects
-      // UI copy, not conversation history) — helper writes in Tagalog,
-      // you write in Chinese, each translated for the other party.
-      const primary = m.from === 'helper' ? (m.text_tl||m.text_zh) : (m.text_zh||m.text_tl);
-      const secondary = m.from === 'helper' ? m.text_zh : m.text_tl;
-      return `<div class="msg ${m.from}">
-        <div class="who">${m.unread ? '<span class="unread-dot"></span>' : ''}${mine ? t('you') : t('helper')}</div>
+    let threadHtml = threadData[slotKey].map(m=>{
+      // "mine" (alignment) is per-viewer: only true on the device that sent
+      // it. "from" (translation-box color) stays tied to which side of the
+      // conversation the message belongs to, regardless of who's looking.
+      const mine = isOwnMessage(m);
+      const whoLabel = chatLabelFor(m);
+      let primary, secondary;
+      if(typeof m.text === 'string'){
+        // Current message shape: original text as actually typed, in
+        // whichever of the three app languages that was (auto-detected at
+        // send time — nobody is assumed to type in a fixed language).
+        // Translation target is fixed to English for everyone, same as
+        // `translatedEn` was computed at send time — this does NOT depend
+        // on the viewer's own EN/中文/TL toggle (that toggle is UI copy
+        // only; see the note on `text_tl` further up about not letting it
+        // leak into message content).
+        primary = m.text;
+        if(m.origLang && m.origLang !== 'en'){
+          secondary = m.translatedEn || t('translationUnavailable');
+        } else {
+          secondary = null; // already English, or language unknown — nothing to show
+        }
+      } else {
+        // Legacy shape (messages sent before language auto-detection
+        // existed, plus the original hand-typed helper/you demo pairs) —
+        // keep the old fixed Chinese/Tagalog pairing so they keep
+        // rendering exactly as before rather than breaking.
+        primary = m.from === 'helper' ? (m.text_tl||m.text_zh) : (m.text_zh||m.text_tl);
+        secondary = m.from === 'helper' ? m.text_zh : m.text_tl;
+      }
+      return `<div class="msg ${m.from}${mine ? ' mine' : ''}">
+        <div class="who">${m.unread ? '<span class="unread-dot"></span>' : ''}${whoLabel}</div>
         <div class="bubble">${primary}</div>
         ${secondary ? `<div class="translated">${secondary}</div>` : ''}
       </div>`;
@@ -958,7 +1155,7 @@ function renderMeals(){
         </div>`;
       }
       const videoBlock = dish.video ? (
-        dish.videoId && entry.videoPlaying
+        dish.videoId && isVideoPlaying(slotKey, idx)
           ? (()=>{
               // Only autoplay the instant the chip was just clicked
               // (autoplayDish, cleared right after this render pass) —
@@ -974,15 +1171,18 @@ function renderMeals(){
       return `<div class="dish">
         <div class="dish-head">
           <div class="recipe-title">${dish.title}</div>
-          <button class="dish-remove" data-removedish="${slotKey}" data-dishidx="${idx}">✕</button>
+          <div class="dish-head-actions">
+            <button class="dish-edit" data-editdish="${dish.id}" title="${t('editRecipe')}">✏️</button>
+            <button class="dish-remove" data-removedish="${slotKey}" data-dishidx="${idx}">✕</button>
+          </div>
         </div>
-        <p class="recipe-note">${dish.note}</p>
+        <p class="recipe-note">${dish.note || `<em>${t('noNoteYet')}</em>`}</p>
         ${videoBlock}
       </div>`;
     }).join('');
 
     card.innerHTML = `
-      <span class="tab">${slotTabLabel(slotKey)}${unreadForMeal(dateIso, slotKey) > 0 ? `<span class="badge">${unreadForMeal(dateIso, slotKey)}</span>` : ''}</span>
+      <span class="tab">${slotTabLabel(slotKey)}${unreadForMeal(slotKey) > 0 ? `<span class="badge">${unreadForMeal(slotKey)}</span>` : ''}</span>
       <div class="card-body">
         ${isKidsSlot(slotKey) ? '' : `<div class="staple-row">${stapleHtml}</div>`}
         ${dishesHtml}
@@ -994,8 +1194,8 @@ function renderMeals(){
           ${threadHtml}
           <div class="msg-input">
             <input type="text" placeholder="${t('inputPlaceholder')}" data-input="${slotKey}">
+            <button data-send="${slotKey}" title="${t('send')}" aria-label="${t('send')}">➤</button>
           </div>
-          <div class="send-hint">${t('sendHint')}</div>
         </div>
       </div>
     `;
@@ -1005,17 +1205,14 @@ function renderMeals(){
   el.querySelectorAll('.status-btn').forEach(btn=>{
     btn.onclick = ()=>{
       const slotKey = btn.dataset.type;
-      getOrCreateDayData(dateIso)[slotKey].status = btn.dataset.status;
-      renderMeals();
-      renderDayStrip();
+      writeMealSlot(slotKey, { ...mealData[slotKey], status: btn.dataset.status });
     };
   });
 
   el.querySelectorAll('.staple-btn').forEach(btn=>{
     btn.onclick = ()=>{
-      getOrCreateDayData(dateIso)[btn.dataset.mealtype].staple = btn.dataset.staple;
-      renderMeals();
-      renderDayStrip();
+      const slotKey = btn.dataset.mealtype;
+      writeMealSlot(slotKey, { ...mealData[slotKey], staple: btn.dataset.staple });
     };
   });
 
@@ -1023,19 +1220,25 @@ function renderMeals(){
     chip.onclick = ()=>{
       const slotKey = chip.dataset.playvideo;
       const idx = chip.dataset.dishidx;
-      getOrCreateDayData(dateIso)[slotKey].dishIds[idx].videoPlaying = true;
+      // Local-only — never synced to Firestore, so this doesn't restart
+      // the video for anyone else viewing the same dashboard.
+      setVideoPlaying(slotKey, idx);
       autoplayDish = `${slotKey}_${idx}`;
       renderMeals();
     };
+  });
+
+  el.querySelectorAll('[data-editdish]').forEach(btn=>{
+    btn.onclick = ()=> openEditDishModal(btn.dataset.editdish);
   });
 
   el.querySelectorAll('[data-removedish]').forEach(btn=>{
     btn.onclick = ()=>{
       const slotKey = btn.dataset.removedish;
       const idx = btn.dataset.dishidx;
-      getOrCreateDayData(dateIso)[slotKey].dishIds.splice(idx,1);
-      renderMeals();
-      renderDayStrip();
+      const newDishIds = mealData[slotKey].dishIds.slice();
+      newDishIds.splice(idx,1);
+      writeMealSlot(slotKey, { ...mealData[slotKey], dishIds: newDishIds });
     };
   });
 
@@ -1043,21 +1246,49 @@ function renderMeals(){
     btn.onclick = ()=> openPickDishModal(btn.dataset.addto);
   });
 
+  async function sendMessageForSlot(slotKey){
+    const input = el.querySelector(`[data-input="${slotKey}"]`);
+    const text = input.value.trim();
+    if(!text) return;
+    if(!localStorage.getItem('wg-username')){ openNameModal(); return; }
+    input.value = '';
+    const sendBtn = el.querySelector(`[data-send="${slotKey}"]`);
+    sendBtn.disabled = true;
+    sendBtn.textContent = '⏳'; // brief icon swap while translating — button is icon-only, no room for text
+    // Whoever's typing (you, your wife, the helper) may write in any of
+    // the three app languages message-to-message — nothing here assumes
+    // a fixed language per sender. Guess what was actually typed (see
+    // detectLangHeuristic — no network call, always returns a guess); if
+    // it's not English, translate it to English (everyone reads
+    // English), and everyone sees that same translation regardless of
+    // their own language toggle — see rendering in renderMeals().
+    const origLang = detectLangHeuristic(text);
+    let translatedEn = null;
+    if(origLang !== 'en'){
+      translatedEn = await translateText(text, 'en', origLang);
+    }
+    const newThread = threadData[slotKey].concat([{
+      from:"you", text, origLang, translatedEn, unread: true,
+      senderId: getUserId(), senderName: localStorage.getItem('wg-username')
+    }]);
+    writeThread(slotKey, newThread); // triggers renderMeals(), which rebuilds this button back to '➤'
+  }
+
+  el.querySelectorAll('[data-send]').forEach(btn=>{
+    btn.onclick = ()=> sendMessageForSlot(btn.dataset.send);
+  });
+
+  // Enter sends — this is a single-line input, so there's no reason to
+  // require reaching for the Send button. Shift+Enter is left alone in
+  // case someone's phone keyboard uses it for something else, but plain
+  // Enter always sends rather than doing nothing (a single-line <input>
+  // has no newline to insert anyway).
   el.querySelectorAll('[data-input]').forEach(input=>{
     input.addEventListener('keydown', (e)=>{
-      if(e.key !== 'Enter') return;
-      const slotKey = input.dataset.input;
-      const text = input.value.trim();
-      if(!text) return;
-      // You type in your own native language (Chinese) regardless of
-      // which UI language is currently selected; only the helper's
-      // translation is generated alongside it.
-      getOrCreateDayData(dateIso)[slotKey].thread.push({ from:"you", text_zh: text, text_tl: `${text} (halimbawang salin)` });
-      input.value = '';
-      renderMeals();
-      renderDayStrip();
-      const freshInput = document.querySelector(`[data-input="${slotKey}"]`);
-      if(freshInput) freshInput.focus();
+      if(e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        sendMessageForSlot(input.dataset.input);
+      }
     });
   });
 
@@ -1072,6 +1303,9 @@ function syncLangUI(){
   });
   document.querySelectorAll('[data-i18n-ph]').forEach(elm=>{
     elm.placeholder = t(elm.dataset.i18nPh);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(elm=>{
+    elm.title = t(elm.dataset.i18nTitle);
   });
 }
 
@@ -1099,9 +1333,42 @@ document.addEventListener('click', (e)=>{
   }
 });
 
+// Testing-only button: wipes every message in every slot for THIS week
+// only (mealThreads/{weekId}) — does not touch mealPlans (staples, dishes,
+// status) or other weeks' message history. Writes straight to Firestore
+// (if configured), so it clears the shared/live copy for every device, not
+// just this one — the confirm() is there specifically because of that.
+document.getElementById('clearMessagesBtn').onclick = ()=>{
+  if(!window.confirm(t('clearMessagesConfirm'))) return;
+  const blankThreads = Object.fromEntries(mealSlots.map(k => [k, []]));
+  mealSlots.forEach(k => { threadData[k] = []; });
+  if(mealThreadRef){
+    setDoc(mealThreadRef, blankThreads).catch(err => console.error('Failed to clear messages in Firestore', err));
+  }
+  renderMeals();
+};
+
 function openNotifPopover(){
   renderNotifPopover();
-  document.getElementById('notifPopover').classList.add('open');
+  const popover = document.getElementById('notifPopover');
+  const bell = document.getElementById('bellIcon');
+  // Default CSS (right:0, relative to the bell) assumes the bell sits near
+  // the right edge of the header — no longer true now the header also has
+  // theme icons and the clear-messages button competing for space, so on a
+  // packed/narrow screen the bell can end up far enough left that a
+  // 260px-wide popover overflows past the left edge of the viewport with
+  // no way to scroll to it. Re-measure and clamp every time it opens
+  // instead of trusting a fixed CSS offset.
+  popover.style.left = '';
+  popover.style.right = '0';
+  popover.classList.add('open');
+  const bellRect = bell.getBoundingClientRect();
+  const popRect = popover.getBoundingClientRect();
+  const margin = 8;
+  let desiredLeft = bellRect.right - popRect.width; // default: right-aligned under the bell
+  desiredLeft = Math.max(margin, Math.min(desiredLeft, window.innerWidth - popRect.width - margin));
+  popover.style.left = `${desiredLeft - bellRect.left}px`; // relative to the bell, its offsetParent
+  popover.style.right = 'auto';
 }
 
 function closeNotifPopover(){
@@ -1110,17 +1377,13 @@ function closeNotifPopover(){
 
 function renderNotifPopover(){
   const popover = document.getElementById('notifPopover');
-  const entries = [];
-  weekDates.forEach((d, dayIdx)=>{
-    const dateIso = isoDate(d);
-    mealSlots.forEach(slotKey=>{
-      const unreadMsgs = peekDayData(dateIso)[slotKey].thread.filter(m => m.from === 'helper' && m.unread);
-      if(unreadMsgs.length === 0) return;
-      const latest = unreadMsgs[unreadMsgs.length - 1];
-      const text = latest.text_zh || latest.text_tl;
-      entries.push({ dateIso, dayIdx, slotKey, text, count: unreadMsgs.length });
-    });
-  });
+  const entries = mealSlots.map(slotKey=>{
+    const unreadMsgs = threadData[slotKey].filter(m => !isOwnMessage(m) && m.unread);
+    if(unreadMsgs.length === 0) return null;
+    const latest = unreadMsgs[unreadMsgs.length - 1];
+    const text = typeof latest.text === 'string' ? latest.text : (latest.text_zh || latest.text_tl);
+    return { slotKey, text, count: unreadMsgs.length };
+  }).filter(Boolean);
 
   if(entries.length === 0){
     popover.innerHTML = `<div class="notif-empty">${t('noNewMessages')}</div>`;
@@ -1128,8 +1391,8 @@ function renderNotifPopover(){
   }
 
   popover.innerHTML = entries.map(en => `
-    <div class="notif-item" data-notifdate="${en.dateIso}" data-notiftype="${en.slotKey}">
-      <div class="notif-meal">${t(days[en.dayIdx])} · ${slotContextLabel(en.slotKey)}${en.count > 1 ? ` (${en.count})` : ''}</div>
+    <div class="notif-item" data-notiftype="${en.slotKey}">
+      <div class="notif-meal">${slotContextLabel(en.slotKey)}${en.count > 1 ? ` (${en.count})` : ''}</div>
       <div class="notif-text">${en.text}</div>
     </div>
   `).join('');
@@ -1137,18 +1400,15 @@ function renderNotifPopover(){
   popover.querySelectorAll('[data-notiftype]').forEach(item=>{
     item.onclick = (e)=>{
       e.stopPropagation();
-      jumpToMealThread(item.dataset.notifdate, item.dataset.notiftype);
+      jumpToMealThread(item.dataset.notiftype);
     };
   });
 }
 
-function jumpToMealThread(dateIso, slotKey){
-  getOrCreateDayData(dateIso)[slotKey].thread.forEach(m=>{ if(m.from === 'helper') m.unread = false; });
+function jumpToMealThread(slotKey){
+  const newThread = threadData[slotKey].map(m => !isOwnMessage(m) ? { ...m, unread: false } : m);
+  writeThread(slotKey, newThread);
   closeNotifPopover();
-  const dayIdx = weekDates.findIndex(d => isoDate(d) === dateIso);
-  if(dayIdx !== -1) activeDay = dayIdx;
-  renderDayStrip();
-  renderMeals();
   const card = document.getElementById('mealcard-' + slotKey);
   if(card){
     card.scrollIntoView({behavior:'smooth', block:'center'});
@@ -1195,17 +1455,25 @@ function renderDishPickList(){
     return;
   }
   listEl.innerHTML = matches.map(d => `
-    <div class="dish-pick-item" data-pickid="${d.id}">
-      <div class="dish-pick-title">${d.video ? '▶ ' : ''}${d.title}</div>
-      <div class="dish-pick-note">${d.note}</div>
+    <div class="dish-pick-item">
+      <div class="dish-pick-item-main" data-pickid="${d.id}">
+        <div class="dish-pick-title">${d.video ? '▶ ' : ''}${d.title}</div>
+        <div class="dish-pick-note">${d.note || `<em>${t('noNoteYet')}</em>`}</div>
+      </div>
+      <button class="dish-edit" data-editpickid="${d.id}" title="${t('editRecipe')}">✏️</button>
     </div>
   `).join('');
   listEl.querySelectorAll('[data-pickid]').forEach(item=>{
     item.onclick = ()=>{
-      getOrCreateDayData(activeDateIso())[pickSlotKey].dishIds.push({ id: item.dataset.pickid, videoPlaying:false });
+      const newDishIds = mealData[pickSlotKey].dishIds.concat([{ id: item.dataset.pickid }]);
+      writeMealSlot(pickSlotKey, { ...mealData[pickSlotKey], dishIds: newDishIds });
       closePickDishModal();
-      renderMeals();
-      renderDayStrip();
+    };
+  });
+  listEl.querySelectorAll('[data-editpickid]').forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      openEditDishModal(btn.dataset.editpickid);
     };
   });
 }
@@ -1228,10 +1496,13 @@ document.getElementById('addNewDishLink').onclick = ()=>{
 // --- New-dish modal (adds to the library, optionally also to a meal slot) ---
 let newDishSource = 'text';
 let newDishContextSlotKey = null;
+let editingDishId = null; // set by openEditDishModal; null means "adding new"
 
 function openNewDishModal(slotKeyContext){
+  editingDishId = null;
   newDishContextSlotKey = slotKeyContext;
   newDishSource = 'text';
+  document.getElementById('newDishModalOverlay').querySelector('h3').textContent = t('newDishTitle');
   document.getElementById('newDishNameInput').value = '';
   document.getElementById('newDishTextInput').value = '';
   document.getElementById('newDishLinkInput').value = '';
@@ -1252,6 +1523,29 @@ function openNewDishModal(slotKeyContext){
 
 function closeNewDishModal(){
   document.getElementById('newDishModalOverlay').classList.remove('open');
+}
+
+// Opens the same add-dish modal, pre-filled with an existing recipe's
+// current data — used both for dishes that were stored blank/incomplete
+// (missing note or video) and for correcting a typo later. Does not add
+// the dish to any meal slot; it only edits the library entry in place.
+function openEditDishModal(dishId){
+  const dish = findRecipe(dishId);
+  if(!dish) return;
+  editingDishId = dishId;
+  newDishContextSlotKey = null;
+  newDishSource = (dish.video && dish.videoId) ? 'link' : 'text';
+
+  document.getElementById('newDishModalOverlay').querySelector('h3').textContent = t('editDishTitle');
+  document.getElementById('newDishNameInput').value = dish.title || '';
+  document.getElementById('newDishTextInput').value = dish.note || '';
+  document.getElementById('newDishLinkInput').value = dish.videoId ? `https://youtu.be/${dish.videoId}` : '';
+  document.querySelectorAll('#newSourceToggle button').forEach(b=>b.classList.toggle('active', b.dataset.source===newDishSource));
+  document.getElementById('newSourceTextWrap').style.display = newDishSource==='text' ? '' : 'none';
+  document.getElementById('newSourceLinkWrap').style.display = newDishSource==='link' ? '' : 'none';
+  document.getElementById('newDishContextLine').style.display = 'none';
+
+  document.getElementById('newDishModalOverlay').classList.add('open');
 }
 
 document.querySelectorAll('#newSourceToggle button').forEach(btn=>{
@@ -1275,41 +1569,89 @@ document.getElementById('newDishSave').onclick = ()=>{
   const name = document.getElementById('newDishNameInput').value.trim();
   if(!name){ document.getElementById('newDishNameInput').focus(); return; }
 
-  const dish = { id: 'custom_' + Date.now(), title: name, video:false, videoId:null, note:"" };
+  // Editing mutates the existing dishLibrary entry in place (same object
+  // reference every meal card already points to via findRecipe(), so any
+  // slot already showing this dish picks up the fix immediately); creating
+  // starts a fresh entry with a new id.
+  const dish = editingDishId ? findRecipe(editingDishId) : { id: 'custom_' + Date.now(), title: '', video:false, videoId:null, note:"" };
+  if(!dish){ closeNewDishModal(); return; }
+  dish.title = name;
 
   if(newDishSource === 'text'){
     dish.note = document.getElementById('newDishTextInput').value.trim();
+    dish.video = false;
+    dish.videoId = null;
   } else {
     const link = document.getElementById('newDishLinkInput').value.trim();
     const ytId = extractYouTubeId(link);
     if(ytId){
       dish.video = true;
       dish.videoId = ytId;
-      dish.note = "Linked video recipe.";
+      if(!dish.note) dish.note = "Linked video recipe.";
     } else if(link){
+      dish.video = false;
+      dish.videoId = null;
       dish.note = "Linked recipe: " + link;
+    } else {
+      dish.video = false;
+      dish.videoId = null;
     }
   }
 
-  dishLibrary.push(dish);
+  if(!editingDishId){
+    dishLibrary.push(dish);
+  }
 
   if(newDishContextSlotKey){
-    getOrCreateDayData(activeDateIso())[newDishContextSlotKey].dishIds.push({ id: dish.id, videoPlaying:false });
+    const newDishIds = mealData[newDishContextSlotKey].dishIds.concat([{ id: dish.id }]);
+    writeMealSlot(newDishContextSlotKey, { ...mealData[newDishContextSlotKey], dishIds: newDishIds });
   }
 
   closeNewDishModal();
-  renderMeals();
-  renderDayStrip();
+  renderMeals(); // in case the edited/added dish is already showing in a slot
+};
+
+// --- Name entry (first visit, or if this page is opened directly) ---
+function openNameModal(){
+  document.getElementById('nameInput').value = localStorage.getItem('wg-username') || '';
+  document.getElementById('nameModalOverlay').classList.add('open');
+}
+function closeNameModal(){
+  document.getElementById('nameModalOverlay').classList.remove('open');
+}
+document.getElementById('nameModalSkip').onclick = closeNameModal;
+document.getElementById('nameModalSave').onclick = ()=>{
+  const name = document.getElementById('nameInput').value.trim();
+  if(!name){ document.getElementById('nameInput').focus(); return; }
+  saveFamilyMemberName(name);
+  closeNameModal();
 };
 
 syncLangUI();
 renderDayStrip();
 applyTheme();
-fetch('./recipes.json')
+if(!localStorage.getItem('wg-username')){
+  openNameModal();
+}
+initFirestoreSync();
+// GitHub Pages / mobile browsers can serve a stale cached copy of this
+// JSON after a re-upload — appending a changing query string defeats that
+// cache on every load, same fix applied in the wg-groupbuy project.
+fetch('./recipes.json?v=' + Date.now())
   .then(r => r.json())
-  .then(recipes => { dishLibrary = recipes; })
+  .then(recipes => {
+    dishLibrary = Array.isArray(recipes) ? recipes.filter(d => d && typeof d.id === 'string' && d.id.trim() !== '' && typeof d.title === 'string' && d.title.trim() !== '') : [];
+  })
   .catch(err => console.error('Failed to load recipes.json', err))
   .finally(renderMeals);
+
+// Mobile Safari/Chrome can restore this page from the back-forward cache
+// with a stale "this week" or stale meal data (e.g. after navigating to
+// index.html and back) — force a real reload in that case, same fix
+// applied in the wg-groupbuy project.
+window.addEventListener('pageshow', (event) => {
+  if(event.persisted) window.location.reload();
+});
 </script>
 </body>
 </html>
