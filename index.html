@@ -51,7 +51,7 @@
   .modal{background:var(--paper); border-radius:16px; width:100%; max-width:360px; padding:20px; box-shadow:0 8px 30px rgba(0,0,0,0.2);}
   .modal h3{font-family:var(--font-head); font-size:20px; font-weight:600; margin:0 0 6px;}
   .modal p.sub{font-size:13px; color:var(--ink-soft); margin:0 0 14px; line-height:1.4;}
-  .modal input[type="text"]{width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 10px; font-family:var(--font-body); font-size:14px; background:var(--paper); color:var(--ink);}
+  .modal input[type="text"], .modal input[type="password"]{width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 10px; font-family:var(--font-body); font-size:14px; background:var(--paper); color:var(--ink);}
   .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:16px;}
   .modal-actions button{padding:8px 16px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; font-family:var(--font-body);}
   .btn-cancel{background:none; border:1px solid var(--line); color:var(--ink-soft);}
@@ -85,6 +85,20 @@
     <div class="modal-actions">
       <button class="btn-cancel" id="nameModalSkip" data-i18n="skip"></button>
       <button class="btn-save" id="nameModalSave" data-i18n="save"></button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN modal — guards claiming an existing family member's name from a new device -->
+<div class="modal-overlay" id="pinModalOverlay">
+  <div class="modal">
+    <h3 id="pinModalTitle" data-i18n="pinModalTitle"></h3>
+    <p class="sub" id="pinModalHint" data-i18n="pinModalHint"></p>
+    <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" data-i18n-ph="pinModalPh">
+    <p class="sub" id="pinModalError" style="display:none; color:var(--brick); margin-top:6px;"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="pinModalCancel" data-i18n="cancel"></button>
+      <button class="btn-save" id="pinModalContinue" data-i18n="continueBtn"></button>
     </div>
   </div>
 </div>

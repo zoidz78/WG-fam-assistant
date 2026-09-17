@@ -268,7 +268,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA6GjU443-D-M2ADE6reI7wBZYuYERTsSU",
@@ -1140,9 +1140,39 @@ function openNameModal(){
 function closeNameModal(){ document.getElementById('nameModalOverlay').classList.remove('open'); }
 document.getElementById('greetingBtn').onclick = openNameModal;
 document.getElementById('nameModalSkip').onclick = closeNameModal;
-document.getElementById('nameModalSave').onclick = ()=>{
+// Typing a name that already belongs to ANOTHER device merges this device
+// into that same identity (same familyMembers doc id) instead of creating a
+// duplicate record — but only after the PIN, so someone can't just type an
+// existing family member's name from a new device and start sending
+// messages that look like they came from that person. Typing your own
+// current name back (no change) or a genuinely new name needs no PIN.
+async function findExistingMemberByName(name){
+  if(!db) return null;
+  try{
+    const snap = await getDocs(collection(db,'familyMembers'));
+    const norm = name.trim().toLowerCase();
+    const match = snap.docs.find(d => d.id!==getUserId() && (d.data().name||'').trim().toLowerCase()===norm);
+    return match ? { id: match.id, name: match.data().name } : null;
+  }catch(err){ console.error('Failed to check for an existing family member with this name', err); return null; }
+}
+document.getElementById('nameModalSave').onclick = async ()=>{
   const name = document.getElementById('nameInput').value.trim();
   if(!name){ document.getElementById('nameInput').focus(); return; }
+  const existing = await findExistingMemberByName(name);
+  if(existing){
+    const previousId = getUserId();
+    requestPinThenConfirm({
+      onConfirm: ()=>{
+        localStorage.setItem('wg-userid', existing.id);
+        saveFamilyMemberName(name);
+        renderGreeting();
+        closeNameModal();
+      },
+      auditAction: 'claimIdentity',
+      auditDetails: { name, claimedId: existing.id, previousId }
+    });
+    return;
+  }
   saveFamilyMemberName(name);
   renderGreeting();
   closeNameModal();
