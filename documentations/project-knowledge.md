@@ -1,326 +1,246 @@
 # WG Family Assistant — Project Knowledge & Setup Guide
 
 **Read this file first in any new chat on this project.** It's the single source
-of truth for how this project works, what's built vs. designed-but-not-yet-wired,
-and what to do next.
+of truth for how this project works and what to do next. This file was rewritten
+2026-09-17 to reflect the current state after several rounds of fixes — if an
+older copy of this file is floating around (chat history, a stale download), this
+version supersedes it.
 
 ## What this project is
 
 A household hub for the family + their live-in helper. Static site, hosted on
 **GitHub Pages** (a separate GitHub account from `wg-groupbuy`, uploaded manually
-by the user — this session has no push access to it). No build step, no backend
-(yet) — plain HTML/CSS/JS files plus a couple of JSON data files.
+by the user — this session has no push access to it, so **every file this
+session edits must be re-uploaded by the user before it's live**). No build
+step — plain HTML/CSS/JS files plus JSON data files, with Firestore for
+anything live/cross-device.
 
-**Pages so far:**
-- `index.html` — Home Hub landing page. Reads `hub-cards.json` for what cards to
-  show; only one exists today (Meals), but more are coming (chores, groceries,
-  etc.) and should be added purely via that JSON file, never by hardcoding a new
-  `<a class="hub-card">` block into this HTML.
-- `meal-dashboard.html` — "What's Cooking": a weekly meal planner (breakfast/
-  lunch/dinner, each split into an Adults card and a paired Kids card) plus a
-  translated message thread per meal slot between the user and the helper.
-
-**Sibling project (`wg-groupbuy`) established the patterns this one follows** —
-generic HTML that never hardcodes a group/round's data, JSON files for static
-reference data, Firestore for anything live/cross-device, a `firestore-rules.md`
-alongside the code, and this same "read me first" doc format. When in doubt about
-a design question not covered below, check how `wg-groupbuy-project-knowledge.md`
-handled the analogous case before improvising.
+**Pages:**
+- `index.html` — Home Hub landing page. Reads `hub-cards.json` for what cards
+  to show.
+- `meal-dashboard.html` — "What's Cooking": a weekly meal planner with dynamic
+  meal cards, a recipe library, and a unified translated chat thread with the
+  helper.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `index.html` | Home Hub landing page. Fetches `hub-cards.json` and renders one real card per entry — no placeholder/ghost card anymore (removed per explicit ask). If the fetch fails or returns nothing usable, falls back to a hardcoded Meals-only card (`FALLBACK_HUB_CARDS`) so the hub is never blank — the one deliberate exception to "never hardcode a card's data," kept in sync with `hub-cards.json`'s meals entry. |
-| `hub-cards.json` | List of Home Hub cards: `{id, href, icon, text: {en, zh, tl: {tab, title, desc}}}`. Add an entry to add a new section — no HTML/JS change needed. |
-| `meal-dashboard.html` | The meal planner + message thread. Fetches `recipes.json` at boot. Computes "this week" (Monday–Sunday) from the real current date every load — see "This week is always live" below. |
-| `recipes.json` | The shared recipe library: `{id, title, note, video, videoId}` per dish. `meal-dashboard.html`'s meal slots store only a recipe `id` (see Firestore schema below) and resolve title/note/video against this file at render time — single source of truth, no duplicated copies per slot. |
-| `firestore-rules.md` | Firestore security rules for `mealPlans`/`mealThreads` (open read/write, scoped to just those two collections) — **designed, not wired yet**, see Setup below. |
-| `README.md` | User-facing docs (English) for a non-technical maintainer — how to add a recipe / a hub card, how to deploy. |
+| `index.html` | Home Hub landing page. Fetches `hub-cards.json`, falls back to `FALLBACK_HUB_CARDS` if that fails. |
+| `hub-cards.json` | List of Home Hub cards: `{id, href, icon, text: {en, zh}}`. |
+| `meal-dashboard.html` | The meal planner + recipe library + chat. See sections below. |
+| `recipes.json` | Seed data for the Firestore recipe library (see Recipe library section) — **not the live source once Firestore has data**. |
+| `firestore-rules.md` | Firestore security rules for all collections used by this app. |
+| `README.md` | User-facing docs for a non-technical maintainer — **stale, still describes the old fixed-6-slot flow; needs a rewrite before handoff.** |
 | `project-knowledge.md` | This file. |
 
-## This week is always live — never hardcode dates again
+## Current visual design — WeChat-style, no theme toggle
 
-`meal-dashboard.html` computes the current Monday–Sunday week from `new Date()`
-at load (`todayDate`/`todayIndex`/`mondayDate`/`weekDates`/`dayNums` near the top
-of the `<script>`), and derives `weekId` (Monday's ISO date, e.g. `"2026-09-08"`)
-— this is the key the future Firestore docs will be keyed by (see below). **Do
-not go back to a hardcoded `dayNums` array or `todayIndex` constant** — that was
-the mockup-era shortcut this was built to replace, per an explicit user ask.
+- **White/near-white background** (`--bg:#F7F7F7`, `--paper:#FFFFFF`) with an
+  **orange sticky top banner** (`--banner-bg:#F2711C`, white banner text/icons).
+  The `--teal` CSS variable name was kept for continuity with older code even
+  though its value is now orange, not teal — don't be confused by the name.
+- **No light/dark/auto theme toggle.** Removed entirely (2026-09-17) — the
+  ☀️/🌙/🌗 buttons, `applyTheme()`/`themePref`/`localStorage['wg-theme']`, and
+  the `prefers-color-scheme`/`data-theme` CSS blocks are all gone. Both pages
+  render one fixed light palette. Don't reintroduce this unless asked again.
+- System font stack, no Google Fonts (unreliable behind China's firewall):
+  `--font-body` (system sans) / `--font-head` (system serif, `Songti SC` etc.).
+- **User's name shows as a bold pill badge** in the header, left of the
+  language pills (`.greeting`/`#greetingBtn`), on BOTH pages — larger and more
+  prominent than the original small text version. Tapping it reopens the name
+  modal. Comes from `localStorage['wg-username']`, shared across both pages
+  since they're the same origin.
+- Language toggle is two pills, 中文/EN only (Tagalog dropped from UI chrome
+  in the WeChat redesign — see below). Default is `zh`.
 
-## Architecture: what's static JSON vs. what's (planned) Firestore
+## What's Cooking page layout (top to bottom)
 
-Two kinds of data, deliberately split the same way `wg-groupbuy` splits static
-`data-<date>.json` files from live `paidStatus`/`adjustments` Firestore
-collections:
+Sticky orange header → day strip (contextual/navigational only, doesn't gate
+which cards render — the plan is week-level, not per-day) → **meal cards**
+→ **chat card** (`.chat-card`, moved to sit AFTER the meal cards, right above
+the sticky input bar, per explicit request) → sticky bottom chat input bar.
 
-- **Static, repo-committed JSON** (`recipes.json`, `hub-cards.json`) — changes
-  rarely (someone teaches the helper a new dish, or a new Home Hub section gets
-  added), edited by hand and re-uploaded to GitHub. Fetched at boot; a missing/
-  failed fetch should degrade gracefully (see `.catch()` on both fetches),
-  not break the page.
-- **Live, cross-device state** — staple picks, which recipe is assigned to each
-  meal slot, status (planned/cooking/missing/done), and the message threads.
-  This changes constantly through the week and needs to sync across every
-  family member's device in real time — Firestore. **The code is wired up**
-  (both pages import the Firebase modular SDK and call `onSnapshot`/`setDoc`/
-  `updateDoc` against `mealPlans/{weekId}` and `mealThreads/{weekId}`), but
-  the `firebaseConfig` object in both `index.html` and `meal-dashboard.html`
-  is now a real, working config (see Setup below).
+## Meal cards (dynamic, not fixed slots)
 
-### Firestore schema (current — dynamic cards / unified chat)
+`mealPlans/{weekId}` stores `{ cards: [{id, audience:'adult'|'kids', mealType,
+staple?, dishIds:[{id}], status}] }` — a card only exists if someone added it
+via the "+ Add a meal" ghost card (expands an inline draft: pick audience →
+meal type → recipe). No fixed 6-slot grid.
 
-- `mealPlans/{weekId}` — one doc per week, `weekId` = that week's Monday ISO
-  date. Field: `cards`, an array of `{id, audience: 'adult'|'kids', mealType,
-  staple?, dishIds: [{id}], status}`. Only meals someone actually added exist
-  — there is no fixed set of slots. `staple` only applies to adult cards.
-  `dishIds` holds recipe **references** (`id` into the recipe library), not
-  embedded copies. **`videoPlaying` is deliberately NOT in this schema** —
-  it's transient per-viewer UI state, kept in a page-local
-  `videoPlayingState` map keyed `"cardId::dishIndex"`, never written to
-  Firestore (persisting it would restart every viewer's video player on any
-  unrelated change to the doc). The plan is week-level, not per-day — the
-  day strip is contextual/navigational only, same as the original design.
-- `mealThreads/{weekId}` — one doc per week. Field: `messages`, a single
-  array for the whole week (not split per meal slot). Each message:
-  `{from, text, origLang, translations:{lang:text}, unread?, senderId?,
-  senderName?, ts?}`. `senderName`/`senderId` are only set on `from:"you"`
-  messages, captured from `localStorage['wg-username']`/`['wg-userid']` at
-  send time (a later rename doesn't rewrite chat history).
-- `familyMembers/{memberId}` — one doc per device, `memberId` = a random ID
-  generated client-side (`crypto.randomUUID()`) and kept in
-  `localStorage['wg-userid']`. Fields: `{ name, updatedAt }`.
-- `recipeLibrary/main` — one shared doc (field `recipes`, same shape as
-  `recipes.json`) — the live, Firestore-backed recipe library. Seeded once
-  from `recipes.json` the first time this doc is created; every add/edit
-  from the UI writes the whole array back here. `recipes.json` remains the
-  fallback when Firebase isn't configured and the seed data for a
-  from-scratch install.
+## Chat (unified, translated, PIN-gated deletion)
 
-`firestore-rules.md` matches all four collection names — keep them in sync
-if any change.
+- **One thread for the whole week**, not per-meal-slot: `mealThreads/{weekId}`
+  = `{ messages: [...] }`.
+- **Multi-language translation**: every message gets a `translations` object
+  keyed by whichever of `en`/`zh`/`tl` it ISN'T written in, via MyMemory
+  (free, no-key translation API).
+  - **Language detection is ratio-based, not "any CJK char = Chinese."**
+    `detectLangHeuristic()` only classifies a message as Chinese if Chinese
+    characters make up >40% of it — a fix for code-mixed messages (e.g.
+    mostly-English with one Chinese phrase mixed in) that used to get
+    entirely misclassified as Chinese, which then skipped generating a
+    Chinese translation for the English majority of the text.
+  - **Chinese↔Tagalog pairs route through English** (`translateViaBestPath()`):
+    MyMemory's direct zh↔tl pair was low quality (came back barely-translated,
+    sometimes reading like English). Any pair involving English is still a
+    single direct call, since that's the case MyMemory handles well.
+  - **Known limitation, not yet solved**: a single message is still
+    translated as ONE language end-to-end. A genuinely code-mixed sentence
+    (half Chinese, half Tagalog, say) gets a big quality improvement from the
+    pivot fix above, but isn't split per-segment and translated part-by-part
+    — that would need real per-segment language detection, out of scope for
+    the current free-API setup.
+- Chat card header has a 🗑️ clear-all button — **PIN + double-confirm +
+  audit-logged**, see below.
 
-**One-time migration**: `initFirestoreSync()` in `meal-dashboard.html`
-detects the old fixed-slot schema (`cards` missing on the plan doc /
-`messages` missing on the thread doc) and migrates automatically, once —
-see `migrateOldMealPlan()`/`migrateOldThread()`. Old fields are left in the
-Firestore doc untouched (harmless, just unread by the new code) rather than
-deleted.
+## PIN + double-confirm + audit log (destructive/edit actions)
 
-### Name entry (built)
+Added 2026-09-17 as a friction check between household members (**not** a
+real security boundary — the PIN is a plain string in client-side JS, visible
+to anyone who views page source; fine for "don't fat-finger a delete between
+family members," not fine against an outside actor).
 
-Both `index.html` and `meal-dashboard.html` show a first-visit modal asking
-"What's your name?" if `localStorage['wg-username']` is unset (skippable).
-Saving writes to `localStorage` immediately and, if Firestore is configured,
-upserts `familyMembers/{wg-userid}`. The Home Hub shows a small "Hi, {name}"
-button (tap to reopen the modal and change it) in the header. The saved name
-is what shows instead of the generic "You" label on a sent chat message in
-`meal-dashboard.html` — see `senderName` above. If a user reaches the meal
-dashboard directly (bookmarked, skipping the hub) with no name set yet, the
-same modal appears there too, and sending a message before naming yourself
-prompts for it first.
+- **PIN is `1117`.**
+- **Delete a meal card, remove a single dish from a card, and clear the whole
+  chat thread** all go through the same gate: PIN prompt → a second, separate
+  `window.confirm()` "are you sure" dialog → only then does the action run.
+  Wrong PIN shows an inline error and doesn't proceed.
+- **Editing an existing recipe (✏️)** is different by explicit request: the
+  pencil button opens the edit modal **immediately, no PIN** — the PIN is
+  only asked when you hit **Save**, with **no extra confirm dialog** (the
+  Save click itself is the confirmation). Adding a brand-new dish (not
+  editing one) needs no PIN at all.
+- **Every one of the above (except opening the edit modal, and adding a new
+  dish) writes an entry to Firestore's `auditLog` collection**: `{action,
+  details, weekId, by (display name), byId (device id), ts}`. Actions logged:
+  `deleteCard`, `removeDish`, `clearMessages`, `editDish`. `auditLog` is
+  **append-only** in `firestore-rules.md` (create allowed, update/delete
+  blocked) so the trail can't be edited or erased after the fact.
+- Implementation: `requestPinThenConfirm(action)` — `action` is
+  `{confirmText?, onConfirm, auditAction?, auditDetails?}`. `confirmText`
+  omitted skips the second confirm step (used for the edit-save case).
+  `performDishSave()` holds the actual dish-mutation logic, called either
+  directly (new dish) or after a successful PIN check (editing one).
 
-### Setup — Firebase project config: DONE
+## Recipe library — Firestore-backed, real household dishes (not placeholders)
 
-The `wg-family-assistant` Firebase project's config is pasted into both
-`index.html` and `meal-dashboard.html` (identical in both, as required —
-they must point at the same Firestore project). `getAnalytics` was
-deliberately left out — this app doesn't use Firebase Analytics, only
-Firestore, so pulling in that extra SDK would be dead weight.
+**This is the current, authoritative recipe set** — the original six
+placeholder dishes (congee, Hainanese chicken rice, tomato egg, steamed fish,
+braised pork, choy sum) were deleted entirely and replaced 2026-09-17 with
+12 real household dishes, confirmed with the user before writing:
 
-**Still needed before this actually syncs (if not already done):**
-1. Confirm Firestore Database is enabled for this project in the Firebase
-   Console (Build → Firestore Database → Create database, if not already
-   done).
-2. Paste `firestore-rules.md`'s rules block into Firestore Database → Rules
-   → publish. Without this, reads/writes will be rejected by the default
-   rules.
-3. Re-upload edited files to GitHub.
-4. Confirm cross-device sync: open the dashboard on two devices/tabs, change
-   a status or send a message on one, watch it appear on the other. Also
-   confirm the Home Hub's badge count updates live, and that a name entered
-   on one device shows up correctly labeled on another.
+| id | English | Chinese |
+|---|---|---|
+| `udon_honey_wings` | Udon Noodles with Honey Fried Chicken Wings | 乌冬面配炸蜂蜜鸡翅 |
+| `udon_jinjja_wings` | Udon Noodles with Jinjja Chicken Wings | 乌冬面配jinjja鸡翅 |
+| `scrambled_eggs` | Scrambled Eggs | 炒蛋 |
+| `tomato_egg_soup_rice` | Tomato Egg Soup with White Rice | 番茄鸡蛋汤配白饭 |
+| `fried_chicken_ribs_rice` | Fried Chicken Ribs with White Rice | 炸鸡肋配白饭 |
+| `squid_ink_noodles` | Squid Ink Noodles ("Black Noodles") | 墨鱼汁面（黑面面） |
+| `korean_instant_noodles` | Korean Instant Noodles ("Korean Noodles") | 韩国泡面（韩国面面） |
+| `braised_chicken` | Braised Chicken (Red-Braised) | 红烧鸡 |
+| `braised_duck` | Braised Duck (Red-Braised) | 红烧鸭 |
+| `blanching_technique` | Blanching (Meat Prep) | 焯水 |
+| `steamed_fish` | Steamed Fish | 蒸鱼 |
+| `stir_fried_vegetables` | Stir-Fried Vegetables | 炒蔬菜 |
 
-## Cross-page conventions already established
+Notes on this list:
+- `红烧鸡/鸭` was explicitly split into two separate entries (`braised_chicken`
+  / `braised_duck`) rather than one dish covering either protein.
+- `blanching_technique` (焯水) has real instructions (given by the user): cold
+  water + raw meat, 2–3 ginger slices, one knotted scallion, a splash of
+  cooking wine, bring to a boil, skim off the blood foam, discard the water.
+  It's technically a prep technique rather than a standalone meal, but was
+  added to the recipe library as a reference card anyway per explicit
+  request, marked "(Steps to be refined later.)" It won't make much sense
+  assigned to a meal card the way an actual dish would — it's there for
+  reference.
+- Every other dish's `note` field is the placeholder text **"Recipe steps to
+  be shared via chat."** — per explicit decision, detailed instructions for
+  those dishes will be communicated through the chat feature rather than
+  written into the recipe library up front. Update `recipes.json` (and the
+  live Firestore doc — see below) as real instructions come in.
+- All 12 have `video: false, videoId: null` — no video links yet.
 
-- **Language** (`localStorage['wg-lang']`, values `en`/`zh`, default `zh`)
-  is shared across `index.html` and `meal-dashboard.html` via the same
-  `localStorage` key — picking either on one page carries to the other.
-  Any new page added to this app should read/write the same key, not
-  invent its own. **There is no theme toggle** — light/dark/auto mode was
-  removed entirely (2026-09-17); both pages render a single fixed light
-  palette. Don't reintroduce a `data-theme`/`wg-theme` mechanism unless
-  explicitly asked again.
-- **Unread-messages badge**: `index.html` subscribes directly to this week's
-  `mealThreads/{weekId}` doc (`subscribeMealsBadge()`) and counts unread
-  messages not sent by this device (`!isMine(m)`) across the unified
-  `messages` array. This means the badge is live across devices, not just
-  within one browser, and needs no page to have been opened first. If
-  Firestore isn't configured, the badge simply doesn't show.
-- **Notification badge is on the card itself** (top-left, overlapping the
-  corner like an iOS app icon), not a bell icon on the Home Hub — that was an
-  explicit design choice. The badge lives in a `.hub-card-wrap` div *without*
-  `overflow:hidden` (the inner `.hub-card` keeps `overflow:hidden` for its tab
-  corner styling) — putting the badge inside the clipped element cuts it off
-  at the card edge, learned the hard way; keep this wrapper structure for any
-  future card that needs a badge.
+### IMPORTANT — reseeding the live Firestore recipe library
 
-## Design conventions already established (don't relitigate unless asked)
+`recipes.json` is only read as a **seed** the first time the
+`recipeLibrary/main` Firestore document is created (see
+`initRecipeLibrary()` in `meal-dashboard.html`) — once that document exists
+with data in it, edits to `recipes.json` alone do **not** propagate to it.
 
-- **WeChat-style palette (2026-09-17):** white/near-white background
-  (`--bg:#F7F7F7`, `--paper:#FFFFFF`) with an **orange sticky top banner**
-  (`--banner-bg:#F2711C`, white banner text/icons). Card accents (links,
-  active toggle states, chip highlights) reuse the same orange family via
-  the `--teal` CSS variable (kept that name for continuity with earlier
-  code, even though the color itself is now orange, not teal — don't be
-  confused by the variable name if this file is touched again). This
-  replaced the earlier dark-teal-banner / parchment-paper aesthetic.
-- System font stack, no Google Fonts: `--font-body` (system sans,
-  `-apple-system`/`PingFang SC`/`Microsoft YaHei` etc.) and `--font-head`
-  (system serif, `Songti SC`/`STSong`/`SimSun`) — dropped Fraunces/Karla
-  since Google Fonts is unreliable behind China's firewall, which defeats
-  the point of a WeChat-optimized site.
-- **No theme toggle.** Removed entirely (2026-09-17) — see above.
-- Kids cards: dashed border + a dedicated plum/lavender accent (`--kids-accent`)
-  used consistently on all Kids tabs and borders, distinct from the
-  per-meal mustard/orange/brick used on the Adults row. Kids cards have **no
-  staple/rice selector** (explicit ask) and their tab always reads
-  "🧒 {Meal} · Kids" vs. the adult tab's "{Meal} · Adults" — both audiences are
-  labeled explicitly, not just the Kids one, per an explicit "make it obvious
-  which is for which" ask.
-- Chat-style message thread: helper (received) messages are left-aligned, your
-  (sent) messages are right-aligned, both capped at `max-width:85%` so the
-  alignment is visible even when a line wraps to two lines. **The original
-  message is never boxed; only its translation gets a colored box** — this
-  keeps visual focus on the translation. A message's displayed original
-  language is **fixed by who sent it and what they typed**
-  (`detectLangHeuristic()`), never by the current EN/中文 UI toggle, which
-  only affects interface copy, not conversation history.
-- i18n pattern: a plain per-page `i18n` object (`{en:{...}, zh:{...}}`) plus
-  a `t(key)` lookup that falls back to returning the key itself if a
-  language is missing that key. Tagalog (`tl`) was removed from both
-  pages' UI-level `i18n` dictionaries (2026-09-17, see below) — **but is
-  still used in the chat's language-detection/translation logic**
-  (`TAGALOG_MARKERS`, `detectLangHeuristic()`), since the helper can still
-  type Tagalog messages; only the interface chrome dropped it.
-- Any element with `data-i18n`/`data-i18n-ph`/`data-i18n-title` gets updated
-  by a `syncLangUI()` sweep on both language switch *and* page boot (needed
-  since language is `localStorage`-persisted — a value other than the
-  HTML's hardcoded default needs that sweep to run before the user ever
-  clicks anything).
+**Since the live site already had the old 6 placeholder dishes seeded into
+Firestore, replacing `recipes.json` in this repo is not enough on its own to
+remove them from the live app.** To actually apply this dish overhaul to the
+live site:
 
-## Chat label / recipe editing / caching / null-guard patterns (carried forward)
+1. Re-upload the new `recipes.json` to GitHub Pages (for future fresh
+   installs / the Firebase-not-configured fallback).
+2. In the Firebase Console → Firestore Database → data, delete the
+   `recipeLibrary/main` document (or clear its `recipes` field to `[]`).
+3. Reload the live site once — `initRecipeLibrary()` will see the library is
+   empty and reseed it from the new `recipes.json`, giving everyone the new
+   12-dish list. (Any meal cards already assigned an old dish `id` like
+   `century_congee` will show the "⚠️ Recipe not found" placeholder after
+   this, since those ids no longer exist — worth checking current meal cards
+   before doing this reset, in case anything needs re-picking.)
 
-- **Chat label is per-viewer, not per-sender.** A message you send always
-  shows "You" on your own device; the same message shows your actual name
-  on anyone else's device, via `senderId` compared against the viewing
-  device's own `getUserId()` (`isOwnMessage()`/`chatLabelFor()`). Messages
-  with no `senderId` (pre-dating this field) fall back to "You" for
-  everyone.
-- **Chat bubble alignment is per-viewer too**, via the same shared
-  `isOwnMessage(m)` helper driving the `.mine` class — not keyed off
-  `m.from` directly, which only drives the helper/you pairing and
-  translation-box styling.
-- **Stale-cache handling**: both pages send `Cache-Control: no-cache` /
-  `Pragma: no-cache` / `Expires: 0` meta tags, append a `?v=Date.now()`
-  cache-busting query string to `hub-cards.json`/`recipes.json` fetches,
-  and force a real reload on `pageshow` when `event.persisted` is true.
-- **Null/blank hardening**: incoming `mealPlans` cards are run through
-  `sanitizeCard()`; incoming `mealThreads` messages are filtered to ones
-  with actual content; `recipes.json`/`hub-cards.json`/`recipeLibrary`
-  entries missing required fields are dropped at fetch/sync time rather
-  than reaching the renderer.
-- A missing/renamed recipe `id` referenced by a card shows a visible
-  "⚠️ {id} — Recipe not found" line instead of throwing (`findRecipe`
-  guard in the dish renderer).
-- **YouTube embeds require an `http://`/`https://` origin** — `file://`
-  breaks both the iframe player (Error 153) and `fetch()` (CORS). Always
-  test via a local server (`python3 -m http.server`), not double-clicking
-  the file.
-- **Video iframes only get `autoplay=1` on the single render right after
-  the click**, via the one-shot `autoplayDish` flag (set on click, cleared
-  at the end of the very next `renderMeals()`) — don't move `autoplay=1`
-  into the dish's persisted state, or every already-playing video restarts
-  on any unrelated re-render.
-- **"Add a new dish" via link accepts either a plain YouTube URL or a
-  pasted `<iframe>` embed snippet** — `extractYouTubeId()` checks for an
-  `<iframe ... src="...">` first, else scans the raw pasted text.
+There is currently no in-app "reset recipe library to seed" button — this is
+a manual Firebase Console step. If dish list overhauls like this become
+routine, a future session could build one (PIN-gated, presumably).
 
-## Major redesign — WeChat-optimized rebuild (2026-09-17)
+## Firestore collections (all in `firestore-rules.md`, all open read/write
+except `auditLog` which is append-only)
 
-Both `index.html` and `meal-dashboard.html` were rebuilt for WeChat's in-app
-browser and a Mandarin-first household. **This was a breaking schema
-change.**
+- `mealPlans/{weekId}` — `{ cards: [...] }`, week-level (Monday's ISO date).
+- `mealThreads/{weekId}` — `{ messages: [...] }`, unified per week.
+- `familyMembers/{memberId}` — `{ name, updatedAt }`, one per device
+  (`localStorage['wg-userid']`).
+- `recipeLibrary/main` — `{ recipes: [...] }`, one shared doc, seeded from
+  `recipes.json` (see above).
+- `auditLog/{entryId}` — `{ action, details, weekId, by, byId, ts }`,
+  append-only, logs destructive/edit actions (see PIN section above).
 
-### What changed and why
-- **Tailwind CDN** (`https://cdn.tailwindcss.com`) added to both pages,
-  alongside the existing CSS-custom-property color system. Static shell
-  markup (header, modals) leans on Tailwind utility classes; the
-  dynamically-rendered meal cards, dishes, and chat bubbles keep their
-  original hand-written CSS classes (`.card`, `.dish`, `.msg`, etc.).
-- **Google Fonts removed entirely.**
-- **Tagalog removed from the UI language toggle** — see Design conventions.
-- **Sticky top banner** on both pages, holds the page title and language
-  pills (theme toggle since removed — see below).
-- **Meal cards are no longer 6 fixed always-shown slots** — dynamic `cards`
-  array, "+ Add a meal" ghost card expands an inline draft card (pick
-  audience → meal type → recipe) instead of a modal.
-- **Chat is now ONE unified thread for the whole week**, not per-slot
-  mini-threads — `mealThreads/{weekId}` is `{ messages: [...] }`.
-- **Migration on first load**: `migrateOldMealPlan()`/`migrateOldThread()`
-  detect and convert the old schema automatically, once.
+## Design conventions to keep
 
-### Not done in this pass (still true)
-- `README.md` was not rewritten for the new flow — it still describes the
-  old fixed-6-slot / per-meal-thread behavior. Needs a pass before handing
-  this off to a non-technical user.
-- No live-browser testing has been performed in any session so far — only
-  `node --check` (JS syntax), HTML tag-balance checks, and JSON validation.
-  Test via a local server before trusting this in production.
-- The Tailwind CDN script is itself an external request — if WeChat's
-  in-app browser in mainland China ever has trouble reaching it, the
-  fallback is self-hosting Tailwind's compiled CSS instead of the Play CDN
-  script.
+- Kids cards: dashed border + `--kids-accent` (plum/lavender), no staple/rice
+  selector, tab always reads "🧒 {Meal} · Kids" vs. "{Meal} · Adults" — both
+  audiences labeled explicitly.
+- Chat: helper messages left-aligned, your own right-aligned (per-viewer via
+  `isOwnMessage()`, not a fixed `m.from==='you'` check — a message you send
+  shows "You" only on your own device, your actual name everywhere else).
+  Only the translation gets a colored box, never the original message.
+- i18n: per-page `i18n = {en:{...}, zh:{...}}` + `t(key)` falling back to the
+  key itself if missing — Tagalog stays OUT of these UI dictionaries (dropped
+  in the WeChat redesign) but stays IN the chat-level translation/detection
+  logic (`TAGALOG_MARKERS`, `detectLangHeuristic()`), since the helper can
+  still type Tagalog.
+- Recipe titles are bilingual (`title:{en,zh}`), switching display with the
+  site's language toggle; a plain string `title` (legacy data) is treated as
+  the same name in both languages. Notes/instructions stay single-language
+  (English) — detail beyond that goes through chat.
+- Stale-cache handling: `no-cache` headers, `?v=Date.now()` cache-busting on
+  JSON fetches, forced reload on `pageshow` with `event.persisted`.
+- YouTube embeds need `http://`/`https://` (not `file://`) to work at all —
+  test via `python3 -m http.server`, not double-clicking the file.
 
-## Follow-up fixes to the WeChat redesign (2026-09-17)
+## Files delivered to the user, not just saved to the Project
 
-1. **Chat moved back into the Meals view, as a card — no separate tab.**
-   The tab switcher from the first redesign pass is gone. Chat is a
-   bordered card (`.chat-card`) between the day strip and the meal cards,
-   with its own scrollable message list and a 🗑️ clear button in its
-   header. The sticky bottom input bar is always visible now. Unread
-   messages are marked read automatically whenever `renderChat()` runs.
-2. **Chat now translates into every language it isn't already written
-   in**, not just English — a message's `translations` field is an object
-   keyed by the languages it needs (`{en, zh, tl} minus origLang`), fetched
-   in parallel via `Promise.all`.
-3. **Recipes are now Firestore-backed, not session-only** — root cause of
-   "the YouTube link doesn't save." A `recipeLibrary/main` Firestore
-   document is now the source of truth, seeded from `recipes.json`, kept
-   in sync live via `onSnapshot`; every add/edit calls
-   `writeRecipeLibrary()`.
-4. **Recipe titles are now bilingual** (`title: {en, zh}`), and the
-   displayed name follows the site's language toggle. The add/edit-dish
-   modal has separate Chinese/English name fields; leaving one blank
-   copies the other into it. Recipe notes/instructions stay
-   single-language (extra detail for the helper goes through chat
-   instead). A plain string `title` (legacy data) is still handled.
+Every file this session edits is sent to the user as a real downloadable
+file (`SendUserFile`) in addition to being saved into the claude.ai Project —
+`project_write` alone does not hand the user a file, which was a real gap
+flagged directly by the user earlier in this project's history. Keep doing
+both on every edit.
 
-## Theme removal + WeChat color pass (2026-09-17)
+## Not done yet
 
-- **Light/Dark/Auto theme toggle removed entirely** from both pages — the
-  ☀️/🌙/🌗 `.icon-btn[data-theme-choice]` buttons, the `applyTheme()`/
-  `themePref`/`localStorage['wg-theme']` JS, and the
-  `@media (prefers-color-scheme: dark)` / `:root[data-theme="dark"]` CSS
-  blocks are all gone. Both pages now render a single fixed light palette.
-  Don't reintroduce this unless explicitly asked again.
-- **Palette switched to a WeChat-typical look**: white/near-white
-  background (`--bg:#F7F7F7`, `--paper:#FFFFFF`) with an **orange sticky
-  top banner** (`--banner-bg:#F2711C`, white banner text). See Design
-  conventions above for the full color rationale, including the note that
-  the `--teal` CSS variable name was kept for continuity even though its
-  value is now orange.
-- Files are now also sent to the user as real downloadable attachments
-  (`SendUserFile`) alongside every `project_write`, not just saved into
-  the claude.ai Project — a gap flagged directly by the user, since
-  `project_write` alone never produced a file they could download.
+- `README.md` rewrite for the current flow (dynamic cards, unified chat,
+  Firestore recipe library, PIN/audit system) — still describes the old
+  fixed-6-slot / per-meal-thread behavior.
+- No live-browser testing has been performed by this session at any point —
+  only `node --check` (JS syntax), HTML tag-balance checks, and JSON
+  validation. All real-world testing has been done by the user, iteratively,
+  via screenshots.
+- The Firestore recipe-library reseed (see above) is a manual step the user
+  still needs to do in the Firebase Console — not yet confirmed done.
