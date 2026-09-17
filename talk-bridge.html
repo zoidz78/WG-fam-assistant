@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Talk Bridge</title>
+<style>
+  :root{
+    --bg: #F7F7F7; --paper: #FFFFFF; --ink: #1F1F1F; --ink-soft: #8A8A8A;
+    --teal: #E8720C; --teal-soft: #FDEBDA; --mustard: #E3A23D; --mustard-soft: #FBF0DC;
+    --brick: #D9480F; --line: #EAEAEA; --dot: rgba(0,0,0,0.035);
+    --banner-bg: #F2711C; --banner-ink: #FFFFFF;
+    --font-body: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+    --font-head: "Songti SC", "STSong", "SimSun", Georgia, serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html, body{height:100%;}
+  body{
+    margin:0; background:var(--bg); background-image:radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+    background-size:22px 22px; color:var(--ink); font-family:var(--font-body);
+    display:flex; flex-direction:column; height:100dvh; overflow:hidden;
+  }
+  .app-header{flex:0 0 auto; position:relative; z-index:20; background:var(--banner-bg); color:var(--banner-ink); box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+  .head-wrap{max-width:920px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .back-link{font-size:12px; font-weight:700; color:var(--banner-ink); opacity:0.85; text-decoration:none; display:inline-flex; align-items:center; gap:4px;}
+  .back-link:hover{opacity:1;}
+  .app-header h1{font-family:var(--font-head); font-weight:600; font-size:20px; margin:2px 0 0; color:var(--banner-ink); display:flex; align-items:center; gap:6px;}
+  .app-header .sub{font-size:11.5px; color:var(--banner-ink); opacity:0.8; margin-top:1px;}
+  .lang-pill{font-size:12px; font-weight:700; padding:5px 10px; border-radius:999px; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.12); color:var(--banner-ink); cursor:pointer;}
+  .lang-pill.active{background:var(--banner-ink); color:var(--banner-bg);}
+  .greeting{font-size:16px; font-weight:800; color:var(--banner-bg); cursor:pointer; border:none; background:var(--banner-ink); font-family:var(--font-body); padding:7px 14px; border-radius:999px; margin-right:8px; box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+  .greeting:hover{filter:brightness(0.97);}
+  .icon-btn{width:34px; height:34px; border-radius:9px; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.12); color:var(--banner-ink); display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer;}
+  .icon-btn:hover{background:rgba(255,255,255,0.22);}
+
+  /* Chat area — the whole point of this page, so fonts run bigger than the
+     compact card version in meal-dashboard.html (this is meant to be easy
+     to read for anyone, including a less tech-savvy family member). */
+  .chat-scroll{flex:1 1 auto; overflow-y:auto; padding:16px 16px 10px;}
+  .chat-inner{max-width:720px; margin:0 auto;}
+  .msg{margin-bottom:16px; display:flex; flex-direction:column; align-items:flex-start;}
+  .msg.mine{align-items:flex-end;}
+  .msg .who{font-size:13px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;}
+  .msg .bubble{display:inline-block; max-width:88%; font-size:19px; line-height:1.5; padding:10px 14px; border-radius:14px; background:var(--paper); border:1px solid var(--line); box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+  .msg.mine .bubble{background:var(--teal-soft); border-color:#F4C89B;}
+  .msg .translated{display:block; width:fit-content; max-width:88%; margin-top:7px; padding:9px 13px; border-radius:12px; font-size:16.5px; line-height:1.45; color:var(--ink); background:var(--mustard-soft); border:1px solid #EED9AE;}
+  .msg .translated::before{content:'→ '; color:var(--ink-soft);}
+  .chat-empty{text-align:center; color:var(--ink-soft); font-size:15px; padding:60px 20px; line-height:1.6;}
+  .chat-empty .big{font-size:40px; display:block; margin-bottom:10px;}
+
+  .chat-bar{flex:0 0 auto; background:var(--paper); border-top:1px solid var(--line); box-shadow:0 -2px 10px rgba(0,0,0,0.08); padding:12px 16px calc(12px + env(safe-area-inset-bottom));}
+  .chat-bar-inner{max-width:720px; margin:0 auto; display:flex; gap:10px;}
+  .chat-bar input{flex:1; min-width:0; border:1px solid var(--line); border-radius:12px; padding:13px 14px; font-size:17px; background:var(--bg); color:var(--ink); font-family:var(--font-body);}
+  .chat-bar button{flex:0 0 auto; width:48px; height:48px; border:none; background:var(--teal); color:#fff; font-size:19px; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .chat-bar button:disabled{opacity:0.5;}
+
+  .modal-overlay{display:none; position:fixed; inset:0; background:rgba(42,36,32,0.45); align-items:center; justify-content:center; padding:16px; z-index:50;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--paper); border-radius:16px; width:100%; max-width:360px; padding:20px; box-shadow:0 8px 30px rgba(0,0,0,0.2);}
+  .modal h3{font-family:var(--font-head); font-size:20px; font-weight:600; margin:0 0 6px;}
+  .modal p.sub{font-size:13px; color:var(--ink-soft); margin:0 0 14px; line-height:1.4;}
+  .modal input[type="text"], .modal input[type="password"]{width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 10px; font-family:var(--font-body); font-size:14px; background:var(--paper); color:var(--ink);}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:16px;}
+  .modal-actions button{padding:8px 16px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; font-family:var(--font-body);}
+  .btn-cancel{background:none; border:1px solid var(--line); color:var(--ink-soft);}
+  .btn-save{background:var(--teal); border:1px solid var(--teal); color:var(--paper);}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="head-wrap">
+    <div>
+      <a class="back-link" href="index.html">← <span data-i18n="backToHub">Home Hub</span></a>
+      <h1><span>🌉</span><span data-i18n="title">语桥</span></h1>
+      <div class="sub" data-i18n="subtitle"></div>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <button class="greeting" id="greetingBtn" style="display:none;"></button>
+      <button class="lang-pill" data-lang="zh">中文</button>
+      <button class="lang-pill" data-lang="en">EN</button>
+      <button class="icon-btn" id="clearChatBtn" data-i18n-title="clearChatTitle">🗑️</button>
+    </div>
+  </div>
+</div>
+
+<div class="chat-scroll" id="chatScroll">
+  <div class="chat-inner" id="chatMessages"></div>
+</div>
+
+<div class="chat-bar">
+  <div class="chat-bar-inner">
+    <input type="text" id="chatInput" data-i18n-ph="inputPlaceholder">
+    <button id="chatSendBtn" data-i18n-title="send">➤</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="nameModalOverlay">
+  <div class="modal">
+    <h3 data-i18n="nameModalTitle"></h3>
+    <p class="sub" data-i18n="nameModalSub"></p>
+    <input type="text" id="nameInput" data-i18n-ph="nameModalPh">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="nameModalSkip" data-i18n="skip"></button>
+      <button class="btn-save" id="nameModalSave" data-i18n="save"></button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN modal — guards clearing the chat and claiming an existing family
+     member's name from a new device (same pattern as index.html /
+     meal-dashboard.html / admin.html). -->
+<div class="modal-overlay" id="pinModalOverlay">
+  <div class="modal">
+    <h3 id="pinModalTitle" data-i18n="pinModalTitle"></h3>
+    <p class="sub" id="pinModalHint" data-i18n="pinModalHint"></p>
+    <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" data-i18n-ph="pinModalPh">
+    <p class="sub" id="pinModalError" style="display:none; color:var(--brick); margin-top:6px;"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="pinModalCancel" data-i18n="cancel"></button>
+      <button class="btn-save" id="pinModalContinue" data-i18n="continueBtn"></button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA6GjU443-D-M2ADE6reI7wBZYuYERTsSU",
+  authDomain: "wg-family-assistant.firebaseapp.com",
+  projectId: "wg-family-assistant",
+  storageBucket: "wg-family-assistant.firebasestorage.app",
+  messagingSenderId: "220482684013",
+  appId: "1:220482684013:web:27fca12be8fe9bfbd52b64"
+};
+let db = null;
+try { db = getFirestore(initializeApp(firebaseConfig)); }
+catch(e){ console.warn('Firebase not configured — local-only this session.', e); }
+
+// --- Translation (MyMemory, free/no-key) — identical logic to
+// meal-dashboard.html's chat, kept in sync deliberately: same language
+// detection heuristic, same zh<->tl-via-English pivot for translation
+// quality. See that file's comments for the full reasoning. ---
+const MYMEMORY_LANG_CODE = { en:'en', zh:'zh-CN', tl:'tl' };
+const TAGALOG_MARKERS = new Set(['ang','ng','mga','sa','ako','ikaw','siya','tayo','kami','sila','kayo','hindi','wala','opo','po','naman','lang','din','rin','kasi','ba','yung','yun','ito','iyon','pag','pala','talaga','salamat','kumusta','paano','ganito','ganyan','marunong','gusto','pwede','oo','na','may','meron','kung','para','dahil','saan','ano','sino','bakit']);
+function detectLangHeuristic(text){
+  const cjkCount = (text.match(/[一-鿿]/g) || []).length;
+  const meaningfulCount = text.replace(/\s/g,'').length || 1;
+  if(cjkCount / meaningfulCount > 0.4) return 'zh';
+  const words = text.toLowerCase().replace(/[^\p{L}\s]/gu,'').split(/\s+/).filter(Boolean);
+  return words.some(w=>TAGALOG_MARKERS.has(w)) ? 'tl' : 'en';
+}
+async function translateText(text, targetAppLang, sourceAppLang){
+  try{
+    const langpair = `${MYMEMORY_LANG_CODE[sourceAppLang]}|${MYMEMORY_LANG_CODE[targetAppLang]}`;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('MyMemory responded '+res.status);
+    const data = await res.json();
+    if(data.responseStatus!==200 || !data.responseData || !data.responseData.translatedText) throw new Error('no usable translation');
+    return data.responseData.translatedText;
+  }catch(err){ console.error('Translation failed', err); return null; }
+}
+async function translateViaBestPath(text, targetAppLang, sourceAppLang){
+  if(targetAppLang===sourceAppLang) return text;
+  if(sourceAppLang==='en' || targetAppLang==='en'){
+    return translateText(text, targetAppLang, sourceAppLang);
+  }
+  const viaEnglish = await translateText(text, 'en', sourceAppLang);
+  if(!viaEnglish) return null;
+  return translateText(viaEnglish, targetAppLang, 'en');
+}
+const ALL_LANGS = ['en','zh','tl'];
+
+function getUserId(){
+  let id = localStorage.getItem('wg-userid');
+  if(!id){ id = (crypto.randomUUID ? crypto.randomUUID() : 'user_'+Date.now()+'_'+Math.random().toString(36).slice(2)); localStorage.setItem('wg-userid', id); }
+  return id;
+}
+function isOwnMessage(m){
+  if(m.from!=='you') return false;
+  if(!m.senderId) return true;
+  return m.senderId===getUserId();
+}
+function chatLabelFor(m){
+  if(m.from==='helper') return t('helper');
+  return isOwnMessage(m) ? t('you') : (m.senderName || t('you'));
+}
+function saveFamilyMemberName(name){
+  localStorage.setItem('wg-username', name);
+  if(!db) return;
+  setDoc(doc(db,'familyMembers', getUserId()), { name, updatedAt: Date.now() }, { merge:true }).catch(err=>console.error('Failed to save name to Firestore', err));
+}
+async function findExistingMemberByName(name){
+  if(!db) return null;
+  try{
+    const snap = await getDocs(collection(db,'familyMembers'));
+    const norm = name.trim().toLowerCase();
+    const match = snap.docs.find(d => d.id!==getUserId() && (d.data().name||'').trim().toLowerCase()===norm);
+    return match ? { id: match.id, name: match.data().name } : null;
+  }catch(err){ console.error('Failed to check for an existing family member with this name', err); return null; }
+}
+
+// --- Audit log (same collection/shape used elsewhere in this app) ---
+function logAuditEvent(action, details){
+  if(!db) return;
+  const id = 'audit_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const entry = {
+    action, details: details || {}, weekId: 'talkbridge',
+    by: localStorage.getItem('wg-username') || t('you'),
+    byId: getUserId(), ts: Date.now()
+  };
+  setDoc(doc(db,'auditLog', id), entry).catch(err=>console.error('Failed to write audit log entry', err));
+}
+
+// --- PIN + double-confirm gate (matches the rest of the app) ---
+const DELETE_PIN = '1117';
+let pendingGuardedAction = null;
+function requestPinThenConfirm(action){
+  pendingGuardedAction = action;
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinModalError').style.display = 'none';
+  document.getElementById('pinModalOverlay').classList.add('open');
+  document.getElementById('pinInput').focus();
+}
+function closePinModal(){ document.getElementById('pinModalOverlay').classList.remove('open'); pendingGuardedAction = null; }
+document.getElementById('pinModalCancel').onclick = closePinModal;
+document.getElementById('pinModalOverlay').onclick = (e)=>{ if(e.target.id==='pinModalOverlay') closePinModal(); };
+document.getElementById('pinInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ e.preventDefault(); document.getElementById('pinModalContinue').click(); }
+});
+document.getElementById('pinModalContinue').onclick = ()=>{
+  const pin = document.getElementById('pinInput').value.trim();
+  if(pin !== DELETE_PIN){
+    const errEl = document.getElementById('pinModalError');
+    errEl.textContent = t('pinModalError');
+    errEl.style.display = '';
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').focus();
+    return;
+  }
+  const action = pendingGuardedAction;
+  closePinModal();
+  if(!action) return;
+  if(action.confirmText && !window.confirm(action.confirmText)) return;
+  action.onConfirm();
+  if(action.auditAction) logAuditEvent(action.auditAction, action.auditDetails);
+};
+
+const i18n = {
+  en: {
+    backToHub:"Home Hub", title:"Talk Bridge", subtitle:"Live translated chat — Mandarin ⇄ English ⇄ Tagalog",
+    you:"You", helper:"Helper",
+    nameModalTitle:"What's your name?", nameModalSub:"So messages show who sent them, instead of just \"You\".",
+    nameModalPh:"e.g. Mother-in-law, Effendy...", skip:"Skip for now", save:"Save", greetingHi:"Hi, ",
+    pinModalTitle:"PIN required", pinModalHint:"Enter the PIN to continue with this action.",
+    pinModalPh:"Enter PIN", pinModalError:"Incorrect PIN", continueBtn:"Continue", cancel:"Cancel",
+    clearChatTitle:"Clear chat", clearChatConfirm:"Clear this whole conversation? This can't be undone.",
+    inputPlaceholder:"Type in Mandarin, English or Tagalog...", send:"Send",
+    translationUnavailable:"(translation unavailable)",
+    emptyTitle:"Say hello 👋", emptyHint:"Type a message below — it'll show up translated into the other two languages automatically."
+  },
+  zh: {
+    backToHub:"家庭中心", title:"语桥", subtitle:"实时翻译聊天——中文⇄英文⇄他加禄语",
+    you:"你", helper:"帮佣",
+    nameModalTitle:"你的名字是？", nameModalSub:"这样消息里会显示是谁发的，而不只是「你」。",
+    nameModalPh:"例如：岳母、Effendy...", skip:"暂时跳过", save:"保存", greetingHi:"你好，",
+    pinModalTitle:"需要密码", pinModalHint:"请输入密码以继续此操作。",
+    pinModalPh:"输入密码", pinModalError:"密码错误", continueBtn:"继续", cancel:"取消",
+    clearChatTitle:"清空聊天记录", clearChatConfirm:"清空整个对话？此操作无法撤销。",
+    inputPlaceholder:"用中文、英文或他加禄语输入...", send:"发送",
+    translationUnavailable:"（暂无翻译）",
+    emptyTitle:"打个招呼吧 👋", emptyHint:"在下面输入一条消息——会自动翻译成另外两种语言。"
+  }
+};
+let currentLang = localStorage.getItem('wg-lang') || 'zh';
+function t(key){ return i18n[currentLang][key] || key; }
+function syncLangUI(){
+  document.querySelectorAll('.lang-pill').forEach(b=>b.classList.toggle('active', b.dataset.lang===currentLang));
+  document.querySelectorAll('[data-i18n]').forEach(elm=>{ elm.textContent = t(elm.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(elm=>{ elm.placeholder = t(elm.dataset.i18nPh); });
+  document.querySelectorAll('[data-i18n-title]').forEach(elm=>{ elm.title = t(elm.dataset.i18nTitle); });
+  document.documentElement.lang = currentLang==='zh' ? 'zh-CN' : 'en';
+}
+document.querySelectorAll('.lang-pill').forEach(btn=>{
+  btn.onclick = ()=>{ currentLang = btn.dataset.lang; localStorage.setItem('wg-lang', currentLang); syncLangUI(); renderGreeting(); renderChat(); };
+});
+
+function renderGreeting(){
+  const btn = document.getElementById('greetingBtn');
+  const name = localStorage.getItem('wg-username');
+  if(name){ btn.style.display=''; btn.innerHTML = `${t('greetingHi')}<b>${name}</b>`; }
+  else btn.style.display = 'none';
+}
+function openNameModal(){
+  document.getElementById('nameInput').value = localStorage.getItem('wg-username') || '';
+  document.getElementById('nameModalOverlay').classList.add('open');
+}
+function closeNameModal(){ document.getElementById('nameModalOverlay').classList.remove('open'); }
+document.getElementById('greetingBtn').onclick = openNameModal;
+document.getElementById('nameModalSkip').onclick = closeNameModal;
+document.getElementById('nameModalSave').onclick = async ()=>{
+  const name = document.getElementById('nameInput').value.trim();
+  if(!name){ document.getElementById('nameInput').focus(); return; }
+  const existing = await findExistingMemberByName(name);
+  if(existing){
+    const previousId = getUserId();
+    requestPinThenConfirm({
+      onConfirm: ()=>{
+        localStorage.setItem('wg-userid', existing.id);
+        saveFamilyMemberName(name);
+        renderGreeting();
+        renderChat();
+        closeNameModal();
+      },
+      auditAction: 'claimIdentity',
+      auditDetails: { name, claimedId: existing.id, previousId }
+    });
+    return;
+  }
+  saveFamilyMemberName(name);
+  renderGreeting();
+  renderChat();
+  closeNameModal();
+};
+
+// --- Firestore-backed thread. Not week-scoped like the meal chat — this is
+// a general-purpose, ongoing conversation (talkBridge/main), since its job
+// is day-to-day translated communication, not tied to a week's meal plan. ---
+const threadRef = db ? doc(db,'talkBridge','main') : null;
+let threadData = { messages: [] };
+
+async function initSync(){
+  if(!db) return;
+  try{
+    const snap = await getDoc(threadRef);
+    if(!snap.exists()) await setDoc(threadRef, { messages: [] });
+  }catch(err){ console.error('Failed to initialize talkBridge/main', err); return; }
+  onSnapshot(threadRef, snap=>{
+    if(!snap.exists()) return;
+    const raw = Array.isArray(snap.data().messages) ? snap.data().messages : [];
+    threadData.messages = raw.filter(m=>m && (m.from==='you'||m.from==='helper') && m.text);
+    renderChat();
+  }, err=>console.error('talkBridge subscription failed', err));
+}
+function writeThread(newMessages){
+  threadData.messages = newMessages;
+  if(threadRef) setDoc(threadRef, { messages:newMessages }).catch(err=>console.error('Failed to save chat', err));
+  renderChat();
+}
+function unreadCount(){ return threadData.messages.filter(m=>!isOwnMessage(m) && m.unread).length; }
+function markThreadRead(){
+  if(unreadCount()===0) return;
+  writeThread(threadData.messages.map(m=> !isOwnMessage(m) ? {...m, unread:false} : m));
+}
+
+function renderMsgHtml(m){
+  const mine = isOwnMessage(m);
+  const whoLabel = chatLabelFor(m);
+  const primary = m.text;
+  const translationLines = [];
+  if(m.translations && typeof m.translations==='object'){
+    ALL_LANGS.forEach(lang=>{
+      if(lang===m.origLang) return;
+      translationLines.push(m.translations[lang] || t('translationUnavailable'));
+    });
+  }
+  return `<div class="msg ${m.from}${mine?' mine':''}">
+    <div class="who">${whoLabel}</div>
+    <div class="bubble">${primary}</div>
+    ${translationLines.map(tx=>`<div class="translated">${tx}</div>`).join('')}
+  </div>`;
+}
+function renderChat(){
+  const el = document.getElementById('chatMessages');
+  el.innerHTML = threadData.messages.length
+    ? threadData.messages.map(renderMsgHtml).join('')
+    : `<div class="chat-empty"><span class="big">🌉</span><b>${t('emptyTitle')}</b><br>${t('emptyHint')}</div>`;
+  const scroller = document.getElementById('chatScroll');
+  scroller.scrollTop = scroller.scrollHeight;
+  markThreadRead();
+}
+
+async function sendMessage(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  if(!localStorage.getItem('wg-username')){ openNameModal(); return; }
+  input.value = '';
+  const sendBtn = document.getElementById('chatSendBtn');
+  sendBtn.disabled = true;
+  const origLang = detectLangHeuristic(text);
+  const targetLangs = ALL_LANGS.filter(l=>l!==origLang);
+  const results = await Promise.all(targetLangs.map(lang=>translateViaBestPath(text, lang, origLang)));
+  const translations = {};
+  targetLangs.forEach((lang,i)=>{ translations[lang] = results[i]; });
+  const newMessages = threadData.messages.concat([{ from:"you", text, origLang, translations, unread:true, senderId:getUserId(), senderName: localStorage.getItem('wg-username'), ts: Date.now() }]);
+  writeThread(newMessages);
+  sendBtn.disabled = false;
+}
+document.getElementById('chatSendBtn').onclick = sendMessage;
+document.getElementById('chatInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+});
+document.getElementById('clearChatBtn').onclick = ()=>{
+  requestPinThenConfirm({
+    confirmText: t('clearChatConfirm'),
+    onConfirm: ()=> writeThread([]),
+    auditAction: 'clearTalkBridge',
+    auditDetails: {}
+  });
+};
+
+// --- Boot ---
+syncLangUI();
+renderGreeting();
+renderChat();
+initSync();
+if(!localStorage.getItem('wg-username')) openNameModal();
+
+window.addEventListener('pageshow', (event)=>{ if(event.persisted) window.location.reload(); });
+</script>
+</body>
+</html>

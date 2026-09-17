@@ -226,15 +226,20 @@ function currentWeekId(){
   return `${monday.getFullYear()}-${String(monday.getMonth()+1).padStart(2,'0')}-${String(monday.getDate()).padStart(2,'0')}`;
 }
 
-function paintMealsBadge(count){
-  const mealsLink = document.getElementById('hubcard-meals');
-  if(!mealsLink) return;
-  const wrap = mealsLink.parentElement;
+function paintBadge(cardId, count){
+  const link = document.getElementById('hubcard-'+cardId);
+  if(!link) return;
+  const wrap = link.parentElement;
   let badge = wrap.querySelector('.notif-badge');
   if(count>0){
     if(!badge){ badge = document.createElement('span'); badge.className='notif-badge'; wrap.appendChild(badge); }
     badge.textContent = count;
   } else if(badge){ badge.remove(); }
+}
+function isMine(m){
+  if(m.from!=='you') return false;
+  if(!m.senderId) return true;
+  return m.senderId===getUserId();
 }
 
 // Reads the unified mealThreads/{weekId}.messages array (see
@@ -242,17 +247,24 @@ function paintMealsBadge(count){
 // week, not split per meal slot).
 function subscribeMealsBadge(){
   if(!db) return;
-  function isMine(m){
-    if(m.from!=='you') return false;
-    if(!m.senderId) return true;
-    return m.senderId===getUserId();
-  }
   onSnapshot(doc(db,'mealThreads', currentWeekId()), snap=>{
-    if(!snap.exists()){ paintMealsBadge(0); return; }
+    if(!snap.exists()){ paintBadge('meals', 0); return; }
     const data = snap.data();
     const messages = Array.isArray(data.messages) ? data.messages : [];
-    paintMealsBadge(messages.filter(m=>m.unread && !isMine(m)).length);
+    paintBadge('meals', messages.filter(m=>m.unread && !isMine(m)).length);
   }, err=>console.error('Failed to subscribe to mealThreads badge', err));
+}
+
+// Reads talkBridge/main.messages — talk-bridge.html's ongoing, not
+// week-scoped, translated chat between the household and the helper.
+function subscribeTalkBridgeBadge(){
+  if(!db) return;
+  onSnapshot(doc(db,'talkBridge','main'), snap=>{
+    if(!snap.exists()){ paintBadge('talkbridge', 0); return; }
+    const data = snap.data();
+    const messages = Array.isArray(data.messages) ? data.messages : [];
+    paintBadge('talkbridge', messages.filter(m=>m.unread && !isMine(m)).length);
+  }, err=>console.error('Failed to subscribe to talkBridge badge', err));
 }
 
 function renderGreeting(){
@@ -316,6 +328,7 @@ document.getElementById('pinModalContinue').onclick = ()=>{
 syncLangUI();
 renderGreeting();
 subscribeMealsBadge();
+subscribeTalkBridgeBadge();
 if(!localStorage.getItem('wg-username')) openNameModal();
 
 fetch('./hub-cards.json?v='+Date.now())

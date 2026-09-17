@@ -9,6 +9,15 @@
     }
   },
   {
+    "id": "talkbridge",
+    "href": "talk-bridge.html",
+    "icon": "🌉",
+    "text": {
+      "en": { "tab": "Talk Bridge", "title": "Talk Bridge", "desc": "Live translated chat for the whole household and the helper — big, easy-to-read text in Mandarin, English and Tagalog side by side." },
+      "zh": { "tab": "语桥", "title": "语桥", "desc": "全家和帮佣的实时翻译聊天——大字体，中文、英文、他加禄语同步显示，方便阅读。" }
+    }
+  },
+  {
     "id": "admin",
     "href": "admin.html",
     "icon": "🛠️",
