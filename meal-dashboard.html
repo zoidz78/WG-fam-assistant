@@ -372,17 +372,14 @@ document.getElementById('pinModalContinue').onclick = ()=>{
   const action = pendingGuardedAction;
   closePinModal();
   if(!action) return;
-  if(!window.confirm(action.confirmText)) return;
+  // confirmText is optional: editing a recipe only needs the PIN itself
+  // (checked above) with no extra "are you sure" step, since it's the Save
+  // click doing double duty as the confirmation. Deleting a card, removing
+  // a dish, and clearing chat all pass confirmText for a real double-prompt.
+  if(action.confirmText && !window.confirm(action.confirmText)) return;
   action.onConfirm();
   if(action.auditAction) logAuditEvent(action.auditAction, action.auditDetails);
 };
-
-// Editing a recipe (the ✏️ button) goes through the same PIN + confirm gate
-// as deleting a card or clearing chat, but the audit entry is written once
-// the edit is actually SAVED (not just when the editor is opened), so it
-// can carry what the dish ended up being — see newDishSave below. Canceling
-// out of the modal after entering the PIN logs nothing.
-let editAuditPending = false;
 
 const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const todayDate = new Date(); todayDate.setHours(0,0,0,0);
@@ -425,7 +422,7 @@ const i18n = {
     pinModalTitle:"PIN required", pinModalHint:"Enter the PIN to continue with this action.",
     pinModalPh:"Enter PIN", pinModalError:"Incorrect PIN", continueBtn:"Continue",
     deleteCardConfirm:"Delete this meal card? This can't be undone.",
-    editDishConfirm:"Edit this recipe?"
+    removeDishConfirm:"Remove this dish from the meal? This can't be undone."
   },
   zh: {
     kicker:"本周", title:"今天吃什么", backToHub:"家庭中心",
@@ -457,7 +454,7 @@ const i18n = {
     pinModalTitle:"需要密码", pinModalHint:"请输入密码以继续此操作。",
     pinModalPh:"输入密码", pinModalError:"密码错误", continueBtn:"继续",
     deleteCardConfirm:"删除这一餐卡片？此操作无法撤销。",
-    editDishConfirm:"编辑此食谱？"
+    removeDishConfirm:"从这一餐中移除此菜肴？此操作无法撤销。"
   }
 };
 function t(key){ return i18n[currentLang][key] || key; }
@@ -830,22 +827,24 @@ function renderMeals(){
       renderMeals();
     };
   });
-  el.querySelectorAll('[data-editdish]').forEach(btn=>{
-    btn.onclick = ()=>{
-      const dishId = btn.dataset.editdish;
-      requestPinThenConfirm({
-        confirmText: t('editDishConfirm'),
-        onConfirm: ()=>{ editAuditPending = true; openEditDishModal(dishId); }
-      });
-    };
-  });
+  el.querySelectorAll('[data-editdish]').forEach(btn=>{ btn.onclick = ()=> openEditDishModal(btn.dataset.editdish); });
   el.querySelectorAll('[data-removedish]').forEach(btn=>{
     btn.onclick = ()=>{
       const card = mealData.cards.find(c=>c.id===btn.dataset.removedish);
       if(!card) return;
-      const newDishIds = card.dishIds.slice();
-      newDishIds.splice(btn.dataset.dishidx, 1);
-      updateCard(card.id, { dishIds:newDishIds });
+      const idx = Number(btn.dataset.dishidx);
+      const entry = card.dishIds[idx];
+      const dish = entry ? findRecipe(entry.id) : null;
+      requestPinThenConfirm({
+        confirmText: t('removeDishConfirm'),
+        onConfirm: ()=>{
+          const newDishIds = card.dishIds.slice();
+          newDishIds.splice(idx, 1);
+          updateCard(card.id, { dishIds:newDishIds });
+        },
+        auditAction: 'removeDish',
+        auditDetails: { cardId: card.id, cardLabel: cardTabLabel(card), dishId: entry ? entry.id : null, dishTitle: dish ? dishTitleObj(dish) : null }
+      });
     };
   });
   el.querySelectorAll('[data-removecard]').forEach(btn=>{
@@ -976,14 +975,7 @@ function renderDishPickList(){
     };
   });
   listEl.querySelectorAll('[data-editpickid]').forEach(btn=>{
-    btn.onclick = (e)=>{
-      e.stopPropagation();
-      const dishId = btn.dataset.editpickid;
-      requestPinThenConfirm({
-        confirmText: t('editDishConfirm'),
-        onConfirm: ()=>{ editAuditPending = true; openEditDishModal(dishId); }
-      });
-    };
+    btn.onclick = (e)=>{ e.stopPropagation(); openEditDishModal(btn.dataset.editpickid); };
   });
 }
 document.getElementById('dishSearchInput').oninput = (e)=>{ dishSearchQuery = e.target.value; renderDishPickList(); };
@@ -1021,7 +1013,7 @@ function openNewDishModal(cardIdContext){
   else contextEl.style.display = 'none';
   document.getElementById('newDishModalOverlay').classList.add('open');
 }
-function closeNewDishModal(){ document.getElementById('newDishModalOverlay').classList.remove('open'); draftForNewDish=false; editAuditPending=false; }
+function closeNewDishModal(){ document.getElementById('newDishModalOverlay').classList.remove('open'); draftForNewDish=false; }
 function openEditDishModal(dishId){
   const dish = findRecipe(dishId);
   if(!dish) return;
@@ -1051,10 +1043,11 @@ document.querySelectorAll('#newSourceToggle button').forEach(btn=>{
 document.getElementById('newDishCancel').onclick = closeNewDishModal;
 document.getElementById('newDishModalOverlay').onclick = (e)=>{ if(e.target.id==='newDishModalOverlay') closeNewDishModal(); };
 
-document.getElementById('newDishSave').onclick = ()=>{
-  const nameZh = document.getElementById('newDishNameZhInput').value.trim();
-  const nameEn = document.getElementById('newDishNameEnInput').value.trim();
-  if(!nameZh && !nameEn){ document.getElementById('newDishNameZhInput').focus(); return; }
+// Saving an EDIT to an existing recipe requires the PIN every time (no
+// extra confirm dialog — the Save click itself is the confirmation), and
+// is always audit-logged. Adding a brand-new dish needs neither, since
+// nothing already-saved is being changed.
+function performDishSave(nameZh, nameEn){
   const dish = editingDishId ? findRecipe(editingDishId) : { id:'custom_'+Date.now(), title:{en:'',zh:''}, video:false, videoId:null, note:"" };
   if(!dish){ closeNewDishModal(); return; }
   if(typeof dish.title === 'string') dish.title = { en: dish.title, zh: dish.title }; // upgrade legacy shape
@@ -1074,9 +1067,7 @@ document.getElementById('newDishSave').onclick = ()=>{
   const wasEdit = !!editingDishId;
   if(!editingDishId) dishLibrary.push(dish);
   writeRecipeLibrary();
-  if(wasEdit && editAuditPending){
-    logAuditEvent('editDish', { dishId: dish.id, title: dishTitleObj(dish) });
-  }
+  if(wasEdit) logAuditEvent('editDish', { dishId: dish.id, title: dishTitleObj(dish) });
 
   if(newDishContextCardId){
     const card = mealData.cards.find(c=>c.id===newDishContextCardId);
@@ -1090,6 +1081,16 @@ document.getElementById('newDishSave').onclick = ()=>{
   draftForNewDish = false;
   closeNewDishModal();
   renderMeals();
+}
+document.getElementById('newDishSave').onclick = ()=>{
+  const nameZh = document.getElementById('newDishNameZhInput').value.trim();
+  const nameEn = document.getElementById('newDishNameEnInput').value.trim();
+  if(!nameZh && !nameEn){ document.getElementById('newDishNameZhInput').focus(); return; }
+  if(editingDishId){
+    requestPinThenConfirm({ onConfirm: ()=> performDishSave(nameZh, nameEn) });
+  } else {
+    performDishSave(nameZh, nameEn);
+  }
 };
 
 // --- Name entry ---
