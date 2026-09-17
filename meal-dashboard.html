@@ -1,14 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Meal Plan</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>What's Cooking</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root{
     --bg: #EEF2EA;
@@ -29,680 +28,257 @@
     --cooking-text: #8a5c14;
     --done-text: #3f5b3c;
     --kids-accent: #6B4E7A;
+    --banner-bg: #22332E;
+    --banner-ink: #F5F1E8;
+    --font-body: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+    --font-head: "Songti SC", "STSong", "SimSun", Georgia, serif;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]):not([data-theme="dark"]){
-      --bg: #1E1B17;
-      --paper: #2A2622;
-      --ink: #EDE8DF;
-      --ink-soft: #A89F91;
-      --teal: #6FA394;
-      --teal-soft: #24332F;
-      --mustard: #E3A23D;
-      --mustard-soft: #3A2E17;
-      --brick: #E07854;
-      --brick-soft: #3A2018;
-      --moss: #9CC198;
-      --moss-soft: #263323;
-      --line: #46403A;
-      --dot: rgba(255,255,255,0.06);
-      --dish-bg: rgba(255,255,255,0.04);
-      --cooking-text: #E3A23D;
-      --done-text: #9CC198;
-      --kids-accent: #B98FCB;
+      --bg: #1E1B17; --paper: #2A2622; --ink: #EDE8DF; --ink-soft: #A89F91;
+      --teal: #6FA394; --teal-soft: #24332F; --mustard: #E3A23D; --mustard-soft: #3A2E17;
+      --brick: #E07854; --brick-soft: #3A2018; --moss: #9CC198; --moss-soft: #263323;
+      --line: #46403A; --dot: rgba(255,255,255,0.06); --dish-bg: rgba(255,255,255,0.04);
+      --cooking-text: #E3A23D; --done-text: #9CC198; --kids-accent: #B98FCB;
+      --banner-bg: #14201C; --banner-ink: #F5F1E8;
     }
   }
   :root[data-theme="dark"]{
-    --bg: #1E1B17;
-    --paper: #2A2622;
-    --ink: #EDE8DF;
-    --ink-soft: #A89F91;
-    --teal: #6FA394;
-    --teal-soft: #24332F;
-    --mustard: #E3A23D;
-    --mustard-soft: #3A2E17;
-    --brick: #E07854;
-    --brick-soft: #3A2018;
-    --moss: #9CC198;
-    --moss-soft: #263323;
-    --line: #46403A;
-    --dot: rgba(255,255,255,0.06);
-    --dish-bg: rgba(255,255,255,0.04);
-    --cooking-text: #E3A23D;
-    --done-text: #9CC198;
-    --kids-accent: #B98FCB;
+    --bg: #1E1B17; --paper: #2A2622; --ink: #EDE8DF; --ink-soft: #A89F91;
+    --teal: #6FA394; --teal-soft: #24332F; --mustard: #E3A23D; --mustard-soft: #3A2E17;
+    --brick: #E07854; --brick-soft: #3A2018; --moss: #9CC198; --moss-soft: #263323;
+    --line: #46403A; --dot: rgba(255,255,255,0.06); --dish-bg: rgba(255,255,255,0.04);
+    --cooking-text: #E3A23D; --done-text: #9CC198; --kids-accent: #B98FCB;
+    --banner-bg: #14201C; --banner-ink: #F5F1E8;
   }
-  *{box-sizing:border-box;}
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
   body{
-    margin:0;
-    background:var(--bg);
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body);
     background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
     background-size: 22px 22px;
-    color:var(--ink);
-    font-family:'Karla', sans-serif;
-    min-height:100vh;
-    padding-bottom:40px;
+    min-height:100vh; padding-bottom:104px;
     transition:background-color 0.2s ease, color 0.2s ease;
   }
-  .wrap{max-width:920px;margin:0 auto;padding:20px 16px 0;}
+  .serif{font-family:var(--font-head);}
+  .no-scrollbar::-webkit-scrollbar{display:none;}
+  .no-scrollbar{-ms-overflow-style:none; scrollbar-width:none;}
+  .hidden{display:none !important;}
 
-  /* Header */
-  header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
-  .brand{display:flex;flex-direction:column;gap:2px;}
-  .back-link{
-    font-family:'Karla',sans-serif;
-    font-size:12px;
-    font-weight:700;
-    color:var(--teal);
-    text-decoration:none;
-    display:inline-flex;
-    align-items:center;
-    gap:4px;
-    margin-bottom:2px;
-  }
-  .back-link:hover{text-decoration:underline;}
-  .brand .kicker{font-size:13px;color:var(--ink-soft);}
-  .brand h1{font-family:'Fraunces',serif;font-style:italic;font-weight:500;font-size:30px;margin:0;color:var(--teal);}
-  .langs{display:flex;gap:6px;align-items:center;}
-  .theme-switch{
-    display:flex;
-    border:1px solid var(--line);
-    background:var(--paper);
-    border-radius:999px;
-    padding:2px;
-    margin-right:4px;
-  }
-  .theme-seg{
-    border:none;
-    background:none;
-    font-family:'Karla',sans-serif;
-    font-weight:700;
-    font-size:14px;
-    line-height:1;
-    padding:7px 9px;
-    border-radius:999px;
-    color:var(--ink-soft);
-    cursor:pointer;
-  }
-  .theme-seg.active{background:var(--teal);color:var(--paper);}
-  .bell{
-    position:relative;
-    width:34px;height:34px;
-    border:1px solid var(--line);
-    background:var(--paper);
-    border-radius:3px;
-    display:flex;align-items:center;justify-content:center;
-    font-size:16px;
-    font-family:inherit;
-    color:inherit;
-    cursor:pointer;
-    margin-right:4px;
-  }
-  .bell .count{
-    position:absolute;top:-6px;right:-6px;
-    background:var(--brick);
-    color:var(--paper);
-    font-size:10px;
-    font-weight:700;
-    min-width:16px;height:16px;
-    border-radius:8px;
-    display:flex;align-items:center;justify-content:center;
-    padding:0 3px;
-    border:1.5px solid var(--bg);
-  }
-  .notif-popover{
-    display:none;
-    position:absolute;
-    top:42px;right:0;
-    width:260px;
-    max-width:calc(100vw - 16px);
-    background:var(--paper);
-    border:1px solid var(--line);
-    border-radius:6px;
-    box-shadow:0 8px 24px rgba(0,0,0,0.18);
-    z-index:60;
-    overflow:hidden;
-    text-align:left;
-  }
-  .notif-popover.open{display:block;}
-  .notif-item{padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;}
-  .notif-item:last-child{border-bottom:none;}
-  .notif-item:hover{background:var(--teal-soft);}
-  .notif-meal{font-family:'Fraunces',serif;font-weight:600;font-size:13px;color:var(--teal);margin-bottom:2px;}
-  .notif-text{font-size:12.5px;color:var(--ink-soft);line-height:1.35;}
-  .notif-empty{padding:14px 12px;font-size:12.5px;color:var(--ink-soft);text-align:center;}
-  .unread-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brick);margin-right:5px;}
-  .card.flash{animation:flashBg 1.2s ease;}
-  @keyframes flashBg{
-    0%{background:var(--teal-soft);}
-    100%{background:var(--paper);}
-  }
-  .lang-btn{
-    border:1px solid var(--line);
-    background:var(--paper);
-    padding:6px 12px;
-    font-family:'Karla',sans-serif;
-    font-weight:600;
-    font-size:13px;
-    color:var(--ink-soft);
-    cursor:pointer;
-    border-radius:3px;
-  }
-  .lang-btn.active{background:var(--teal);color:var(--paper);border-color:var(--teal);}
-  .greeting{font-size:13px;color:var(--ink-soft);cursor:pointer;border:none;background:none;font-family:'Karla',sans-serif;padding:0;margin-right:6px;}
-  .greeting b{color:var(--teal);}
+  /* Sticky app header */
+  .app-header{position:sticky; top:0; z-index:30; background:var(--banner-bg); color:var(--banner-ink); box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+  .back-link{font-size:12px; font-weight:700; color:var(--banner-ink); opacity:0.8; text-decoration:none; display:inline-flex; align-items:center; gap:4px;}
+  .back-link:hover{opacity:1;}
+  .app-header h1{font-family:var(--font-head); font-weight:600; font-size:19px; margin:0; color:var(--banner-ink);}
+  .icon-btn{width:32px; height:32px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:var(--banner-ink); display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;}
+  .icon-btn.active{background:rgba(255,255,255,0.22);}
+  .lang-pill{font-size:12px; font-weight:700; padding:5px 10px; border-radius:999px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:var(--banner-ink); cursor:pointer;}
+  .lang-pill.active{background:var(--banner-ink); color:var(--banner-bg);}
+
+  /* Tab switcher */
+  .mode-tabs{display:flex; background:var(--teal-soft); padding:4px; border-radius:14px; gap:2px;}
+  .mode-tab{flex:1; text-align:center; padding:9px 6px; border-radius:11px; font-weight:700; font-size:13.5px; color:var(--ink-soft); cursor:pointer; border:none; background:none; font-family:var(--font-body); position:relative;}
+  .mode-tab.active{background:var(--paper); color:var(--teal); box-shadow:0 1px 3px rgba(42,36,32,0.12);}
+  .tab-badge{display:none; align-items:center; justify-content:center; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--brick); color:#fff; font-size:10px; font-weight:800; margin-left:5px; vertical-align:middle;}
 
   /* Day strip */
-  .day-strip{display:flex;gap:2px;overflow-x:auto;border-bottom:2px solid var(--ink);margin-bottom:26px;padding-bottom:0;}
-  .day-tab{
-    position:relative;
-    flex:0 0 auto;
-    padding:10px 16px 12px;
-    font-weight:600;
-    font-size:14px;
-    color:var(--ink-soft);
-    cursor:pointer;
-    white-space:nowrap;
-    border:1px solid transparent;
-    border-bottom:none;
-  }
-  .day-tab .num{display:block;font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink);}
-  .day-tab.today::after{content:'today';position:absolute;top:-2px;right:6px;font-size:9px;letter-spacing:0.04em;color:var(--brick);}
-  /* Shown once a day has actually had something saved to it (a dish added,
-     staple/status changed, or a message sent) — see mealData/threadData
-     and dayHasData() in the script. An untouched day shows no dot. */
-  .day-tab.has-data .num::after{content:'';display:block;width:5px;height:5px;border-radius:50%;background:var(--teal);margin:3px auto 0;}
-  .day-tab.active{
-    background:var(--paper);
-    color:var(--teal);
-    border-color:var(--ink);
-    border-radius:4px 4px 0 0;
-    margin-bottom:-2px;
-  }
+  .day-strip{display:flex; gap:2px; overflow-x:auto; border-bottom:2px solid var(--ink); margin:18px 0 22px; padding-bottom:0;}
+  .day-tab{position:relative; flex:0 0 auto; padding:10px 16px 12px; font-weight:600; font-size:14px; color:var(--ink-soft); cursor:pointer; white-space:nowrap; border:1px solid transparent; border-bottom:none;}
+  .day-tab .num{display:block; font-family:var(--font-head); font-size:18px; font-weight:600; color:var(--ink);}
+  .day-tab.today::after{content:'今天'; position:absolute; top:-2px; right:2px; font-size:9px; color:var(--brick);}
+  .day-tab.active{background:var(--paper); color:var(--teal); border-color:var(--ink); border-radius:8px 8px 0 0; margin-bottom:-2px;}
   .day-tab.active .num{color:var(--teal);}
 
   /* Meal cards */
-  .meals{display:grid;grid-template-columns:1fr;gap:16px;}
-  @media(min-width:720px){.meals{grid-template-columns:repeat(3,1fr);}}
-
-  .card{
-    background:var(--paper);
-    border:1px solid var(--line);
-    border-radius:2px;
-    position:relative;
-    box-shadow:2px 3px 0 rgba(42,36,32,0.08);
-  }
-  .card.kids{border-style:dashed;border-color:var(--kids-accent);}
-  .card .tab{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    font-family:'Fraunces',serif;
-    font-weight:600;
-    font-size:13px;
-    padding:5px 14px;
-    color:var(--paper);
-    border-radius:0 0 4px 0;
-    cursor:pointer;
-  }
-  .tab-chevron{font-size:9px;opacity:0.85;}
-  .card .tab .badge{
-    background:var(--paper);
-    color:var(--brick);
-    font-family:'Karla',sans-serif;
-    font-weight:800;
-    font-size:10.5px;
-    min-width:16px;height:16px;
-    border-radius:8px;
-    display:flex;align-items:center;justify-content:center;
-    padding:0 3px;
-  }
+  .meals{display:grid; grid-template-columns:1fr; gap:16px;}
+  @media(min-width:720px){.meals{grid-template-columns:repeat(2,1fr);}}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:12px; position:relative; box-shadow:2px 3px 0 rgba(42,36,32,0.08);}
+  .card.kids{border-style:dashed; border-color:var(--kids-accent);}
+  .card .tab{display:inline-flex; align-items:center; gap:6px; font-family:var(--font-head); font-weight:600; font-size:13px; padding:6px 14px; color:#fff; border-radius:12px 0 12px 0;}
+  .card .tab .badge{background:var(--paper); color:var(--brick); font-weight:800; font-size:10.5px; min-width:16px; height:16px; border-radius:8px; display:flex; align-items:center; justify-content:center; padding:0 3px;}
   .card.breakfast .tab{background:var(--mustard);}
   .card.lunch .tab{background:var(--teal);}
   .card.dinner .tab{background:var(--brick);}
   .card.kids .tab{background:var(--kids-accent);}
-
-  /* Collapsed-card summary row (shown instead of the full staple/dish/
-     status/thread body when a card isn't expanded) — a compact one-liner
-     for a slot with data, or a thin "+ Add" prompt for an empty one. */
-  .card-summary{
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-  }
-  .card-summary:hover .summary-dishes{color:var(--teal);}
-  .card-summary .summary-dishes{
-    font-size:13.5px;
-    color:var(--ink);
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-    flex:1;
-    min-width:0;
-  }
-  .card-summary.empty{
-    color:var(--ink-soft);
-    font-weight:700;
-    font-size:12.5px;
-  }
-  .card-summary .add-plus{margin-right:3px;}
-  .status-pill{
-    font-family:'Karla',sans-serif;
-    font-size:11px;
-    font-weight:700;
-    padding:3px 9px;
-    border-radius:20px;
-    border:1px solid var(--line);
-    background:var(--paper);
-    color:var(--ink-soft);
-    flex:0 0 auto;
-  }
-  .status-pill.planned{background:var(--teal-soft);color:var(--teal);border-color:var(--teal);}
-  .status-pill.cooking{background:var(--mustard-soft);color:var(--cooking-text);border-color:var(--mustard);}
-  .status-pill.missing{background:var(--brick-soft);color:var(--brick);border-color:var(--brick);}
-  .status-pill.done{background:var(--moss-soft);color:var(--done-text);border-color:var(--moss);}
-
   .card-body{padding:14px 16px 16px;}
-  .recipe-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin:0 0 3px;line-height:1.25;}
-  .recipe-note{font-size:13px;color:var(--ink-soft);margin:0 0 8px;line-height:1.4;}
-
-  .staple-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
-  .staple-btn{
-    font-family:'Karla',sans-serif;
-    font-size:11.5px;
-    font-weight:700;
-    padding:6px 10px;
-    border-radius:3px;
-    border:1px solid var(--line);
-    background:var(--paper);
-    color:var(--ink-soft);
-    cursor:pointer;
-  }
-  .staple-btn.selected{background:var(--ink);color:var(--paper);border-color:var(--ink);}
-
-  .dish{
-    border:1px solid var(--line);
-    border-radius:3px;
-    padding:10px 12px;
-    margin-bottom:8px;
-    background:var(--dish-bg);
-  }
-  .dish-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
-  .dish-remove{
-    background:none;border:none;color:var(--ink-soft);
-    font-size:15px;cursor:pointer;line-height:1;padding:2px;
-  }
-  .dish-edit{
-    background:none;border:none;color:var(--ink-soft);
-    font-size:13px;cursor:pointer;line-height:1;padding:2px;margin-right:2px;
-  }
+  .recipe-title{font-family:var(--font-head); font-size:17px; font-weight:600; margin:0 0 3px; line-height:1.25;}
+  .recipe-note{font-size:13px; color:var(--ink-soft); margin:0 0 8px; line-height:1.4;}
+  .staple-row{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;}
+  .staple-btn{font-size:11.5px; font-weight:700; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--paper); color:var(--ink-soft); cursor:pointer;}
+  .staple-btn.selected{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+  .dish{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px; background:var(--dish-bg);}
+  .dish-head{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+  .dish-remove, .dish-edit{background:none; border:none; color:var(--ink-soft); cursor:pointer; line-height:1; padding:2px;}
+  .dish-remove{font-size:15px;} .dish-edit{font-size:13px; margin-right:2px;}
   .dish-edit:hover, .dish-remove:hover{color:var(--teal);}
-  .dish-head-actions{display:flex;align-items:flex-start;flex:0 0 auto;}
+  .dish-head-actions{display:flex; align-items:flex-start; flex:0 0 auto;}
+  .add-dish-btn{width:100%; border:1.5px dashed var(--line); background:none; color:var(--ink-soft); font-size:12.5px; font-weight:700; padding:9px; border-radius:10px; cursor:pointer; margin-bottom:4px; font-family:var(--font-body);}
+  .add-dish-btn:hover{border-color:var(--teal); color:var(--teal);}
+  .video-chip{display:flex; align-items:center; gap:8px; border:1px solid var(--line); background:var(--teal-soft); padding:7px 10px; border-radius:10px; font-size:12.5px; font-weight:600; color:var(--teal); margin-bottom:12px; cursor:pointer;}
+  .video-chip .dot{width:7px; height:7px; border-radius:50%; background:var(--teal); flex:0 0 auto;}
+  .video-embed{position:relative; width:100%; padding-top:56.25%; margin-bottom:12px; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:#000;}
+  .video-embed iframe{position:absolute; top:0; left:0; width:100%; height:100%; border:0;}
+  .status-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:12px;}
+  .status-btn{font-size:11.5px; font-weight:700; padding:6px 10px; border-radius:20px; border:1px solid var(--line); background:var(--paper); color:var(--ink-soft); cursor:pointer;}
+  .status-btn.selected.planned{background:var(--teal-soft); color:var(--teal); border-color:var(--teal);}
+  .status-btn.selected.cooking{background:var(--mustard-soft); color:var(--cooking-text); border-color:var(--mustard);}
+  .status-btn.selected.missing{background:var(--brick-soft); color:var(--brick); border-color:var(--brick);}
+  .status-btn.selected.done{background:var(--moss-soft); color:var(--done-text); border-color:var(--moss);}
 
-  .add-dish-btn{
-    width:100%;
-    border:1.5px dashed var(--line);
-    background:none;
-    color:var(--ink-soft);
-    font-family:'Karla',sans-serif;
-    font-size:12.5px;
-    font-weight:700;
-    padding:9px;
-    border-radius:3px;
-    cursor:pointer;
-    margin-bottom:12px;
-  }
-  .add-dish-btn:hover{border-color:var(--teal);color:var(--teal);}
-
-  .video-chip{
-    display:flex;align-items:center;gap:8px;
-    border:1px solid var(--line);
-    background:var(--teal-soft);
-    padding:7px 10px;
-    border-radius:3px;
-    font-size:12.5px;
-    font-weight:600;
-    color:var(--teal);
-    margin-bottom:12px;
-    cursor:pointer;
-  }
-  .video-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex:0 0 auto;}
-
-  .video-embed{
-    position:relative;
-    width:100%;
-    padding-top:56.25%;
-    margin-bottom:12px;
-    border-radius:3px;
-    overflow:hidden;
-    border:1px solid var(--line);
-    background:#000;
-  }
-  .video-embed iframe{
-    position:absolute;top:0;left:0;width:100%;height:100%;border:0;
-  }
-  .video-fullscreen-btn{
-    position:absolute;
-    top:8px;right:8px;
-    z-index:2;
-    width:32px;height:32px;
-    border:none;
-    border-radius:4px;
-    background:rgba(0,0,0,0.6);
-    color:#fff;
-    font-size:16px;
-    line-height:1;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .video-fullscreen-btn:hover{background:rgba(0,0,0,0.8);}
-
-  .status-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-  .status-btn{
-    font-family:'Karla',sans-serif;
-    font-size:11.5px;
-    font-weight:700;
-    letter-spacing:0.01em;
-    padding:6px 10px;
-    border-radius:20px;
-    border:1px solid var(--line);
-    background:var(--paper);
-    color:var(--ink-soft);
-    cursor:pointer;
-  }
-  .status-btn.selected.planned{background:var(--teal-soft);color:var(--teal);border-color:var(--teal);}
-  .status-btn.selected.cooking{background:var(--mustard-soft);color:var(--cooking-text);border-color:var(--mustard);}
-  .status-btn.selected.missing{background:var(--brick-soft);color:var(--brick);border-color:var(--brick);}
-  .status-btn.selected.done{background:var(--moss-soft);color:var(--done-text);border-color:var(--moss);}
-
-  .thread{border-top:1px dashed var(--line);padding-top:10px;}
-  .msg{margin-bottom:8px;display:flex;flex-direction:column;align-items:flex-start;}
-  .msg.mine{align-items:flex-end;}
-  .msg .bubble{
-    display:inline-block;
-    max-width:85%;
-    font-size:13px;
-    line-height:1.4;
-  }
-  .msg .who{font-size:10.5px;font-weight:700;color:var(--ink-soft);margin-bottom:2px;letter-spacing:0.02em;}
-  .msg .translated{
-    display:block;
-    width:fit-content;
-    max-width:85%;
-    margin-top:5px;
-    padding:6px 8px;
-    border-radius:3px;
-    font-size:12px;
-    line-height:1.4;
-    color:var(--ink-soft);
-    background:var(--teal-soft);
-    border:1px solid var(--line);
-  }
-  .msg.helper .translated{background:var(--mustard-soft);border-color:#EED9AE;}
-  .msg .translated::before{content:'→ ';}
-
-  .msg-input{display:flex;gap:6px;margin-top:10px;}
-  .msg-input input{
-    flex:1;
-    min-width:0;
-    border:1px solid var(--line);
-    border-radius:3px;
-    padding:7px 9px;
-    font-family:'Karla',sans-serif;
-    font-size:13px;
-    background:var(--paper);
-    color:var(--ink);
-  }
-  .msg-input input::placeholder{color:var(--ink-soft);}
-  .send-hint{
-    font-size:11px;
-    font-style:italic;
-    color:var(--ink-soft);
-    text-align:right;
-    margin-top:4px;
-  }
-
-  .add-recipe{
-    max-width:920px;margin:30px auto 0;padding:0 16px;
-  }
-  .add-recipe .ghost-card{
-    border:1.5px dashed var(--line);
-    border-radius:3px;
-    padding:16px;
-    text-align:center;
-    color:var(--ink-soft);
-    font-size:13.5px;
-    cursor:pointer;
-  }
-  .add-recipe .ghost-card b{color:var(--teal);}
-
-  /* Modals (shared look) */
-  .modal-overlay{
-    display:none;
-    position:fixed;inset:0;
-    background:rgba(42,36,32,0.45);
-    align-items:center;justify-content:center;
-    padding:16px;
-    z-index:50;
-  }
-  .modal-overlay.open{display:flex;}
-  .modal{
-    background:var(--paper);
-    border-radius:4px;
-    width:100%;
-    max-width:420px;
-    padding:20px;
-    box-shadow:0 8px 30px rgba(0,0,0,0.2);
-  }
-  .modal .context{
-    font-size:12px;
-    color:var(--ink-soft);
-    font-weight:700;
-    margin-bottom:10px;
-    letter-spacing:0.01em;
-  }
-  .modal .context b{color:var(--teal);}
-  .modal h3{font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin:0 0 14px;}
-  .field-label{font-size:11.5px;font-weight:700;color:var(--ink-soft);margin:12px 0 5px;letter-spacing:0.01em;}
-  .field-label:first-of-type{margin-top:0;}
-  .toggle-row{display:flex;gap:6px;}
-  .toggle-row button{
-    flex:1;
-    border:1px solid var(--line);
-    background:var(--paper);
-    padding:7px;
-    font-family:'Karla',sans-serif;
-    font-weight:700;
-    font-size:12.5px;
-    color:var(--ink-soft);
-    cursor:pointer;
-    border-radius:3px;
-  }
-  .toggle-row button.active{background:var(--teal-soft);color:var(--teal);border-color:var(--teal);}
-  .modal input[type="text"], .modal textarea{
-    width:100%;
-    border:1px solid var(--line);
-    border-radius:3px;
-    padding:8px 9px;
-    font-family:'Karla',sans-serif;
-    font-size:13.5px;
-    background:var(--paper);
-    color:var(--ink);
-    resize:vertical;
-  }
-  .modal input[type="text"]::placeholder, .modal textarea::placeholder{color:var(--ink-soft);}
-  .modal textarea{min-height:70px;}
-  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
-  .modal-actions button{
-    padding:8px 16px;
-    border-radius:3px;
-    font-family:'Karla',sans-serif;
-    font-weight:700;
-    font-size:13px;
-    cursor:pointer;
-  }
-  .btn-cancel{background:none;border:1px solid var(--line);color:var(--ink-soft);}
-  .btn-save{background:var(--teal);border:1px solid var(--teal);color:var(--paper);}
-  .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
-
-  /* Pick-a-dish modal */
-  .search-input{
-    width:100%;
-    border:1px solid var(--line);
-    border-radius:3px;
-    padding:8px 9px;
-    font-family:'Karla',sans-serif;
-    font-size:13.5px;
-    background:var(--paper);
-    color:var(--ink);
-    margin-bottom:10px;
-  }
-  .search-input::placeholder{color:var(--ink-soft);}
-  .dish-pick-list{
-    max-height:280px;
-    overflow-y:auto;
-    border:1px solid var(--line);
-    border-radius:3px;
-  }
-  .dish-pick-item{
-    padding:10px 12px;
-    border-bottom:1px solid var(--line);
-    cursor:pointer;
-    display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
-  }
-  .dish-pick-item-main{flex:1;min-width:0;}
+  /* Add-card ghost + draft */
+  .add-card-ghost{border:1.5px dashed var(--line); border-radius:12px; padding:18px; text-align:center; color:var(--ink-soft); font-size:13.5px; font-weight:700; cursor:pointer; grid-column:1/-1;}
+  .add-card-ghost:hover{border-color:var(--teal); color:var(--teal);}
+  .draft-card{grid-column:1/-1;}
+  .field-label{font-size:11.5px; font-weight:700; color:var(--ink-soft); margin:0 0 6px; letter-spacing:0.01em;}
+  .toggle-row{display:flex; gap:6px;}
+  .toggle-row button{flex:1; border:1px solid var(--line); background:var(--paper); padding:9px 6px; font-weight:700; font-size:12.5px; color:var(--ink-soft); cursor:pointer; border-radius:10px; font-family:var(--font-body);}
+  .toggle-row button.active{background:var(--teal-soft); color:var(--teal); border-color:var(--teal);}
+  .hint{font-size:11.5px; color:var(--ink-soft); margin-top:4px;}
+  .search-input{width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 9px; font-size:13.5px; background:var(--paper); color:var(--ink); margin-bottom:10px; font-family:var(--font-body);}
+  .dish-pick-list{max-height:240px; overflow-y:auto; border:1px solid var(--line); border-radius:10px;}
+  .dish-pick-item{padding:10px 12px; border-bottom:1px solid var(--line); cursor:pointer; display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+  .dish-pick-item-main{flex:1; min-width:0;}
   .dish-pick-item:last-child{border-bottom:none;}
   .dish-pick-item:hover{background:var(--teal-soft);}
-  .dish-pick-title{font-family:'Fraunces',serif;font-size:14.5px;font-weight:600;margin-bottom:2px;}
-  .dish-pick-note{font-size:12px;color:var(--ink-soft);line-height:1.35;}
-  .dish-pick-empty{padding:16px 12px;font-size:13px;color:var(--ink-soft);text-align:center;}
-  .add-new-link{
-    display:block;
-    text-align:center;
-    margin-top:12px;
-    font-size:12.5px;
-    font-weight:700;
-    color:var(--teal);
-    cursor:pointer;
-    background:none;
-    border:none;
-    width:100%;
-    padding:6px;
-  }
-  .new-dish-context{
-    font-size:12px;
-    color:var(--ink-soft);
-    font-weight:700;
-    margin-bottom:10px;
-    letter-spacing:0.01em;
-  }
-  .new-dish-context b{color:var(--teal);}
+  .dish-pick-title{font-family:var(--font-head); font-size:14.5px; font-weight:600; margin-bottom:2px;}
+  .dish-pick-note{font-size:12px; color:var(--ink-soft); line-height:1.35;}
+  .dish-pick-empty{padding:16px 12px; font-size:13px; color:var(--ink-soft); text-align:center;}
+  .add-new-link{display:block; text-align:center; margin-top:10px; font-size:12.5px; font-weight:700; color:var(--teal); cursor:pointer; background:none; border:none; width:100%; padding:6px; font-family:var(--font-body);}
+
+  /* Chat */
+  .chat-scroll{padding:6px 4px 20px;}
+  .msg{margin-bottom:10px; display:flex; flex-direction:column; align-items:flex-start;}
+  .msg.mine{align-items:flex-end;}
+  .msg .bubble{display:inline-block; max-width:85%; font-size:13.5px; line-height:1.4;}
+  .msg .who{font-size:10.5px; font-weight:700; color:var(--ink-soft); margin-bottom:2px;}
+  .msg .translated{display:block; width:fit-content; max-width:85%; margin-top:5px; padding:6px 8px; border-radius:8px; font-size:12px; line-height:1.4; color:var(--ink-soft); background:var(--teal-soft); border:1px solid var(--line);}
+  .msg.helper .translated{background:var(--mustard-soft); border-color:#EED9AE;}
+  .msg .translated::before{content:'→ ';}
+  .chat-empty{text-align:center; color:var(--ink-soft); font-size:13px; padding:40px 20px;}
+
+  .chat-bar{position:fixed; left:0; right:0; bottom:0; z-index:40; background:var(--paper); border-top:1px solid var(--line); box-shadow:0 -2px 10px rgba(0,0,0,0.08); padding:10px 14px calc(10px + env(safe-area-inset-bottom));}
+  .chat-bar-inner{max-width:920px; margin:0 auto; display:flex; gap:8px;}
+  .chat-bar input{flex:1; min-width:0; border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:14px; background:var(--bg); color:var(--ink); font-family:var(--font-body);}
+  .chat-bar button{flex:0 0 auto; width:40px; height:40px; border:none; background:var(--teal); color:#fff; font-size:16px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+
+  /* Modals */
+  .modal-overlay{display:none; position:fixed; inset:0; background:rgba(42,36,32,0.45); align-items:center; justify-content:center; padding:16px; z-index:50;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--paper); border-radius:16px; width:100%; max-width:420px; padding:20px; box-shadow:0 8px 30px rgba(0,0,0,0.2); max-height:85vh; overflow-y:auto;}
+  .modal .context{font-size:12px; color:var(--ink-soft); font-weight:700; margin-bottom:10px;}
+  .modal .context b{color:var(--teal);}
+  .modal h3{font-family:var(--font-head); font-size:20px; font-weight:600; margin:0 0 14px;}
+  .modal input[type="text"], .modal textarea{width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 9px; font-size:13.5px; background:var(--paper); color:var(--ink); resize:vertical; font-family:var(--font-body);}
+  .modal textarea{min-height:70px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
+  .modal-actions button{padding:8px 16px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; font-family:var(--font-body);}
+  .btn-cancel{background:none; border:1px solid var(--line); color:var(--ink-soft);}
+  .btn-save{background:var(--teal); border:1px solid var(--teal); color:var(--paper);}
+  .wrap{max-width:920px; margin:0 auto; padding:0 16px;}
+  .head-wrap{max-width:920px; margin:0 auto; padding:12px 16px;}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="brand">
+<div class="app-header">
+  <div class="head-wrap" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+    <div>
       <a class="back-link" href="index.html">← <span data-i18n="backToHub">Home Hub</span></a>
-      <span class="kicker" data-i18n="kicker">This week's meals</span>
-      <h1 data-i18n="title">What's Cooking</h1>
+      <h1 data-i18n="title" style="margin-top:2px;">今天吃什么</h1>
     </div>
-    <div class="langs">
-      <button class="greeting" id="greetingBtn" style="display:none;"></button>
-      <div class="theme-switch" id="themeSwitch">
-        <button class="theme-seg" data-theme-choice="light" data-i18n-title="themeLight">☀️</button>
-        <button class="theme-seg" data-theme-choice="dark" data-i18n-title="themeDark">🌙</button>
-        <button class="theme-seg" data-theme-choice="auto" data-i18n-title="themeAuto">🖥️</button>
-      </div>
-      <div class="bell" id="bellIcon">🔔<span class="count" id="bellCount" style="display:none">0</span>
-        <div class="notif-popover" id="notifPopover"></div>
-      </div>
-      <button class="bell" id="clearMessagesBtn" data-i18n-title="clearMessagesTitle">🗑️</button>
-      <button class="lang-btn active" data-lang="en">EN</button>
-      <button class="lang-btn" data-lang="zh">中文</button>
-      <button class="lang-btn" data-lang="tl">TL</button>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <button class="icon-btn" data-theme-choice="light" data-i18n-title="themeLight">☀️</button>
+      <button class="icon-btn" data-theme-choice="dark" data-i18n-title="themeDark">🌙</button>
+      <button class="icon-btn" data-theme-choice="auto" data-i18n-title="themeAuto">🌗</button>
+      <button class="lang-pill" data-lang="zh">中文</button>
+      <button class="lang-pill" data-lang="en">EN</button>
     </div>
-  </header>
+  </div>
+</div>
 
+<div class="wrap" style="margin-top:14px;">
+  <div class="mode-tabs">
+    <button class="mode-tab" id="tabMeals" data-i18n="mealsTab">🍲 餐单</button>
+    <button class="mode-tab" id="tabChat" data-i18n="chatTab">💬 消息<span class="tab-badge" id="chatTabBadge">0</span></button>
+  </div>
+</div>
+
+<main class="wrap" id="mealsPanel">
   <div class="day-strip" id="dayStrip"></div>
   <div class="meals" id="mealArea"></div>
-</div>
+</main>
 
-<div class="add-recipe">
-  <div class="ghost-card" id="addNewDishGhost">
-    <b data-i18n="addRecipe">+ Add a new dish</b> — <span data-i18n="addRecipeSub">add it to the list so it's easy to pick next time</span>
+<main class="wrap hidden" id="chatPanel">
+  <div style="display:flex; justify-content:flex-end; margin:14px 0 4px;">
+    <button class="icon-btn" id="clearMessagesBtn" data-i18n-title="clearMessagesTitle">🗑️</button>
+  </div>
+  <div class="chat-scroll" id="chatMessages"></div>
+</main>
+
+<div class="chat-bar hidden" id="chatBottomBar">
+  <div class="chat-bar-inner">
+    <input type="text" id="chatInput" data-i18n-ph="inputPlaceholder">
+    <button id="chatSendBtn" data-i18n-title="send">➤</button>
   </div>
 </div>
 
-<!-- Pick-a-dish modal -->
-<div class="modal-overlay" id="pickModalOverlay">
-  <div class="modal">
-    <div class="context" id="pickModalContext">Adding to: <b>Wed · Dinner</b></div>
-    <h3 data-i18n="pickDishTitle">Choose a dish</h3>
-    <input type="text" class="search-input" id="dishSearchInput" data-i18n-ph="searchPh" placeholder="Search dishes...">
-    <div class="dish-pick-list" id="dishPickList"></div>
-    <button class="add-new-link" id="addNewDishLink" data-i18n="addNewDishLink">+ Add a new dish</button>
-    <div class="modal-actions">
-      <button class="btn-cancel" id="pickModalCancel" data-i18n="cancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- New-dish modal -->
+<!-- New/edit dish modal -->
 <div class="modal-overlay" id="newDishModalOverlay">
   <div class="modal">
-    <div class="new-dish-context" id="newDishContextLine" style="display:none;"></div>
-    <h3 data-i18n="newDishTitle">Add a new dish</h3>
-    <div class="hint" data-i18n="newDishHint">This gets added to the list so you can pick it again next time.</div>
-
-    <div class="field-label" data-i18n="nameLabel">Dish name</div>
-    <input type="text" id="newDishNameInput" data-i18n-ph="dishNamePh">
-
-    <div class="field-label" data-i18n="sourceLabel">Recipe source</div>
+    <div class="context" id="newDishContextLine" style="display:none;"></div>
+    <h3 data-i18n="newDishTitle">添加新菜</h3>
+    <div class="hint" data-i18n="newDishHint" style="margin-bottom:10px;"></div>
+    <div class="field-label" data-i18n="nameLabel">菜名</div>
+    <input type="text" id="newDishNameInput" data-i18n-ph="dishNamePh" style="margin-bottom:12px;">
+    <div class="field-label" data-i18n="sourceLabel">食谱来源</div>
     <div class="toggle-row" id="newSourceToggle">
-      <button data-source="text" class="active" data-i18n="pasteText">Paste text</button>
-      <button data-source="link" data-i18n="pasteLink">Paste link</button>
+      <button data-source="text" class="active" data-i18n="pasteText">粘贴文字</button>
+      <button data-source="link" data-i18n="pasteLink">粘贴链接</button>
     </div>
     <div id="newSourceTextWrap" style="margin-top:8px;">
       <textarea id="newDishTextInput" data-i18n-ph="recipeTextPh"></textarea>
     </div>
-    <div id="newSourceLinkWrap" style="margin-top:8px;display:none;">
+    <div id="newSourceLinkWrap" style="margin-top:8px; display:none;">
       <input type="text" id="newDishLinkInput" data-i18n-ph="recipeLinkPh">
-      <div class="hint" data-i18n="linkHint">We'll pull the title automatically once this is wired to a live oEmbed lookup — for now, name it below.</div>
+      <div class="hint" data-i18n="linkHint"></div>
     </div>
-
     <div class="modal-actions">
-      <button class="btn-cancel" id="newDishCancel" data-i18n="cancel">Cancel</button>
-      <button class="btn-save" id="newDishSave" data-i18n="saveDish">Save dish</button>
+      <button class="btn-cancel" id="newDishCancel" data-i18n="cancel">取消</button>
+      <button class="btn-save" id="newDishSave" data-i18n="saveDish">保存菜肴</button>
     </div>
   </div>
 </div>
 
+<!-- Pick-dish modal (adding an extra dish to an existing card) -->
+<div class="modal-overlay" id="pickModalOverlay">
+  <div class="modal">
+    <div class="context" id="pickModalContext"></div>
+    <h3 data-i18n="pickDishTitle">选择菜肴</h3>
+    <input type="text" class="search-input" id="dishSearchInput" data-i18n-ph="searchPh">
+    <div class="dish-pick-list" id="dishPickList"></div>
+    <button class="add-new-link" id="addNewDishLink" data-i18n="addNewDishLink"></button>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="pickModalCancel" data-i18n="cancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Name modal -->
 <div class="modal-overlay" id="nameModalOverlay">
   <div class="modal">
-    <h3 data-i18n="nameModalTitle">What's your name?</h3>
-    <div class="hint" data-i18n="nameModalSub">So messages you send show who sent them, instead of just "You".</div>
-    <input type="text" id="nameInput" style="margin-top:10px;" data-i18n-ph="nameModalPh">
+    <h3 data-i18n="nameModalTitle"></h3>
+    <div class="hint" data-i18n="nameModalSub" style="margin-bottom:10px;"></div>
+    <input type="text" id="nameInput" data-i18n-ph="nameModalPh">
     <div class="modal-actions">
-      <button class="btn-cancel" id="nameModalSkip" data-i18n="skip">Skip for now</button>
-      <button class="btn-save" id="nameModalSave" data-i18n="save">Save</button>
+      <button class="btn-cancel" id="nameModalSkip" data-i18n="skip"></button>
+      <button class="btn-save" id="nameModalSave" data-i18n="save"></button>
     </div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// TODO: paste this app's Firebase project config here — must match the
-// config pasted into index.html so both pages talk to the same Firestore
-// project. See index.html for where to find these values.
 const firebaseConfig = {
   apiKey: "AIzaSyA6GjU443-D-M2ADE6reI7wBZYuYERTsSU",
   authDomain: "wg-family-assistant.firebaseapp.com",
@@ -712,1142 +288,529 @@ const firebaseConfig = {
   appId: "1:220482684013:web:27fca12be8fe9bfbd52b64"
 };
 let db = null;
-try {
-  db = getFirestore(initializeApp(firebaseConfig));
-} catch (e) {
-  console.warn('Firebase not configured yet — meal plan/messages stay local-only this session.', e);
-}
+try { db = getFirestore(initializeApp(firebaseConfig)); }
+catch(e){ console.warn('Firebase not configured — local-only this session.', e); }
 
-// Everyone typing into the chat — you, your wife, the helper — can type in
-// whichever of these three languages they're comfortable with per message;
-// nothing is fixed to one "sender types Chinese, helper types Tagalog"
-// pairing. But the target is fixed and simple: everyone understands
-// English, so anything not already English gets translated to English —
-// not to all three languages, and not per-viewer.
-//
-// Translation uses MyMemory (https://mymemory.translated.net) instead of a
-// paid Google Cloud API — it's a public, free, no-signup, no-API-key
-// translation service, generous enough for household chat volume (roughly
-// 5,000 words/day anonymously; see project-knowledge.md for how to raise
-// that with a free email registration if it's ever hit). The trade-off:
-// unlike Google's paid API, MyMemory doesn't detect language for you — you
-// have to tell it the source language — so a small local heuristic below
-// (detectLangHeuristic) guesses en/zh/tl before translating. It's not
-// perfect on very short or ambiguous text, but reliable for normal
-// sentences, and costs nothing either way.
-const MYMEMORY_LANG_CODE = { en: 'en', zh: 'zh-CN', tl: 'tl' };
-
-// Common Tagalog function words/phrases — short, high-frequency words that
-// rarely appear in ordinary English sentences. Chinese is detected
-// separately (by script, not word list) since it doesn't share an
-// alphabet with the other two, which makes it unambiguous.
-//
-// Loaded from tagalog-markers.json (fetched at boot, same cache-busting
-// pattern as recipes.json/hub-cards.json) — a combination of the
-// stopwords-iso project's official Tagalog stopword list (147 words,
-// https://github.com/stopwords-iso/stopwords-tl, MIT licensed) plus our
-// own curated colloquial/texting words the formal list doesn't cover
-// (polite particles like po/opo, casual particles like daw/raw/din/rin,
-// greetings like salamat/kumusta). `phrases` are short multi-word phrases
-// checked as substrings against the whole message rather than token by
-// token — splitting "walang anuman" into single words would either miss
-// it or match words too generic on their own. These two Sets start with a
-// small hardcoded fallback so detection still works if the fetch fails;
-// see project-knowledge.md for how to add to the JSON file.
-let tagalogMarkerWords = new Set([
-  'ang','ng','mga','sa','ako','ikaw','siya','tayo','kami','sila','kayo',
-  'hindi','wala','opo','po','naman','lang','din','rin','kasi','ba',
-  'yung','yun','ito','iyon','may','meron','mayroon','salamat','kumusta'
-]);
-let tagalogMarkerPhrases = ['walang anuman', 'kumusta ka', 'salamat po'];
-
-// Local, no-network language guess across the three app languages. Chinese
-// is detected by the presence of any CJK character (unambiguous — the
-// other two languages don't use that script). Between English and
-// Tagalog, a message counts as Tagalog if it contains at least one common
-// Tagalog function word (or one of the short marker phrases as a whole);
-// otherwise it's assumed English. Short or unusual messages can still be
-// misclassified — there's no server-side detection to fall back on with a
-// free, keyless service — but this holds up well for ordinary sentences.
-//
-// One real miss this caught: "Mayroon kaming isda at bok choy." went
-// untranslated because "kaming" isn't itself in the marker list — it's the
-// pronoun "kami" plus the "-ng" linking particle (same pattern turns
-// "tayo" into "tayong", "sila" into "silang"). Stripping a trailing "ng"
-// and checking THAT against the marker list catches this whole family of
-// inflected pronouns without needing to enumerate every linked form by
-// hand — and it's safe against false positives, since an English word
-// like "morning" stripped to "morni" simply isn't a marker either way.
+// --- Translation (unchanged: MyMemory, free/no-key; target is always English) ---
+const MYMEMORY_LANG_CODE = { en:'en', zh:'zh-CN', tl:'tl' };
+const TAGALOG_MARKERS = new Set(['ang','ng','mga','sa','ako','ikaw','siya','tayo','kami','sila','kayo','hindi','wala','opo','po','naman','lang','din','rin','kasi','ba','yung','yun','ito','iyon','pag','pala','talaga','salamat','kumusta','paano','ganito','ganyan','marunong','gusto','pwede','oo','na','may','meron','kung','para','dahil','saan','ano','sino','bakit']);
 function detectLangHeuristic(text){
   if(/[\u4e00-\u9fff]/.test(text)) return 'zh';
-  const lower = text.toLowerCase();
-  if(tagalogMarkerPhrases.some(p => lower.includes(p))) return 'tl';
-  const words = lower.replace(/[^\p{L}\s]/gu, '').split(/\s+/).filter(Boolean);
-  const hasTagalogMarker = words.some(w =>
-    tagalogMarkerWords.has(w) || (w.endsWith('ng') && tagalogMarkerWords.has(w.slice(0, -2)))
-  );
-  return hasTagalogMarker ? 'tl' : 'en';
+  const words = text.toLowerCase().replace(/[^\p{L}\s]/gu,'').split(/\s+/).filter(Boolean);
+  return words.some(w=>TAGALOG_MARKERS.has(w)) ? 'tl' : 'en';
 }
-
-// Calls MyMemory's translation endpoint directly from the browser — a
-// plain GET request, no key, no auth. Returns the translated string, or
-// null if the call fails or MyMemory couldn't produce a translation;
-// callers treat null as "no translation available" rather than blocking
-// anything.
 async function translateText(text, targetAppLang, sourceAppLang){
   try{
     const langpair = `${MYMEMORY_LANG_CODE[sourceAppLang]}|${MYMEMORY_LANG_CODE[targetAppLang]}`;
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
     const res = await fetch(url);
-    if(!res.ok) throw new Error('MyMemory API responded ' + res.status);
+    if(!res.ok) throw new Error('MyMemory responded '+res.status);
     const data = await res.json();
-    if(data.responseStatus !== 200 || !data.responseData || !data.responseData.translatedText){
-      throw new Error('MyMemory API returned no usable translation');
-    }
+    if(data.responseStatus!==200 || !data.responseData || !data.responseData.translatedText) throw new Error('no usable translation');
     return data.responseData.translatedText;
-  }catch(err){
-    console.error('Translation request failed', err);
-    return null;
-  }
+  }catch(err){ console.error('Translation failed', err); return null; }
 }
-
 
 function getUserId(){
   let id = localStorage.getItem('wg-userid');
-  if(!id){
-    id = (crypto.randomUUID ? crypto.randomUUID() : 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2));
-    localStorage.setItem('wg-userid', id);
-  }
+  if(!id){ id = (crypto.randomUUID ? crypto.randomUUID() : 'user_'+Date.now()+'_'+Math.random().toString(36).slice(2)); localStorage.setItem('wg-userid', id); }
   return id;
 }
-// True only on the device that actually sent this message — used for both
-// the "You" label and right-alignment, so a message from any other family
-// member's device (or the helper) reads the same way theirs does: their
-// name (or "Helper"), left-aligned, never mistaken for your own message.
 function isOwnMessage(m){
-  if(m.from !== 'you') return false;
-  if(!m.senderId) return true; // legacy message saved before senderId existed
-  return m.senderId === getUserId();
+  if(m.from!=='you') return false;
+  if(!m.senderId) return true;
+  return m.senderId===getUserId();
 }
 function chatLabelFor(m){
-  if(m.from === 'helper') return t('helper');
+  if(m.from==='helper') return t('helper');
   return isOwnMessage(m) ? t('you') : (m.senderName || t('you'));
 }
-
-// "Unread" used to be a single shared boolean on the message itself,
-// flipped to false in Firestore the moment ANY device marked it read —
-// which meant one person opening a message marked it read for every
-// other device too, so a real message could get missed entirely by
-// someone who never actually saw it. Fixed by tracking who's read each
-// message individually: `readBy` is an array of viewer ids
-// (getUserId()) accumulated onto the message, and a message only counts
-// as unread for a given viewer if their id isn't in that list yet — same
-// live-synced field, just per-viewer instead of global. Legacy messages
-// from before this fix have no `readBy` field, so they default to unread
-// for everyone until each person's device actually reads them (a one-time
-// bump the first time this code runs against old data, not a bug).
-function isUnreadForMe(m){
-  if(isOwnMessage(m)) return false;
-  const readBy = Array.isArray(m.readBy) ? m.readBy : [];
-  return !readBy.includes(getUserId());
-}
-
-// Marks every not-yet-read (by me) message in this slot as read by me —
-// appends my id to each message's `readBy` array rather than touching any
-// other viewer's read state. Only writes to Firestore if something
-// actually changed, so viewing an already-fully-read thread is a no-op.
-function markThreadReadForMe(dateIso, slotKey){
-  const userId = getUserId();
-  let changed = false;
-  const newThread = peekDayThreads(dateIso)[slotKey].map(m=>{
-    if(isOwnMessage(m)) return m;
-    const readBy = Array.isArray(m.readBy) ? m.readBy : [];
-    if(readBy.includes(userId)) return m;
-    changed = true;
-    return { ...m, readBy: [...readBy, userId] };
-  });
-  if(changed) writeThread(dateIso, slotKey, newThread);
-}
-
 function saveFamilyMemberName(name){
   localStorage.setItem('wg-username', name);
   if(!db) return;
-  setDoc(doc(db, 'familyMembers', getUserId()), { name, updatedAt: Date.now() }, { merge: true })
-    .catch(err => console.error('Failed to save name to Firestore', err));
+  setDoc(doc(db,'familyMembers', getUserId()), { name, updatedAt: Date.now() }, { merge:true }).catch(err=>console.error('Failed to save name', err));
 }
 
 const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-
-// "This week" is computed for real (Monday-start) instead of hardcoded, so
-// the dashboard always shows whatever week it's actually opened during.
-const todayDate = new Date();
-todayDate.setHours(0,0,0,0);
-const todayIndex = (todayDate.getDay() + 6) % 7; // JS getDay(): 0=Sun..6=Sat → remap to 0=Mon..6=Sun
-const mondayDate = new Date(todayDate);
-mondayDate.setDate(todayDate.getDate() - todayIndex);
-const weekDates = days.map((_, i)=>{
-  const d = new Date(mondayDate);
-  d.setDate(mondayDate.getDate() + i);
-  return d;
-});
-const dayNums = weekDates.map(d => d.getDate());
-function isoDate(d){
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-// Monday's date — becomes the Firestore document key once mealPlans/
-// mealThreads are wired in (see project-knowledge.md); introduced now so
-// the in-memory shape already matches what it'll sync against.
+const todayDate = new Date(); todayDate.setHours(0,0,0,0);
+const todayIndex = (todayDate.getDay()+6)%7;
+const mondayDate = new Date(todayDate); mondayDate.setDate(todayDate.getDate()-todayIndex);
+const weekDates = days.map((_,i)=>{ const d=new Date(mondayDate); d.setDate(mondayDate.getDate()+i); return d; });
+const dayNums = weekDates.map(d=>d.getDate());
+function isoDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 const weekId = isoDate(mondayDate);
-
 let activeDay = todayIndex;
-let currentLang = localStorage.getItem('wg-lang') || 'en';
+let currentLang = localStorage.getItem('wg-lang') || 'zh';
 
 const i18n = {
   en: {
-    kicker: "This week's meals", title: "What's Cooking",
-    backToHub: "Home Hub",
-    breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner",
-    planned: "Planned", cooking: "Cooking", missing: "Missing ingredient", done: "Done",
-    videoLink: "Watch recipe video",
-    fullscreenVideo: "Watch fullscreen",
-    addRecipe: "+ Add a new dish", addRecipeSub: "add it to the list so it's easy to pick next time",
-    sendHint: "Press Enter to send", inputPlaceholder: "Type a message...",
-    translating: "Translating...",
-    translationUnavailable: "Translation unavailable",
-    clearMessagesTitle: "Reset this week (testing)",
-    clearMessagesConfirm: "Reset this whole week back to blank for everyone — every day's dishes, staple, status, AND every message? This can't be undone.",
-    you: "You", helper: "Helper (Tagalog → 中文)",
-    addDish: "+ Add dish",
-    pickDishTitle: "Choose a dish",
-    searchPh: "Search dishes...",
-    noMatch: "No dishes match.",
-    addNewDishLink: "+ Add a new dish",
-    newDishTitle: "Add a new dish",
-    newDishHint: "This gets added to the list so you can pick it again next time.",
-    alsoAddTo: "Also add to",
-    sourceLabel: "Recipe source",
-    pasteText: "Paste text", pasteLink: "Paste link",
-    recipeTextPh: "Paste the recipe steps here...",
-    recipeLinkPh: "Paste a YouTube / TikTok / IG / FB link...",
-    linkHint: "We'll pull the title automatically once this is wired to a live oEmbed lookup — for now, name it below. For YouTube, either a regular link or the embed code (Share → Embed) works.",
-    nameLabel: "Dish name",
-    dishNamePh: "e.g. Tomato Egg Stir-fry",
-    cancel: "Cancel", saveDish: "Save dish",
-    stapleNone: "No staple", stapleWhite: "White rice", stapleBrown: "Brown rice", stapleNoodles: "Noodles",
-    addingTo: "Adding to",
-    themeLight: "Light", themeDark: "Dark", themeAuto: "Auto",
-    noNewMessages: "No new messages",
-    kids: "Kids",
-    adults: "Adults",
-    nameModalTitle: "What's your name?",
-    nameModalSub: "So messages you send show who sent them, instead of just \"You\".",
-    nameModalPh: "e.g. Mom, Dad, Effendy...",
-    skip: "Skip for now", save: "Save",
-    greetingHi: "Hi, ",
-    editRecipe: "Edit recipe",
-    editDishTitle: "Edit dish",
-    noNoteYet: "No note yet — tap ✏️ to add one",
-    noDishYet: "Nothing planned yet"
+    kicker:"This week", title:"What's Cooking", backToHub:"Home Hub",
+    mealsTab:"🍲 Meals", chatTab:"💬 Chat",
+    breakfast:"Breakfast", lunch:"Lunch", dinner:"Dinner",
+    planned:"Planned", cooking:"Cooking", missing:"Missing ingredient", done:"Done",
+    videoLink:"Watch recipe video",
+    addMeal:"+ Add a meal", chooseAudience:"Who's eating", chooseMealType:"Which meal",
+    pickBothHint:"Choose who's eating and which meal first",
+    send:"Send", inputPlaceholder:"Type a message...",
+    translationUnavailable:"Translation unavailable",
+    clearMessagesTitle:"Clear all messages (testing)",
+    clearMessagesConfirm:"Delete all chat messages, for everyone? This can't be undone.",
+    you:"You", helper:"Helper",
+    addDish:"+ Add dish", pickDishTitle:"Choose a dish", searchPh:"Search dishes...",
+    noMatch:"No dishes match.", addNewDishLink:"+ Add a new dish",
+    newDishTitle:"Add a new dish", newDishHint:"This gets added to the list so you can pick it again next time.",
+    alsoAddTo:"Also add to", sourceLabel:"Recipe source", pasteText:"Paste text", pasteLink:"Paste link",
+    recipeTextPh:"Paste the recipe steps here...", recipeLinkPh:"Paste a YouTube / TikTok / IG / FB link...",
+    linkHint:"For YouTube, either a regular link or the embed code (Share → Embed) works.",
+    nameLabel:"Dish name", dishNamePh:"e.g. Tomato Egg Stir-fry", cancel:"Cancel", saveDish:"Save dish",
+    stapleNone:"No staple", stapleWhite:"White rice", stapleBrown:"Brown rice", stapleNoodles:"Noodles",
+    addingTo:"Adding to", themeLight:"Light", themeDark:"Dark", themeAuto:"Auto",
+    kids:"Kids", adults:"Adults",
+    nameModalTitle:"What's your name?", nameModalSub:"So messages you send show who sent them, instead of just \"You\".",
+    nameModalPh:"e.g. Mom, Dad, Effendy...", skip:"Skip for now", save:"Save",
+    editRecipe:"Edit recipe", editDishTitle:"Edit dish", noNoteYet:"No note yet — tap ✏️ to add one"
   },
   zh: {
-    kicker: "本周餐单", title: "今天吃什么",
-    backToHub: "家庭中心",
-    Mon: "周一", Tue: "周二", Wed: "周三", Thu: "周四", Fri: "周五", Sat: "周六", Sun: "周日",
-    breakfast: "早餐", lunch: "午餐", dinner: "晚餐",
-    planned: "已安排", cooking: "烹饪中", missing: "食材不足", done: "已完成",
-    videoLink: "观看食谱视频",
-    fullscreenVideo: "全屏观看",
-    addRecipe: "+ 添加新菜", addRecipeSub: "加入清单，下次直接选用",
-    sendHint: "按 Enter 发送", inputPlaceholder: "输入消息...",
-    translating: "翻译中...",
-    translationUnavailable: "暂无翻译",
-    clearMessagesTitle: "重置本周（测试用）",
-    clearMessagesConfirm: "将本周恢复为空白，对所有人生效——包括每天的菜肴、主食、状态，以及全部消息？此操作无法撤销。",
-    you: "你", helper: "帮佣（他加禄语 → 中文）",
-    addDish: "+ 添加菜肴",
-    pickDishTitle: "选择菜肴",
-    searchPh: "搜索菜肴...",
-    noMatch: "未找到匹配的菜肴。",
-    addNewDishLink: "+ 添加新菜",
-    newDishTitle: "添加新菜",
-    newDishHint: "加入清单后，下次可直接选用。",
-    alsoAddTo: "同时添加至",
-    sourceLabel: "食谱来源",
-    pasteText: "粘贴文字", pasteLink: "粘贴链接",
-    recipeTextPh: "在此粘贴食谱步骤...",
-    recipeLinkPh: "粘贴 YouTube / TikTok / IG / FB 链接...",
-    linkHint: "连接实时 oEmbed 查询后会自动提取标题——目前请在下方自行命名。YouTube 视频可以粘贴普通链接，也可以粘贴嵌入代码（分享 → 嵌入）。",
-    nameLabel: "菜名",
-    dishNamePh: "例如：番茄炒蛋",
-    cancel: "取消", saveDish: "保存菜肴",
-    stapleNone: "不需要主食", stapleWhite: "白饭", stapleBrown: "糙米饭", stapleNoodles: "面条",
-    addingTo: "添加至",
-    themeLight: "浅色", themeDark: "深色", themeAuto: "自动",
-    noNewMessages: "没有新消息",
-    kids: "儿童",
-    adults: "成人",
-    nameModalTitle: "你的名字是？",
-    nameModalSub: "这样你发的消息会显示是谁发的，而不只是「你」。",
-    nameModalPh: "例如：妈妈、爸爸、Effendy...",
-    skip: "暂时跳过", save: "保存",
-    greetingHi: "你好，",
-    editRecipe: "编辑食谱",
-    editDishTitle: "编辑菜肴",
-    noNoteYet: "还没有说明——点 ✏️ 添加",
-    noDishYet: "还没有安排"
-  },
-  tl: {
-    kicker: "Mga pagkain ngayong linggo", title: "Ano ang Lutuin",
-    backToHub: "Home Hub",
-    breakfast: "Almusal", lunch: "Tanghalian", dinner: "Hapunan",
-    planned: "Nakaplano", cooking: "Niluluto", missing: "Kulang ang sangkap", done: "Tapos na",
-    videoLink: "Panoorin ang recipe video",
-    fullscreenVideo: "Panoorin nang fullscreen",
-    addRecipe: "+ Magdagdag ng bagong ulam", addRecipeSub: "idagdag sa listahan para madali nang piliin sa susunod",
-    sendHint: "Pindutin ang Enter para magpadala", inputPlaceholder: "Mag-type ng mensahe...",
-    translating: "Isinasalin...",
-    translationUnavailable: "Walang available na salin",
-    clearMessagesTitle: "I-reset ang linggong ito (testing)",
-    clearMessagesConfirm: "I-reset ang buong linggong ito pabalik sa blangko para sa lahat — lahat ng ulam, staple, status ng bawat araw, AT lahat ng mensahe? Hindi na ito mababawi.",
-    you: "Ikaw", helper: "Katulong (Tagalog → 中文)",
-    addDish: "+ Magdagdag ng ulam",
-    pickDishTitle: "Pumili ng ulam",
-    searchPh: "Maghanap ng ulam...",
-    noMatch: "Walang tugmang ulam.",
-    addNewDishLink: "+ Magdagdag ng bagong ulam",
-    newDishTitle: "Magdagdag ng bagong ulam",
-    newDishHint: "Idadagdag ito sa listahan para madali nang piliin sa susunod.",
-    alsoAddTo: "Idagdag din sa",
-    sourceLabel: "Pinagmulan ng recipe",
-    pasteText: "I-paste ang teksto", pasteLink: "I-paste ang link",
-    recipeTextPh: "I-paste dito ang mga hakbang...",
-    recipeLinkPh: "I-paste ang link mula YouTube / TikTok / IG / FB...",
-    linkHint: "Awtomatikong makukuha ang pamagat kapag naka-connect na sa live oEmbed — sa ngayon, pangalanan ito sa ibaba. Para sa YouTube, pwede ang regular na link o ang embed code (Share → Embed).",
-    nameLabel: "Pangalan ng ulam",
-    dishNamePh: "hal. Tomato Egg Stir-fry",
-    cancel: "Kanselahin", saveDish: "I-save ang ulam",
-    stapleNone: "Walang staple", stapleWhite: "Puting kanin", stapleBrown: "Brown rice", stapleNoodles: "Pansit",
-    addingTo: "Idaragdag sa",
-    themeLight: "Maliwanag", themeDark: "Madilim", themeAuto: "Awtomatiko",
-    noNewMessages: "Walang bagong mensahe",
-    kids: "Mga Bata",
-    adults: "Matatanda",
-    nameModalTitle: "Ano ang pangalan mo?",
-    nameModalSub: "Para makita kung sino ang nagpadala ng mensahe mo, hindi lang \"You\".",
-    nameModalPh: "hal. Mommy, Daddy, Effendy...",
-    skip: "Laktawan muna", save: "I-save",
-    greetingHi: "Hi, ",
-    editRecipe: "I-edit ang recipe",
-    editDishTitle: "I-edit ang ulam",
-    noNoteYet: "Wala pang tala — pindutin ang ✏️ para magdagdag",
-    noDishYet: "Wala pang plano"
+    kicker:"本周", title:"今天吃什么", backToHub:"家庭中心",
+    mealsTab:"🍲 餐单", chatTab:"💬 消息",
+    Mon:"周一", Tue:"周二", Wed:"周三", Thu:"周四", Fri:"周五", Sat:"周六", Sun:"周日",
+    breakfast:"早餐", lunch:"午餐", dinner:"晚餐",
+    planned:"已安排", cooking:"烹饪中", missing:"食材不足", done:"已完成",
+    videoLink:"观看食谱视频",
+    addMeal:"+ 添加一餐", chooseAudience:"谁吃", chooseMealType:"什么时段",
+    pickBothHint:"请先选择用餐对象和时段",
+    send:"发送", inputPlaceholder:"输入消息...",
+    translationUnavailable:"暂无翻译",
+    clearMessagesTitle:"清空所有消息（测试用）",
+    clearMessagesConfirm:"删除所有聊天记录，对所有人生效？此操作无法撤销。",
+    you:"你", helper:"帮佣",
+    addDish:"+ 添加菜肴", pickDishTitle:"选择菜肴", searchPh:"搜索菜肴...",
+    noMatch:"未找到匹配的菜肴。", addNewDishLink:"+ 添加新菜",
+    newDishTitle:"添加新菜", newDishHint:"加入清单后，下次可直接选用。",
+    alsoAddTo:"同时添加至", sourceLabel:"食谱来源", pasteText:"粘贴文字", pasteLink:"粘贴链接",
+    recipeTextPh:"在此粘贴食谱步骤...", recipeLinkPh:"粘贴 YouTube / TikTok / IG / FB 链接...",
+    linkHint:"YouTube 视频可以粘贴普通链接，也可以粘贴嵌入代码（分享 → 嵌入）。",
+    nameLabel:"菜名", dishNamePh:"例如：番茄炒蛋", cancel:"取消", saveDish:"保存菜肴",
+    stapleNone:"不需要主食", stapleWhite:"白饭", stapleBrown:"糙米饭", stapleNoodles:"面条",
+    addingTo:"添加至", themeLight:"浅色", themeDark:"深色", themeAuto:"自动",
+    kids:"儿童", adults:"成人",
+    nameModalTitle:"你的名字是？", nameModalSub:"这样你发的消息会显示是谁发的，而不只是「你」。",
+    nameModalPh:"例如：妈妈、爸爸、Effendy...", skip:"暂时跳过", save:"保存",
+    editRecipe:"编辑食谱", editDishTitle:"编辑菜肴", noNoteYet:"还没有说明——点 ✏️ 添加"
   }
 };
+function t(key){ return i18n[currentLang][key] || key; }
 
-const staples = [
-  {id:"none", key:"stapleNone"},
-  {id:"white", key:"stapleWhite"},
-  {id:"brown", key:"stapleBrown"},
-  {id:"noodles", key:"stapleNoodles"}
-];
-
-// Dishes the helper already knows how to cook — now synced live across
-// devices via Firestore (recipeLibrary/library), not just loaded once from
-// recipes.json. Picking from here is how a dish gets added to a meal slot;
-// see openNewDishModal/newDishSave for how one gets added to this list.
-// Meal slots store only a recipe id (see mealData/writeMealSlot below),
-// resolved against this array at render time via findRecipe() — single
-// source of truth, no duplicated title/note/video copies per slot.
-let dishLibrary = [];
-function findRecipe(id){ return dishLibrary.find(d => d.id === id); }
-
-// Each meal type gets an adult card and a paired Kids card right after it
-// (same shape, own staple/dishes/status/thread) so the helper can be told
-// a different menu for the kids without it being confused with the adults'.
+const staples = [ {id:"none",key:"stapleNone"}, {id:"white",key:"stapleWhite"}, {id:"brown",key:"stapleBrown"}, {id:"noodles",key:"stapleNoodles"} ];
 const mealTypes = ['breakfast','lunch','dinner'];
-const mealSlots = [...mealTypes, ...mealTypes.map(t => t + '_kids')];
-function slotType(slotKey){ return slotKey.replace('_kids',''); }
-function isKidsSlot(slotKey){ return slotKey.endsWith('_kids'); }
-function slotTabLabel(slotKey){
-  const base = t(slotType(slotKey));
-  return isKidsSlot(slotKey) ? `🧒 ${base} · ${t('kids')}` : `${base} · ${t('adults')}`;
-}
-function slotContextLabel(slotKey){ return t(slotType(slotKey)) + (isKidsSlot(slotKey) ? ` (${t('kids')})` : ''); }
-
 const statusOrder = ["planned","cooking","missing","done"];
 
+let dishLibrary = [];
+function findRecipe(id){ return dishLibrary.find(d=>d.id===id); }
+
+function cardTabLabel(card){
+  const base = t(card.mealType);
+  return card.audience==='kids' ? `🧒 ${base} · ${t('kids')}` : `${base} · ${t('adults')}`;
+}
+
 // --- Firestore-backed state ---
-// mealPlans/{weekId}: { [dateIso]: { [slotKey]: { staple?, dishIds:[{id}], status } } }
-// mealThreads/{weekId}: { [dateIso]: { [slotKey]: [{from, text_zh, text_tl, unread?, senderName?}] } }
-// Nested by date first (one of that week's 7 ISO dates) then by meal slot —
-// a date only appears once something's actually been saved against it; an
-// untouched date has no key at all, and peekDayPlan()/peekDayThreads() give
-// back a blank template for it without persisting anything. Both are
-// mirrored locally into mealData / threadData; every user action writes
-// straight to Firestore (via a dot-path field update, e.g. "2026-09-10.lunch",
-// which creates the nested date map automatically if it doesn't exist yet)
-// and the onSnapshot listener below re-renders from whatever comes back
-// (including the echo of our own write), so this stays a thin mirror rather
-// than a second source of truth.
-const mealPlanRef = db ? doc(db, 'mealPlans', weekId) : null;
-const mealThreadRef = db ? doc(db, 'mealThreads', weekId) : null;
+// mealPlans/{weekId}: { cards: [{id, audience:'adult'|'kids', mealType, staple?, dishIds:[{id}], status}] }
+// mealThreads/{weekId}: { messages: [{from, text/text_zh/text_tl, origLang?, translatedEn?, unread?, senderId?, senderName?, ts?}] }
+// The plan is week-level (not per-day), matching the original design — the
+// day strip is contextual/navigational only, same as before.
+const mealPlanRef = db ? doc(db,'mealPlans', weekId) : null;
+const mealThreadRef = db ? doc(db,'mealThreads', weekId) : null;
+const LEGACY_SLOT_ORDER = ['breakfast','breakfast_kids','lunch','lunch_kids','dinner','dinner_kids'];
 
-// recipeLibrary/library: a single fixed doc, one top-level field per dish
-// keyed by recipe id — { [dishId]: { title, note, video, videoId } }. Not
-// scoped to a week like the other two; the recipe library is shared
-// forever, not per-week. Editing or adding a dish writes a dot-path field
-// update (e.g. "century_congee.videoId") so two people editing DIFFERENT
-// dishes at the same time never clobber each other, same reasoning as the
-// mealPlans date/slot dot-paths above. `recipes.json` is now only a
-// one-time seed — used the very first time this doc doesn't exist yet, and
-// as a same-tab fallback if Firestore isn't configured — not the ongoing
-// source of truth once the library is live (see initRecipeLibrarySync()).
-const recipeLibraryRef = db ? doc(db, 'recipeLibrary', 'library') : null;
-
-// Guards against a corrupted or partially-written recipe doc, same
-// defensive philosophy as sanitizeSlot() below. A dish with no usable
-// title is dropped entirely rather than showing a blank card.
-function sanitizeDish(id, raw){
-  if(!raw || typeof raw !== 'object') return null;
-  const title = (typeof raw.title === 'string' && raw.title.trim() !== '') ? raw.title.trim() : null;
-  if(!title) return null;
-  return {
-    id,
-    title,
-    note: typeof raw.note === 'string' ? raw.note : '',
-    video: !!raw.video,
-    videoId: (typeof raw.videoId === 'string' && raw.videoId.trim() !== '') ? raw.videoId.trim() : null
-  };
-}
-
-
-function activeDateIso(){ return isoDate(weekDates[activeDay]); }
-
-function blankSlot(slotKey){
-  return isKidsSlot(slotKey) ? { dishIds: [], status: 'planned' } : { staple: 'none', dishIds: [], status: 'planned' };
-}
-function emptyDayPlan(){ return Object.fromEntries(mealSlots.map(k => [k, blankSlot(k)])); }
-function emptyDayThreads(){ return Object.fromEntries(mealSlots.map(k => [k, []])); }
-
-// Guards against a corrupted or partially-written Firestore doc (a field
-// saved as null, a dishIds entry missing its id, an out-of-range status
-// string from hand-edited data) — same null/blank defensiveness applied in
-// the wg-groupbuy project's missing-product-key handling. Without this, a
-// single bad field in the doc would throw partway through renderMeals()
-// and blank the whole page instead of just that one slot.
-function sanitizeSlot(slotKey, raw){
-  const base = blankSlot(slotKey);
-  if(!raw || typeof raw !== 'object') return base;
-  const dishIds = Array.isArray(raw.dishIds)
-    ? raw.dishIds.filter(d => d && typeof d.id === 'string' && d.id.trim() !== '')
-    : [];
-  const status = statusOrder.includes(raw.status) ? raw.status : base.status;
-  const slot = { ...base, dishIds, status };
-  if(!isKidsSlot(slotKey)){
-    slot.staple = (typeof raw.staple === 'string' && raw.staple.trim() !== '') ? raw.staple : base.staple;
-  }
-  return slot;
-}
-
-let mealData = {};   // dateIso -> { slotKey -> slot }
-let threadData = {}; // dateIso -> { slotKey -> messages[] }
-
-// Read-only accessors for rendering — never create or persist an entry, so
-// simply looking at an untouched date doesn't make it "have data".
-function peekDayPlan(dateIso){ return mealData[dateIso] || emptyDayPlan(); }
-function peekDayThreads(dateIso){ return threadData[dateIso] || emptyDayThreads(); }
-function dayHasData(dateIso){ return !!mealData[dateIso] || !!threadData[dateIso]; }
-
-// videoPlaying is transient UI-only state (which embed is currently
-// showing) — it must never be written to Firestore, or every viewer's
-// player would restart on someone else's unrelated change. Keyed by
-// "dateIso::slotKey::dishIndex" (date included so switching days doesn't
-// coincidentally resume a video from a different day's same slot/index).
+let mealData = { cards: [] };
+let threadData = { messages: [] };
 let videoPlayingState = {};
-function isVideoPlaying(dateIso, slotKey, idx){ return !!videoPlayingState[`${dateIso}::${slotKey}::${idx}`]; }
-function setVideoPlaying(dateIso, slotKey, idx){ videoPlayingState[`${dateIso}::${slotKey}::${idx}`] = true; }
+function isVideoPlaying(cardId, idx){ return !!videoPlayingState[`${cardId}::${idx}`]; }
+function setVideoPlaying(cardId, idx){ videoPlayingState[`${cardId}::${idx}`] = true; }
 
-// Per-day-and-slot "is this card expanded" state — UI-only, never written
-// to Firestore, same reasoning as videoPlayingState above. Once a card is
-// explicitly toggled open or closed this session, that choice sticks
-// (switch days and come back, it remembers); before any explicit toggle,
-// a card with an unread message defaults open so nothing's missed, and
-// everything else defaults collapsed to keep the page short.
-let cardExpandState = {};
-function cardExpandKey(dateIso, slotKey){ return `${dateIso}::${slotKey}`; }
-function isCardExpanded(dateIso, slotKey, hasUnread){
-  const key = cardExpandKey(dateIso, slotKey);
-  return Object.prototype.hasOwnProperty.call(cardExpandState, key) ? cardExpandState[key] : hasUnread;
-}
-function toggleCardExpand(dateIso, slotKey, hasUnread){
-  const key = cardExpandKey(dateIso, slotKey);
-  cardExpandState[key] = !isCardExpanded(dateIso, slotKey, hasUnread);
+function sanitizeCard(raw){
+  if(!raw || typeof raw!=='object' || typeof raw.id!=='string' || !raw.id) return null;
+  const audience = raw.audience==='kids' ? 'kids' : 'adult';
+  const mealType = mealTypes.includes(raw.mealType) ? raw.mealType : 'dinner';
+  const dishIds = Array.isArray(raw.dishIds) ? raw.dishIds.filter(d=>d && typeof d.id==='string' && d.id.trim()!=='') : [];
+  const status = statusOrder.includes(raw.status) ? raw.status : 'planned';
+  const card = { id: raw.id, audience, mealType, dishIds, status };
+  if(audience==='adult') card.staple = (typeof raw.staple==='string' && raw.staple.trim()!=='') ? raw.staple : 'none';
+  return card;
 }
 
-// A slot counts as "has data" — and shows a compact one-line summary
-// instead of a thin "+ Add dish" prompt when collapsed — the moment
-// anything's actually been set on it: a dish added, staple changed off
-// the default, status moved off "planned", or a message sent.
-function slotHasData(slotKey, data, messages){
-  if(data.dishIds.length > 0) return true;
-  if(data.status !== 'planned') return true;
-  if(!isKidsSlot(slotKey) && data.staple !== 'none') return true;
-  if(messages.length > 0) return true;
-  return false;
+// One-time migration from the old fixed-slot schema (breakfast/breakfast_kids/
+// lunch/... each with its own {staple?,dishIds,status}) into the new dynamic
+// cards array — only slots that actually had a dish become a card, so we
+// don't manufacture 6 empty ghost cards out of blank legacy data.
+function migrateOldMealPlan(oldData){
+  const cards = [];
+  mealTypes.forEach(mt=>{
+    ['adult','kids'].forEach(aud=>{
+      const slotKey = aud==='kids' ? mt+'_kids' : mt;
+      const raw = oldData[slotKey];
+      const dishIds = raw && Array.isArray(raw.dishIds) ? raw.dishIds.filter(d=>d&&d.id) : [];
+      if(dishIds.length>0){
+        const card = { id:'card_migrated_'+slotKey, audience:aud, mealType:mt, dishIds, status: statusOrder.includes(raw.status)?raw.status:'planned' };
+        if(aud==='adult') card.staple = (typeof raw.staple==='string' && raw.staple) ? raw.staple : 'none';
+        cards.push(card);
+      }
+    });
+  });
+  return cards;
+}
+function migrateOldThread(oldData){
+  const messages = [];
+  LEGACY_SLOT_ORDER.forEach(slotKey=>{
+    const arr = Array.isArray(oldData[slotKey]) ? oldData[slotKey] : [];
+    arr.forEach(m=>{ if(m) messages.push(m); });
+  });
+  return messages;
 }
 
 async function initFirestoreSync(){
-  if(!db) return; // Firebase not configured yet — stays local-only this session.
+  if(!db) return;
   try{
     const planSnap = await getDoc(mealPlanRef);
     if(!planSnap.exists()){
-      await setDoc(mealPlanRef, {});
+      await setDoc(mealPlanRef, { cards: [] });
+    } else if(!Array.isArray(planSnap.data().cards)){
+      await setDoc(mealPlanRef, { cards: migrateOldMealPlan(planSnap.data()) }, { merge:true });
     }
     const threadSnap = await getDoc(mealThreadRef);
     if(!threadSnap.exists()){
-      await setDoc(mealThreadRef, {});
+      await setDoc(mealThreadRef, { messages: [] });
+    } else if(!Array.isArray(threadSnap.data().messages)){
+      await setDoc(mealThreadRef, { messages: migrateOldThread(threadSnap.data()) }, { merge:true });
     }
-  }catch(err){
-    console.error('Failed to initialize this week\'s Firestore docs', err);
-    return;
-  }
-  onSnapshot(mealPlanRef, snap => {
+  }catch(err){ console.error("Failed to initialize this week's Firestore docs", err); return; }
+
+  onSnapshot(mealPlanRef, snap=>{
     if(!snap.exists()) return;
-    const data = snap.data();
-    weekDates.forEach(d=>{
-      const dateIso = isoDate(d);
-      const rawDay = data[dateIso];
-      if(rawDay && typeof rawDay === 'object'){
-        const day = {};
-        mealSlots.forEach(k => { day[k] = sanitizeSlot(k, rawDay[k]); });
-        mealData[dateIso] = day;
-      } else {
-        delete mealData[dateIso]; // untouched date — renders empty via peekDayPlan()
-      }
-    });
+    mealData.cards = Array.isArray(snap.data().cards) ? snap.data().cards.map(sanitizeCard).filter(Boolean) : [];
     renderMeals();
-  }, err => console.error('mealPlans subscription failed', err));
-  onSnapshot(mealThreadRef, snap => {
+  }, err=>console.error('mealPlans subscription failed', err));
+
+  onSnapshot(mealThreadRef, snap=>{
     if(!snap.exists()) return;
-    const data = snap.data();
-    weekDates.forEach(d=>{
-      const dateIso = isoDate(d);
-      const rawDay = data[dateIso];
-      if(rawDay && typeof rawDay === 'object'){
-        const day = {};
-        mealSlots.forEach(k => {
-          const raw = Array.isArray(rawDay[k]) ? rawDay[k] : [];
-          // Drop any entry missing the fields the renderer needs — a hand-
-          // edited or partially-written doc shouldn't be able to blank the
-          // whole thread. Accepts either shape: new messages carry `text`
-          // (+ origLang/translations), older ones carry text_zh/text_tl.
-          day[k] = raw.filter(m => m && (m.from === 'you' || m.from === 'helper') && (m.text || m.text_zh || m.text_tl));
-        });
-        threadData[dateIso] = day;
-      } else {
-        delete threadData[dateIso];
-      }
-    });
-    renderMeals();
-  }, err => console.error('mealThreads subscription failed', err));
+    const raw = Array.isArray(snap.data().messages) ? snap.data().messages : [];
+    threadData.messages = raw.filter(m=>m && (m.from==='you'||m.from==='helper') && (m.text||m.text_zh||m.text_tl));
+    renderChat();
+  }, err=>console.error('mealThreads subscription failed', err));
 }
 
-// Loads the recipe library. Always fetches recipes.json first — used
-// immediately as a fallback render (something shows before Firestore
-// responds, or forever if Firestore isn't configured) and, the very first
-// time this app runs, as the seed data written into Firestore so the live
-// library doesn't start empty. After that, recipeLibrary/library in
-// Firestore is the real source of truth and recipes.json is no longer
-// read from again this session.
-async function initRecipeLibrarySync(){
-  let seedRecipes = [];
-  try{
-    // GitHub Pages / mobile browsers can serve a stale cached copy of this
-    // JSON after a re-upload — appending a changing query string defeats
-    // that cache on every load, same fix applied in the wg-groupbuy project.
-    const r = await fetch('./recipes.json?v=' + Date.now());
-    const recipes = await r.json();
-    seedRecipes = Array.isArray(recipes) ? recipes.filter(d => d && typeof d.id === 'string' && d.id.trim() !== '' && typeof d.title === 'string' && d.title.trim() !== '') : [];
-  }catch(err){
-    console.error('Failed to load recipes.json', err);
-  }
-  dishLibrary = seedRecipes;
-  renderMeals();
-
-  if(!db || !recipeLibraryRef) return; // Firebase not configured — recipes.json stays the whole story this session; edits won't persist or sync.
-
-  try{
-    const snap = await getDoc(recipeLibraryRef);
-    if(!snap.exists()){
-      const seedMap = Object.fromEntries(seedRecipes.map(d => [d.id, {
-        title: d.title, note: d.note || '', video: !!d.video, videoId: d.videoId || null
-      }]));
-      await setDoc(recipeLibraryRef, seedMap);
-    }
-  }catch(err){
-    console.error('Failed to initialize recipe library in Firestore', err);
-    return;
-  }
-
-  onSnapshot(recipeLibraryRef, snap => {
-    if(!snap.exists()) return;
-    const data = snap.data();
-    const synced = Object.entries(data).map(([id, raw]) => sanitizeDish(id, raw)).filter(Boolean);
-    if(synced.length){
-      dishLibrary = synced;
-      renderMeals();
-    }
-  }, err => console.error('recipeLibrary subscription failed', err));
-}
-
-// Adds or updates one dish. Updates the local mirror immediately so the UI
-// feels instant; the onSnapshot listener above reconciles shortly after
-// with whatever Firestore actually confirms (same pattern as
-// writeMealSlot/writeThread). The Firestore write only touches this one
-// dish's field (dot-path-free here since the dish id itself is the
-// top-level field), so editing two different dishes at once from two
-// devices never clobbers either edit.
-function writeDish(dish){
-  const idx = dishLibrary.findIndex(d => d.id === dish.id);
-  if(idx === -1) dishLibrary.push(dish); else dishLibrary[idx] = dish;
-  if(recipeLibraryRef){
-    updateDoc(recipeLibraryRef, {
-      [dish.id]: { title: dish.title, note: dish.note || '', video: !!dish.video, videoId: dish.videoId || null }
-    }).catch(err => console.error('Failed to save recipe to Firestore', err));
-  }
-}
-
-// Field-path updates (e.g. "2026-09-10.lunch") only touch that one date's
-// slot in Firestore and create the nested date map automatically the first
-// time something's saved against that date — no need to pre-seed every
-// date up front.
-function writeMealSlot(dateIso, slotKey, newSlotData){
-  if(!mealData[dateIso]) mealData[dateIso] = emptyDayPlan();
-  mealData[dateIso][slotKey] = newSlotData;
-  if(mealPlanRef) updateDoc(mealPlanRef, { [`${dateIso}.${slotKey}`]: newSlotData }).catch(err => console.error('Failed to save meal plan change', err));
+function writeMealCards(newCards){
+  mealData.cards = newCards;
+  if(mealPlanRef) updateDoc(mealPlanRef, { cards:newCards }).catch(err=>console.error('Failed to save meal plan change', err));
   renderMeals();
 }
-function writeThread(dateIso, slotKey, newMessages){
-  if(!threadData[dateIso]) threadData[dateIso] = emptyDayThreads();
-  threadData[dateIso][slotKey] = newMessages;
-  if(mealThreadRef) updateDoc(mealThreadRef, { [`${dateIso}.${slotKey}`]: newMessages }).catch(err => console.error('Failed to save message', err));
-  renderMeals();
+function writeThread(newMessages){
+  threadData.messages = newMessages;
+  if(mealThreadRef) updateDoc(mealThreadRef, { messages:newMessages }).catch(err=>console.error('Failed to save message', err));
+  renderChat();
+}
+function updateCard(cardId, patch){ writeMealCards(mealData.cards.map(c=>c.id===cardId ? {...c, ...patch} : c)); }
+function removeCardById(cardId){ writeMealCards(mealData.cards.filter(c=>c.id!==cardId)); }
+function addCard(newCard){ writeMealCards(mealData.cards.concat([newCard])); }
+function newCardId(){ return 'card_'+Date.now()+'_'+Math.random().toString(36).slice(2,7); }
+
+function unreadCount(){ return threadData.messages.filter(m=>!isOwnMessage(m) && m.unread).length; }
+function renderTabBadges(){
+  const n = unreadCount();
+  const badge = document.getElementById('chatTabBadge');
+  badge.style.display = n>0 ? 'inline-flex' : 'none';
+  badge.textContent = n;
+}
+function markThreadRead(){
+  if(unreadCount()===0) return;
+  writeThread(threadData.messages.map(m=> !isOwnMessage(m) ? {...m, unread:false} : m));
 }
 
-function unreadForMeal(dateIso, slotKey){
-  return peekDayThreads(dateIso)[slotKey].filter(isUnreadForMe).length;
-}
-
-// Spans the whole visible week, not just the active day — a message left
-// on Monday's breakfast should still count toward the bell even while
-// looking at Friday.
-function totalUnread(){
-  return weekDates.reduce((sum, d) => {
-    const dateIso = isoDate(d);
-    return sum + mealSlots.reduce((s2, slotKey) => s2 + unreadForMeal(dateIso, slotKey), 0);
-  }, 0);
-}
-
-function renderBell(){
-  const total = totalUnread();
-  const countEl = document.getElementById('bellCount');
-  countEl.textContent = total;
-  countEl.style.display = total > 0 ? 'flex' : 'none';
-}
-
-function t(key){ return i18n[currentLang][key] || key; }
-
+// --- Theme ---
 let themePref = localStorage.getItem('wg-theme') || 'auto';
-
 function applyTheme(){
-  if(themePref === 'auto'){
-    document.documentElement.removeAttribute('data-theme');
-  } else {
-    document.documentElement.setAttribute('data-theme', themePref);
-  }
-  document.querySelectorAll('.theme-seg').forEach(btn=>{
-    btn.classList.toggle('active', btn.dataset.themeChoice === themePref);
-  });
+  if(themePref==='auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', themePref);
+  document.querySelectorAll('[data-theme-choice]').forEach(btn=>btn.classList.toggle('active', btn.dataset.themeChoice===themePref));
 }
-
-document.querySelectorAll('.theme-seg').forEach(btn=>{
-  btn.onclick = ()=>{
-    themePref = btn.dataset.themeChoice;
-    localStorage.setItem('wg-theme', themePref);
-    applyTheme();
-  };
+document.querySelectorAll('[data-theme-choice]').forEach(btn=>{
+  btn.onclick = ()=>{ themePref = btn.dataset.themeChoice; localStorage.setItem('wg-theme', themePref); applyTheme(); };
 });
 
+// --- Tabs (Meals / Chat) ---
+let activeTab = 'meals';
+function setActiveTab(tab){
+  activeTab = tab;
+  document.getElementById('mealsPanel').classList.toggle('hidden', tab!=='meals');
+  document.getElementById('chatPanel').classList.toggle('hidden', tab!=='chat');
+  document.getElementById('chatBottomBar').classList.toggle('hidden', tab!=='chat');
+  document.getElementById('tabMeals').classList.toggle('active', tab==='meals');
+  document.getElementById('tabChat').classList.toggle('active', tab==='chat');
+  if(tab==='chat'){ renderChat(); markThreadRead(); }
+}
+document.getElementById('tabMeals').onclick = ()=>setActiveTab('meals');
+document.getElementById('tabChat').onclick = ()=>setActiveTab('chat');
+
+// --- Day strip (contextual only, same as original design) ---
 function renderDayStrip(){
   const el = document.getElementById('dayStrip');
   el.innerHTML = '';
   days.forEach((d,i)=>{
-    const dateIso = isoDate(weekDates[i]);
     const tab = document.createElement('div');
-    tab.className = 'day-tab' + (i===activeDay?' active':'') + (i===todayIndex?' today':'') + (dayHasData(dateIso) ? ' has-data' : '');
+    tab.className = 'day-tab'+(i===activeDay?' active':'')+(i===todayIndex?' today':'');
     tab.innerHTML = `${t(d)}<span class="num">${dayNums[i]}</span>`;
-    tab.onclick = ()=>{ activeDay = i; renderDayStrip(); renderMeals(); };
+    tab.onclick = ()=>{ activeDay=i; renderDayStrip(); };
     el.appendChild(tab);
   });
+}
+
+// --- Draft card (the empty, expandable "add a meal" flow) ---
+let draftCard = null; // {audience, mealType, searchQuery}
+let draftForNewDish = false; // true when the "add a new dish" link was opened from the draft flow
+
+function renderDraftDishPickItems(){
+  const q = (draftCard.searchQuery||'').trim().toLowerCase();
+  const matches = dishLibrary.filter(d=>d.title.toLowerCase().includes(q));
+  if(matches.length===0) return `<div class="dish-pick-empty">${t('noMatch')}</div>`;
+  return matches.map(d=>`
+    <div class="dish-pick-item">
+      <div class="dish-pick-item-main" data-draftpickid="${d.id}">
+        <div class="dish-pick-title">${d.video?'▶ ':''}${d.title}</div>
+        <div class="dish-pick-note">${d.note || `<em>${t('noNoteYet')}</em>`}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildDraftCardHtml(){
+  const ready = draftCard.audience && draftCard.mealType;
+  return `
+    <div class="card draft-card">
+      <div class="card-body">
+        <div class="field-label">${t('chooseAudience')}</div>
+        <div class="toggle-row" style="margin-bottom:12px;">
+          <button data-draftaud="adult" class="${draftCard.audience==='adult'?'active':''}">${t('adults')}</button>
+          <button data-draftaud="kids" class="${draftCard.audience==='kids'?'active':''}">🧒 ${t('kids')}</button>
+        </div>
+        <div class="field-label">${t('chooseMealType')}</div>
+        <div class="toggle-row">
+          ${mealTypes.map(mt=>`<button data-draftmt="${mt}" class="${draftCard.mealType===mt?'active':''}">${t(mt)}</button>`).join('')}
+        </div>
+        ${ ready ? `
+          <div class="field-label" style="margin-top:14px;">${t('pickDishTitle')}</div>
+          <input type="text" class="search-input" id="draftDishSearch" placeholder="${t('searchPh')}" value="${draftCard.searchQuery||''}">
+          <div class="dish-pick-list" id="draftDishPickList">${renderDraftDishPickItems()}</div>
+          <button class="add-new-link" id="draftAddNewDishLink">${t('addNewDishLink')}</button>
+        ` : `<div class="hint" style="margin-top:10px;">${t('pickBothHint')}</div>` }
+        <div class="modal-actions">
+          <button class="btn-cancel" id="draftCancelBtn">${t('cancel')}</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function wireDraftCardEvents(container){
+  container.querySelectorAll('[data-draftaud]').forEach(btn=>{
+    btn.onclick = ()=>{ draftCard.audience = btn.dataset.draftaud; renderMeals(); };
+  });
+  container.querySelectorAll('[data-draftmt]').forEach(btn=>{
+    btn.onclick = ()=>{ draftCard.mealType = btn.dataset.draftmt; renderMeals(); };
+  });
+  const cancelBtn = container.querySelector('#draftCancelBtn');
+  if(cancelBtn) cancelBtn.onclick = ()=>{ draftCard=null; renderMeals(); };
+  const searchInput = container.querySelector('#draftDishSearch');
+  if(searchInput){
+    searchInput.oninput = (e)=>{
+      draftCard.searchQuery = e.target.value;
+      container.querySelector('#draftDishPickList').innerHTML = renderDraftDishPickItems();
+      wireDraftPickItems(container);
+    };
+    searchInput.focus();
+  }
+  wireDraftPickItems(container);
+  const addNewLink = container.querySelector('#draftAddNewDishLink');
+  if(addNewLink) addNewLink.onclick = ()=>{ draftForNewDish = true; openNewDishModal(null); };
+}
+function wireDraftPickItems(container){
+  container.querySelectorAll('[data-draftpickid]').forEach(item=>{
+    item.onclick = ()=>{
+      const newCard = { id:newCardId(), audience:draftCard.audience, mealType:draftCard.mealType, dishIds:[{id:item.dataset.draftpickid}], status:'planned' };
+      if(draftCard.audience==='adult') newCard.staple = 'none';
+      addCard(newCard);
+      draftCard = null;
+    };
+  });
+}
+
+// --- Render a filled card ---
+function buildCardHtml(card){
+  const dishesHtml = card.dishIds.map((entry, idx)=>{
+    const dish = findRecipe(entry.id);
+    if(!dish){
+      return `<div class="dish">
+        <div class="dish-head">
+          <div class="recipe-title">⚠️ ${entry.id}</div>
+          <button class="dish-remove" data-removedish="${card.id}" data-dishidx="${idx}">✕</button>
+        </div>
+        <p class="recipe-note">Recipe not found — check recipes.json</p>
+      </div>`;
+    }
+    const videoBlock = dish.video ? (
+      dish.videoId && isVideoPlaying(card.id, idx)
+        ? (()=>{
+            const isJustClicked = autoplayDish===`${card.id}_${idx}`;
+            const src = `https://www.youtube.com/embed/${dish.videoId}?playsinline=1${isJustClicked?'&autoplay=1':''}`;
+            return `<div class="video-embed"><iframe src="${src}" title="${dish.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`;
+          })()
+        : `<div class="video-chip" data-playvideo="${card.id}" data-dishidx="${idx}"><span class="dot"></span>${t('videoLink')}</div>`
+    ) : '';
+    return `<div class="dish">
+      <div class="dish-head">
+        <div class="recipe-title">${dish.title}</div>
+        <div class="dish-head-actions">
+          <button class="dish-edit" data-editdish="${dish.id}" title="${t('editRecipe')}">✏️</button>
+          <button class="dish-remove" data-removedish="${card.id}" data-dishidx="${idx}">✕</button>
+        </div>
+      </div>
+      <p class="recipe-note">${dish.note || `<em>${t('noNoteYet')}</em>`}</p>
+      ${videoBlock}
+    </div>`;
+  }).join('');
+
+  const stapleHtml = card.audience==='kids' ? '' : `<div class="staple-row">${staples.map(s=>
+    `<button class="staple-btn ${card.staple===s.id?'selected':''}" data-cardid="${card.id}" data-staple="${s.id}">${t(s.key)}</button>`
+  ).join('')}</div>`;
+
+  return `<div class="card ${card.mealType}${card.audience==='kids'?' kids':''}" id="mealcard-${card.id}">
+    <span class="tab">${cardTabLabel(card)}</span>
+    <div class="card-body">
+      ${stapleHtml}
+      ${dishesHtml}
+      <button class="add-dish-btn" data-addto="${card.id}">${t('addDish')}</button>
+      <div class="status-row">
+        ${statusOrder.map(s=>`<button class="status-btn ${s===card.status?'selected '+s:''}" data-cardid="${card.id}" data-status="${s}">${t(s)}</button>`).join('')}
+      </div>
+      <div style="text-align:right; margin-top:8px;">
+        <button class="dish-remove" data-removecard="${card.id}" title="${t('cancel')}">🗑️</button>
+      </div>
+    </div>
+  </div>`;
 }
 
 let autoplayDish = null;
 
 function renderMeals(){
-  const dateIso = activeDateIso();
-  const dayPlan = peekDayPlan(dateIso);
-  const dayThreads = peekDayThreads(dateIso);
   const el = document.getElementById('mealArea');
-  el.innerHTML = '';
-  mealSlots.forEach(slotKey=>{
-    const data = dayPlan[slotKey];
-    const messages = dayThreads[slotKey];
-    const unreadCount = unreadForMeal(dateIso, slotKey);
-    const hasData = slotHasData(slotKey, data, messages);
-    const expanded = isCardExpanded(dateIso, slotKey, unreadCount > 0);
-    const card = document.createElement('div');
-    card.className = 'card ' + slotType(slotKey) + (isKidsSlot(slotKey) ? ' kids' : '');
-    card.id = 'mealcard-' + slotKey;
+  el.innerHTML = mealData.cards.map(buildCardHtml).join('') + (draftCard ? buildDraftCardHtml() : `<button class="add-card-ghost" id="addCardGhost">${t('addMeal')}</button>`);
 
-    let bodyHtml;
-    if(!expanded){
-      // Collapsed: a compact one-liner for a slot with something on it, or
-      // a thin "+ Add" prompt for one that's still empty — either way,
-      // clicking it (or the tab above) expands into the full card below.
-      if(hasData){
-        const dishNames = data.dishIds.map(entry=>{
-          const dish = findRecipe(entry.id);
-          return dish ? dish.title : `⚠️ ${entry.id}`;
-        }).join(', ');
-        const stapleLabel = (!isKidsSlot(slotKey) && data.staple !== 'none')
-          ? t(staples.find(s => s.id === data.staple).key) : '';
-        const summaryText = dishNames || stapleLabel || t('noDishYet');
-        bodyHtml = `
-          <div class="card-summary" data-togglecard="${slotKey}">
-            <div class="summary-dishes">${summaryText}</div>
-            <span class="status-pill ${data.status}">${t(data.status)}</span>
-          </div>
-        `;
-      } else {
-        bodyHtml = `<div class="card-summary empty" data-togglecard="${slotKey}"><span class="add-plus">+</span> ${t('addDish')}</div>`;
-      }
-    } else {
-      let threadHtml = messages.map(m=>{
-        // "mine" (alignment) is per-viewer: only true on the device that sent
-        // it. "from" (translation-box color) stays tied to which side of the
-        // conversation the message belongs to, regardless of who's looking.
-        const mine = isOwnMessage(m);
-        const whoLabel = chatLabelFor(m);
-        let primary, secondary;
-        if(typeof m.text === 'string'){
-          // Current message shape: original text as actually typed, in
-          // whichever of the three app languages that was (auto-detected at
-          // send time — nobody is assumed to type in a fixed language).
-          // Translation target is fixed to English for everyone, same as
-          // `translatedEn` was computed at send time — this does NOT depend
-          // on the viewer's own EN/中文/TL toggle (that toggle is UI copy
-          // only; see the note on `text_tl` further up about not letting it
-          // leak into message content).
-          primary = m.text;
-          if(m.origLang && m.origLang !== 'en'){
-            secondary = m.translatedEn || t('translationUnavailable');
-          } else {
-            secondary = null; // already English, or language unknown — nothing to show
-          }
-        } else {
-          // Legacy shape (messages sent before language auto-detection
-          // existed, plus the original hand-typed helper/you demo pairs) —
-          // keep the old fixed Chinese/Tagalog pairing so they keep
-          // rendering exactly as before rather than breaking.
-          primary = m.from === 'helper' ? (m.text_tl||m.text_zh) : (m.text_zh||m.text_tl);
-          secondary = m.from === 'helper' ? m.text_zh : m.text_tl;
-        }
-        return `<div class="msg ${m.from}${mine ? ' mine' : ''}">
-          <div class="who">${isUnreadForMe(m) ? '<span class="unread-dot"></span>' : ''}${whoLabel}</div>
-          <div class="bubble">${primary}</div>
-          ${secondary ? `<div class="translated">${secondary}</div>` : ''}
-        </div>`;
-      }).join('');
-
-      const stapleHtml = isKidsSlot(slotKey) ? '' : staples.map(s=>
-        `<button class="staple-btn ${data.staple===s.id?'selected':''}" data-mealtype="${slotKey}" data-staple="${s.id}">${t(s.key)}</button>`
-      ).join('');
-
-      const dishesHtml = data.dishIds.map((entry, idx)=>{
-        const dish = findRecipe(entry.id);
-        if(!dish){
-          // A slot referencing a recipe id that's missing from recipes.json
-          // (hand-edited data drifting) — degrade to a visible warning
-          // instead of throwing, same defensive pattern as the groupbuy
-          // dashboard's missing-product-key guard.
-          return `<div class="dish">
-            <div class="dish-head">
-              <div class="recipe-title">⚠️ ${entry.id}</div>
-              <button class="dish-remove" data-removedish="${slotKey}" data-dishidx="${idx}">✕</button>
-            </div>
-            <p class="recipe-note">Recipe not found — check recipes.json</p>
-          </div>`;
-        }
-        const videoBlock = dish.video ? (
-          dish.videoId && isVideoPlaying(dateIso, slotKey, idx)
-            ? (()=>{
-                // Only autoplay the instant the chip was just clicked
-                // (autoplayDish, cleared right after this render pass) —
-                // otherwise any later re-render (language switch, status
-                // change, sending a message, etc.) rebuilds this iframe
-                // from scratch and would restart the video from 0:00.
-                const isJustClicked = autoplayDish === `${dateIso}_${slotKey}_${idx}`;
-                const src = `https://www.youtube.com/embed/${dish.videoId}?playsinline=1${isJustClicked ? '&autoplay=1' : ''}`;
-                return `<div class="video-embed"><iframe src="${src}" title="${dish.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe><button class="video-fullscreen-btn" data-fullscreen-video title="${t('fullscreenVideo')}" aria-label="${t('fullscreenVideo')}">⛶</button></div>`;
-              })()
-            : `<div class="video-chip" data-playvideo="${slotKey}" data-dishidx="${idx}"><span class="dot"></span>${t('videoLink')}</div>`
-        ) : '';
-        return `<div class="dish">
-          <div class="dish-head">
-            <div class="recipe-title">${dish.title}</div>
-            <div class="dish-head-actions">
-              <button class="dish-edit" data-editdish="${dish.id}" title="${t('editRecipe')}">✏️</button>
-              <button class="dish-remove" data-removedish="${slotKey}" data-dishidx="${idx}">✕</button>
-            </div>
-          </div>
-          <p class="recipe-note">${dish.note || `<em>${t('noNoteYet')}</em>`}</p>
-          ${videoBlock}
-        </div>`;
-      }).join('');
-
-      bodyHtml = `
-        ${isKidsSlot(slotKey) ? '' : `<div class="staple-row">${stapleHtml}</div>`}
-        ${dishesHtml}
-        <button class="add-dish-btn" data-addto="${slotKey}" data-i18n="addDish">${t('addDish')}</button>
-        <div class="status-row">
-          ${statusOrder.map(s=>`<button class="status-btn ${s===data.status?'selected '+s:''}" data-type="${slotKey}" data-status="${s}">${t(s)}</button>`).join('')}
-        </div>
-        <div class="thread" data-thread="${slotKey}">
-          ${threadHtml}
-          <div class="msg-input">
-            <input type="text" placeholder="${t('inputPlaceholder')}" data-input="${slotKey}">
-          </div>
-          <div class="send-hint">${t('sendHint')}</div>
-        </div>
-      `;
-    }
-
-    card.innerHTML = `
-      <span class="tab" data-togglecard="${slotKey}">${slotTabLabel(slotKey)}${unreadCount > 0 ? `<span class="badge">${unreadCount}</span>` : ''}<span class="tab-chevron">${expanded ? '▾' : '▸'}</span></span>
-      <div class="card-body">${bodyHtml}</div>
-    `;
-    el.appendChild(card);
+  el.querySelectorAll('[data-cardid][data-status]').forEach(btn=>{
+    btn.onclick = ()=> updateCard(btn.dataset.cardid, { status: btn.dataset.status });
   });
-
-  el.querySelectorAll('[data-togglecard]').forEach(elm=>{
-    elm.onclick = ()=>{
-      const slotKey = elm.dataset.togglecard;
-      const wasExpanded = isCardExpanded(dateIso, slotKey, unreadForMeal(dateIso, slotKey) > 0);
-      toggleCardExpand(dateIso, slotKey, unreadForMeal(dateIso, slotKey) > 0);
-      if(!wasExpanded){
-        // Opening a card counts as reading it, for me — same per-viewer
-        // readBy tracking as the notification popover uses.
-        markThreadReadForMe(dateIso, slotKey);
-      }
-      renderMeals();
-    };
+  el.querySelectorAll('[data-cardid][data-staple]').forEach(btn=>{
+    btn.onclick = ()=> updateCard(btn.dataset.cardid, { staple: btn.dataset.staple });
   });
-
-  el.querySelectorAll('.status-btn').forEach(btn=>{
-    btn.onclick = ()=>{
-      const slotKey = btn.dataset.type;
-      writeMealSlot(dateIso, slotKey, { ...dayPlan[slotKey], status: btn.dataset.status });
-    };
-  });
-
-  el.querySelectorAll('.staple-btn').forEach(btn=>{
-    btn.onclick = ()=>{
-      const slotKey = btn.dataset.mealtype;
-      writeMealSlot(dateIso, slotKey, { ...dayPlan[slotKey], staple: btn.dataset.staple });
-    };
-  });
-
   el.querySelectorAll('[data-playvideo]').forEach(chip=>{
     chip.onclick = ()=>{
-      const slotKey = chip.dataset.playvideo;
-      const idx = chip.dataset.dishidx;
-      // Local-only — never synced to Firestore, so this doesn't restart
-      // the video for anyone else viewing the same dashboard.
-      setVideoPlaying(dateIso, slotKey, idx);
-      autoplayDish = `${dateIso}_${slotKey}_${idx}`;
+      setVideoPlaying(chip.dataset.playvideo, chip.dataset.dishidx);
+      autoplayDish = `${chip.dataset.playvideo}_${chip.dataset.dishidx}`;
       renderMeals();
     };
   });
-
-  // The YouTube player's own fullscreen control is tiny at this embed
-  // size and easy to miss, so there's a dedicated button on top of the
-  // video instead. Requests fullscreen on the <iframe> itself (not the
-  // player inside it — cross-origin content can't be reached directly),
-  // which is the same underlying browser API the player's own button
-  // would call; "fullscreen" is explicitly listed in the iframe's `allow`
-  // attribute (alongside the legacy `allowfullscreen` boolean) so this
-  // works consistently across browsers.
-  el.querySelectorAll('[data-fullscreen-video]').forEach(btn=>{
-    btn.onclick = (e)=>{
-      e.stopPropagation();
-      const iframe = btn.closest('.video-embed')?.querySelector('iframe');
-      if(!iframe) return;
-      const request = iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen || iframe.msRequestFullscreen;
-      if(request) request.call(iframe);
-    };
-  });
-
-  el.querySelectorAll('[data-editdish]').forEach(btn=>{
-    btn.onclick = ()=> openEditDishModal(btn.dataset.editdish);
-  });
-
+  el.querySelectorAll('[data-editdish]').forEach(btn=>{ btn.onclick = ()=> openEditDishModal(btn.dataset.editdish); });
   el.querySelectorAll('[data-removedish]').forEach(btn=>{
     btn.onclick = ()=>{
-      const slotKey = btn.dataset.removedish;
-      const idx = btn.dataset.dishidx;
-      const newDishIds = dayPlan[slotKey].dishIds.slice();
-      newDishIds.splice(idx,1);
-      writeMealSlot(dateIso, slotKey, { ...dayPlan[slotKey], dishIds: newDishIds });
+      const card = mealData.cards.find(c=>c.id===btn.dataset.removedish);
+      if(!card) return;
+      const newDishIds = card.dishIds.slice();
+      newDishIds.splice(btn.dataset.dishidx, 1);
+      updateCard(card.id, { dishIds:newDishIds });
     };
   });
+  el.querySelectorAll('[data-removecard]').forEach(btn=>{ btn.onclick = ()=> removeCardById(btn.dataset.removecard); });
+  el.querySelectorAll('[data-addto]').forEach(btn=>{ btn.onclick = ()=> openPickDishModal(btn.dataset.addto); });
 
-  el.querySelectorAll('[data-addto]').forEach(btn=>{
-    btn.onclick = ()=> openPickDishModal(btn.dataset.addto);
-  });
+  const ghost = document.getElementById('addCardGhost');
+  if(ghost) ghost.onclick = ()=>{ draftCard = { audience:null, mealType:null, searchQuery:'' }; renderMeals(); };
+  const draftEl = el.querySelector('.draft-card');
+  if(draftEl) wireDraftCardEvents(el);
 
-  async function sendMessageForSlot(slotKey){
-    const input = el.querySelector(`[data-input="${slotKey}"]`);
-    const text = input.value.trim();
-    if(!text) return;
-    if(!localStorage.getItem('wg-username')){ openNameModal(); return; }
-    input.value = '';
-    input.disabled = true; // prevent a double-send while translation is in flight; renderMeals() below rebuilds a fresh, enabled input
-    // Whoever's typing (you, your wife, the helper) may write in any of
-    // the three app languages message-to-message — nothing here assumes
-    // a fixed language per sender. Guess what was actually typed (see
-    // detectLangHeuristic — no network call, always returns a guess); if
-    // it's not English, translate it to English (everyone reads
-    // English), and everyone sees that same translation regardless of
-    // their own language toggle — see rendering in renderMeals().
-    const origLang = detectLangHeuristic(text);
-    let translatedEn = null;
-    if(origLang !== 'en'){
-      translatedEn = await translateText(text, 'en', origLang);
-    }
-    const userId = getUserId();
-    const newThread = dayThreads[slotKey].concat([{
-      from:"you", text, origLang, translatedEn,
-      senderId: userId, senderName: localStorage.getItem('wg-username')
-    }]).map(m => {
-      // Replying implies you've seen everything already in the thread —
-      // stamp your id onto any prior message not already marked read by
-      // you, in the same write as the new message itself.
-      if(isOwnMessage(m)) return m;
-      const readBy = Array.isArray(m.readBy) ? m.readBy : [];
-      return readBy.includes(userId) ? m : { ...m, readBy: [...readBy, userId] };
-    });
-    writeThread(dateIso, slotKey, newThread); // triggers renderMeals(), which rebuilds a fresh input
-    const freshInput = document.querySelector(`[data-input="${slotKey}"]`);
-    if(freshInput) freshInput.focus();
-  }
-
-  // No Send button — Enter/Return sends (a small italic hint under the
-  // field says so). This is a single-line input, so Shift+Enter is left
-  // alone but has nothing to insert anyway.
-  el.querySelectorAll('[data-input]').forEach(input=>{
-    input.addEventListener('keydown', (e)=>{
-      if(e.key === 'Enter' && !e.shiftKey){
-        e.preventDefault();
-        sendMessageForSlot(input.dataset.input);
-      }
-    });
-  });
-
-  renderBell();
   autoplayDish = null;
 }
 
-function syncLangUI(){
-  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active', b.dataset.lang === currentLang));
-  document.querySelectorAll('[data-i18n]').forEach(elm=>{
-    elm.textContent = t(elm.dataset.i18n);
-  });
-  document.querySelectorAll('[data-i18n-ph]').forEach(elm=>{
-    elm.placeholder = t(elm.dataset.i18nPh);
-  });
-  document.querySelectorAll('[data-i18n-title]').forEach(elm=>{
-    elm.title = t(elm.dataset.i18nTitle);
-  });
+// --- Chat rendering ---
+function renderMsgHtml(m){
+  const mine = isOwnMessage(m);
+  const whoLabel = chatLabelFor(m);
+  let primary, secondary;
+  if(typeof m.text==='string'){
+    primary = m.text;
+    secondary = (m.origLang && m.origLang!=='en') ? (m.translatedEn || t('translationUnavailable')) : null;
+  } else {
+    primary = m.from==='helper' ? (m.text_tl||m.text_zh) : (m.text_zh||m.text_tl);
+    secondary = m.from==='helper' ? m.text_zh : m.text_tl;
+  }
+  return `<div class="msg ${m.from}${mine?' mine':''}">
+    <div class="who">${whoLabel}</div>
+    <div class="bubble">${primary}</div>
+    ${secondary ? `<div class="translated">${secondary}</div>` : ''}
+  </div>`;
+}
+function renderChat(){
+  const el = document.getElementById('chatMessages');
+  el.innerHTML = threadData.messages.length ? threadData.messages.map(renderMsgHtml).join('') : `<div class="chat-empty">${t('noMatch')==='No dishes match.'?'':''}</div>`;
+  if(threadData.messages.length===0){ el.innerHTML = `<div class="chat-empty">💬</div>`; }
+  el.scrollTop = el.scrollHeight;
+  renderTabBadges();
 }
 
-document.querySelectorAll('.lang-btn').forEach(btn=>{
-  btn.onclick = ()=>{
-    currentLang = btn.dataset.lang;
-    localStorage.setItem('wg-lang', currentLang);
-    syncLangUI();
-    applyTheme();
-    renderDayStrip();
-    renderMeals();
-    renderGreeting();
-  };
+async function sendMessage(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  if(!localStorage.getItem('wg-username')){ openNameModal(); return; }
+  input.value = '';
+  const sendBtn = document.getElementById('chatSendBtn');
+  sendBtn.disabled = true;
+  const origLang = detectLangHeuristic(text);
+  let translatedEn = null;
+  if(origLang!=='en') translatedEn = await translateText(text,'en',origLang);
+  const newMessages = threadData.messages.concat([{ from:"you", text, origLang, translatedEn, unread:true, senderId:getUserId(), senderName: localStorage.getItem('wg-username'), ts: Date.now() }]);
+  writeThread(newMessages);
+  sendBtn.disabled = false;
+}
+document.getElementById('chatSendBtn').onclick = sendMessage;
+document.getElementById('chatInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
 });
-
-document.getElementById('bellIcon').onclick = (e)=>{
-  e.stopPropagation();
-  const popover = document.getElementById('notifPopover');
-  popover.classList.contains('open') ? closeNotifPopover() : openNotifPopover();
-};
-
-document.addEventListener('click', (e)=>{
-  const popover = document.getElementById('notifPopover');
-  if(popover.classList.contains('open') && !popover.contains(e.target) && e.target.id !== 'bellIcon'){
-    closeNotifPopover();
-  }
-});
-
-// TESTING ONLY — remove this button entirely before handing the app off
-// as "live"/deployed for real household use. Resets THIS WEEK ONLY back
-// to a blank slate: every date's dishes/staple/status (mealPlans/{weekId})
-// AND every message (mealThreads/{weekId}) — does not touch other weeks'
-// data, or the shared recipe library (recipeLibrary/library). Writes
-// straight to Firestore (if configured), so it resets the shared/live copy
-// for every device, not just this one — the confirm() is there
-// specifically because of that.
 document.getElementById('clearMessagesBtn').onclick = ()=>{
   if(!window.confirm(t('clearMessagesConfirm'))) return;
-  mealData = {};
-  threadData = {};
-  if(mealPlanRef){
-    setDoc(mealPlanRef, {}).catch(err => console.error('Failed to reset meal plan in Firestore', err));
-  }
-  if(mealThreadRef){
-    setDoc(mealThreadRef, {}).catch(err => console.error('Failed to clear messages in Firestore', err));
-  }
-  renderDayStrip();
-  renderMeals();
+  writeThread([]);
 };
 
-function openNotifPopover(){
-  renderNotifPopover();
-  const popover = document.getElementById('notifPopover');
-  const bell = document.getElementById('bellIcon');
-  // Default CSS (right:0, relative to the bell) assumes the bell sits near
-  // the right edge of the header — no longer true now the header also has
-  // theme icons and the clear-messages button competing for space, so on a
-  // packed/narrow screen the bell can end up far enough left that a
-  // 260px-wide popover overflows past the left edge of the viewport with
-  // no way to scroll to it. Re-measure and clamp every time it opens
-  // instead of trusting a fixed CSS offset.
-  popover.style.left = '';
-  popover.style.right = '0';
-  popover.classList.add('open');
-  const bellRect = bell.getBoundingClientRect();
-  const popRect = popover.getBoundingClientRect();
-  const margin = 8;
-  let desiredLeft = bellRect.right - popRect.width; // default: right-aligned under the bell
-  desiredLeft = Math.max(margin, Math.min(desiredLeft, window.innerWidth - popRect.width - margin));
-  popover.style.left = `${desiredLeft - bellRect.left}px`; // relative to the bell, its offsetParent
-  popover.style.right = 'auto';
-}
-
-function closeNotifPopover(){
-  document.getElementById('notifPopover').classList.remove('open');
-}
-
-function renderNotifPopover(){
-  const popover = document.getElementById('notifPopover');
-  const entries = [];
-  weekDates.forEach((d, dayIdx)=>{
-    const dateIso = isoDate(d);
-    mealSlots.forEach(slotKey=>{
-      const unreadMsgs = peekDayThreads(dateIso)[slotKey].filter(isUnreadForMe);
-      if(unreadMsgs.length === 0) return;
-      const latest = unreadMsgs[unreadMsgs.length - 1];
-      const text = typeof latest.text === 'string' ? latest.text : (latest.text_zh || latest.text_tl);
-      entries.push({ dateIso, dayIdx, slotKey, text, count: unreadMsgs.length });
-    });
-  });
-
-  if(entries.length === 0){
-    popover.innerHTML = `<div class="notif-empty">${t('noNewMessages')}</div>`;
-    return;
-  }
-
-  popover.innerHTML = entries.map(en => `
-    <div class="notif-item" data-notifdate="${en.dateIso}" data-notiftype="${en.slotKey}">
-      <div class="notif-meal">${t(days[en.dayIdx])} · ${slotContextLabel(en.slotKey)}${en.count > 1 ? ` (${en.count})` : ''}</div>
-      <div class="notif-text">${en.text}</div>
-    </div>
-  `).join('');
-
-  popover.querySelectorAll('[data-notiftype]').forEach(item=>{
-    item.onclick = (e)=>{
-      e.stopPropagation();
-      jumpToMealThread(item.dataset.notifdate, item.dataset.notiftype);
-    };
-  });
-}
-
-function jumpToMealThread(dateIso, slotKey){
-  markThreadReadForMe(dateIso, slotKey);
-  // Marking it read just now would otherwise take away the "auto-expand
-  // if unread" default before we even scroll to it — force it open
-  // explicitly so tapping a notification always reveals the message.
-  cardExpandState[cardExpandKey(dateIso, slotKey)] = true;
-  closeNotifPopover();
-  const dayIdx = weekDates.findIndex(d => isoDate(d) === dateIso);
-  if(dayIdx !== -1) activeDay = dayIdx;
-  renderDayStrip();
-  renderMeals();
-  const card = document.getElementById('mealcard-' + slotKey);
-  if(card){
-    card.scrollIntoView({behavior:'smooth', block:'center'});
-    card.classList.add('flash');
-    setTimeout(()=> card.classList.remove('flash'), 1200);
-  }
-}
-
-function extractYouTubeId(url){
-  // Accepts a plain YouTube link (watch/share/shorts) OR a pasted <iframe>
-  // embed snippet (YouTube's "Share > Embed" option) — pull the src out of
-  // the iframe first if that's what got pasted, then look for the video ID
-  // in whichever string we ended up with.
-  const iframeSrcMatch = url.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
-  const target = iframeSrcMatch ? iframeSrcMatch[1] : url;
-  const m = target.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
-  return m ? m[1] : null;
-}
-
-// --- Pick-a-dish modal ---
-let pickSlotKey = null;
+// --- Pick-dish modal (adding an extra dish to an EXISTING card) ---
+let pickCardId = null;
 let dishSearchQuery = '';
-
-function openPickDishModal(slotKey){
-  pickSlotKey = slotKey;
+function openPickDishModal(cardId){
+  pickCardId = cardId;
   dishSearchQuery = '';
-  document.getElementById('pickModalContext').innerHTML = `${t('addingTo')}: <b>${t(days[activeDay])} · ${slotContextLabel(slotKey)}</b>`;
+  const card = mealData.cards.find(c=>c.id===cardId);
+  document.getElementById('pickModalContext').innerHTML = card ? `${t('addingTo')}: <b>${cardTabLabel(card)}</b>` : '';
   document.getElementById('dishSearchInput').value = '';
   renderDishPickList();
   document.getElementById('pickModalOverlay').classList.add('open');
   document.getElementById('dishSearchInput').focus();
 }
-
-function closePickDishModal(){
-  document.getElementById('pickModalOverlay').classList.remove('open');
-}
-
+function closePickDishModal(){ document.getElementById('pickModalOverlay').classList.remove('open'); }
 function renderDishPickList(){
   const listEl = document.getElementById('dishPickList');
   const q = dishSearchQuery.trim().toLowerCase();
-  const matches = dishLibrary.filter(d => d.title.toLowerCase().includes(q));
-  if(matches.length === 0){
-    listEl.innerHTML = `<div class="dish-pick-empty">${t('noMatch')}</div>`;
-    return;
-  }
-  listEl.innerHTML = matches.map(d => `
+  const matches = dishLibrary.filter(d=>d.title.toLowerCase().includes(q));
+  if(matches.length===0){ listEl.innerHTML = `<div class="dish-pick-empty">${t('noMatch')}</div>`; return; }
+  listEl.innerHTML = matches.map(d=>`
     <div class="dish-pick-item">
       <div class="dish-pick-item-main" data-pickid="${d.id}">
-        <div class="dish-pick-title">${d.video ? '▶ ' : ''}${d.title}</div>
+        <div class="dish-pick-title">${d.video?'▶ ':''}${d.title}</div>
         <div class="dish-pick-note">${d.note || `<em>${t('noNoteYet')}</em>`}</div>
       </div>
       <button class="dish-edit" data-editpickid="${d.id}" title="${t('editRecipe')}">✏️</button>
@@ -1855,44 +818,35 @@ function renderDishPickList(){
   `).join('');
   listEl.querySelectorAll('[data-pickid]').forEach(item=>{
     item.onclick = ()=>{
-      const dateIso = activeDateIso();
-      const slot = peekDayPlan(dateIso)[pickSlotKey];
-      const newDishIds = slot.dishIds.concat([{ id: item.dataset.pickid }]);
-      writeMealSlot(dateIso, pickSlotKey, { ...slot, dishIds: newDishIds });
+      const card = mealData.cards.find(c=>c.id===pickCardId);
+      if(!card) return;
+      updateCard(pickCardId, { dishIds: card.dishIds.concat([{id:item.dataset.pickid}]) });
       closePickDishModal();
     };
   });
   listEl.querySelectorAll('[data-editpickid]').forEach(btn=>{
-    btn.onclick = (e)=>{
-      e.stopPropagation();
-      openEditDishModal(btn.dataset.editpickid);
-    };
+    btn.onclick = (e)=>{ e.stopPropagation(); openEditDishModal(btn.dataset.editpickid); };
   });
 }
-
-document.getElementById('dishSearchInput').oninput = (e)=>{
-  dishSearchQuery = e.target.value;
-  renderDishPickList();
-};
-
+document.getElementById('dishSearchInput').oninput = (e)=>{ dishSearchQuery = e.target.value; renderDishPickList(); };
 document.getElementById('pickModalCancel').onclick = closePickDishModal;
-document.getElementById('pickModalOverlay').onclick = (e)=>{
-  if(e.target.id === 'pickModalOverlay') closePickDishModal();
-};
+document.getElementById('pickModalOverlay').onclick = (e)=>{ if(e.target.id==='pickModalOverlay') closePickDishModal(); };
+document.getElementById('addNewDishLink').onclick = ()=>{ closePickDishModal(); openNewDishModal(pickCardId); };
 
-document.getElementById('addNewDishLink').onclick = ()=>{
-  closePickDishModal();
-  openNewDishModal(pickSlotKey);
-};
-
-// --- New-dish modal (adds to the library, optionally also to a meal slot) ---
+// --- New/edit dish modal ---
 let newDishSource = 'text';
-let newDishContextSlotKey = null;
-let editingDishId = null; // set by openEditDishModal; null means "adding new"
+let newDishContextCardId = null;
+let editingDishId = null;
 
-function openNewDishModal(slotKeyContext){
+function extractYouTubeId(url){
+  const iframeSrcMatch = url.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
+  const target = iframeSrcMatch ? iframeSrcMatch[1] : url;
+  const m = target.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+  return m ? m[1] : null;
+}
+function openNewDishModal(cardIdContext){
   editingDishId = null;
-  newDishContextSlotKey = slotKeyContext;
+  newDishContextCardId = cardIdContext;
   newDishSource = 'text';
   document.getElementById('newDishModalOverlay').querySelector('h3').textContent = t('newDishTitle');
   document.getElementById('newDishNameInput').value = '';
@@ -1901,33 +855,19 @@ function openNewDishModal(slotKeyContext){
   document.querySelectorAll('#newSourceToggle button').forEach(b=>b.classList.toggle('active', b.dataset.source==='text'));
   document.getElementById('newSourceTextWrap').style.display = '';
   document.getElementById('newSourceLinkWrap').style.display = 'none';
-
   const contextEl = document.getElementById('newDishContextLine');
-  if(slotKeyContext){
-    contextEl.style.display = '';
-    contextEl.innerHTML = `${t('alsoAddTo')}: <b>${t(days[activeDay])} · ${slotContextLabel(slotKeyContext)}</b>`;
-  } else {
-    contextEl.style.display = 'none';
-  }
-
+  const card = cardIdContext ? mealData.cards.find(c=>c.id===cardIdContext) : null;
+  if(card){ contextEl.style.display=''; contextEl.innerHTML = `${t('alsoAddTo')}: <b>${cardTabLabel(card)}</b>`; }
+  else if(draftForNewDish){ contextEl.style.display=''; contextEl.innerHTML = `${t('alsoAddTo')}: <b>${cardTabLabel({mealType:draftCard.mealType, audience:draftCard.audience})}</b>`; }
+  else contextEl.style.display = 'none';
   document.getElementById('newDishModalOverlay').classList.add('open');
 }
-
-function closeNewDishModal(){
-  document.getElementById('newDishModalOverlay').classList.remove('open');
-}
-
-// Opens the same add-dish modal, pre-filled with an existing recipe's
-// current data — used both for dishes that were stored blank/incomplete
-// (missing note or video) and for correcting a typo later. Does not add
-// the dish to any meal slot; it only edits the library entry in place.
+function closeNewDishModal(){ document.getElementById('newDishModalOverlay').classList.remove('open'); draftForNewDish=false; }
 function openEditDishModal(dishId){
   const dish = findRecipe(dishId);
   if(!dish) return;
-  editingDishId = dishId;
-  newDishContextSlotKey = null;
+  editingDishId = dishId; newDishContextCardId = null; draftForNewDish = false;
   newDishSource = (dish.video && dish.videoId) ? 'link' : 'text';
-
   document.getElementById('newDishModalOverlay').querySelector('h3').textContent = t('editDishTitle');
   document.getElementById('newDishNameInput').value = dish.title || '';
   document.getElementById('newDishTextInput').value = dish.note || '';
@@ -1936,10 +876,8 @@ function openEditDishModal(dishId){
   document.getElementById('newSourceTextWrap').style.display = newDishSource==='text' ? '' : 'none';
   document.getElementById('newSourceLinkWrap').style.display = newDishSource==='link' ? '' : 'none';
   document.getElementById('newDishContextLine').style.display = 'none';
-
   document.getElementById('newDishModalOverlay').classList.add('open');
 }
-
 document.querySelectorAll('#newSourceToggle button').forEach(btn=>{
   btn.onclick = ()=>{
     newDishSource = btn.dataset.source;
@@ -1949,128 +887,87 @@ document.querySelectorAll('#newSourceToggle button').forEach(btn=>{
     document.getElementById('newSourceLinkWrap').style.display = newDishSource==='link' ? '' : 'none';
   };
 });
-
 document.getElementById('newDishCancel').onclick = closeNewDishModal;
-document.getElementById('newDishModalOverlay').onclick = (e)=>{
-  if(e.target.id === 'newDishModalOverlay') closeNewDishModal();
-};
-
-document.getElementById('addNewDishGhost').onclick = ()=> openNewDishModal(null);
+document.getElementById('newDishModalOverlay').onclick = (e)=>{ if(e.target.id==='newDishModalOverlay') closeNewDishModal(); };
 
 document.getElementById('newDishSave').onclick = ()=>{
   const name = document.getElementById('newDishNameInput').value.trim();
   if(!name){ document.getElementById('newDishNameInput').focus(); return; }
-
-  // Editing mutates the existing dishLibrary entry in place (same object
-  // reference every meal card already points to via findRecipe(), so any
-  // slot already showing this dish picks up the fix immediately); creating
-  // starts a fresh entry with a new id. Either way, writeDish() below is
-  // what actually syncs it to Firestore for every device — this used to
-  // be a bare local push with no persistence at all.
-  const dish = editingDishId ? findRecipe(editingDishId) : { id: 'custom_' + Date.now(), title: '', video:false, videoId:null, note:"" };
+  const dish = editingDishId ? findRecipe(editingDishId) : { id:'custom_'+Date.now(), title:'', video:false, videoId:null, note:"" };
   if(!dish){ closeNewDishModal(); return; }
   dish.title = name;
-
-  if(newDishSource === 'text'){
+  if(newDishSource==='text'){
     dish.note = document.getElementById('newDishTextInput').value.trim();
-    dish.video = false;
-    dish.videoId = null;
+    dish.video = false; dish.videoId = null;
   } else {
     const link = document.getElementById('newDishLinkInput').value.trim();
     const ytId = extractYouTubeId(link);
-    if(ytId){
-      dish.video = true;
-      dish.videoId = ytId;
-      if(!dish.note) dish.note = "Linked video recipe.";
-    } else if(link){
-      dish.video = false;
-      dish.videoId = null;
-      dish.note = "Linked recipe: " + link;
-    } else {
-      dish.video = false;
-      dish.videoId = null;
-    }
+    if(ytId){ dish.video=true; dish.videoId=ytId; if(!dish.note) dish.note="Linked video recipe."; }
+    else if(link){ dish.video=false; dish.videoId=null; dish.note="Linked recipe: "+link; }
+    else { dish.video=false; dish.videoId=null; }
   }
+  if(!editingDishId) dishLibrary.push(dish);
 
-  writeDish(dish);
-
-  if(newDishContextSlotKey){
-    const dateIso = activeDateIso();
-    const slot = peekDayPlan(dateIso)[newDishContextSlotKey];
-    const newDishIds = slot.dishIds.concat([{ id: dish.id }]);
-    writeMealSlot(dateIso, newDishContextSlotKey, { ...slot, dishIds: newDishIds });
+  if(newDishContextCardId){
+    const card = mealData.cards.find(c=>c.id===newDishContextCardId);
+    if(card) updateCard(newDishContextCardId, { dishIds: card.dishIds.concat([{id:dish.id}]) });
+  } else if(draftForNewDish && draftCard && draftCard.audience && draftCard.mealType){
+    const newCard = { id:newCardId(), audience:draftCard.audience, mealType:draftCard.mealType, dishIds:[{id:dish.id}], status:'planned' };
+    if(draftCard.audience==='adult') newCard.staple = 'none';
+    addCard(newCard);
+    draftCard = null;
   }
-
+  draftForNewDish = false;
   closeNewDishModal();
-  renderMeals(); // in case the edited/added dish is already showing in a slot
+  renderMeals();
 };
 
-// --- Name entry (first visit, or if this page is opened directly) ---
-// Same "Hi, {name}" button/behavior as index.html's Home Hub — tap it any
-// time to reopen the modal and change your name. Kept in sync manually
-// since the two pages don't share a script file (same pattern as
-// isOwnMessage/isMine and the badge-counting logic).
-function renderGreeting(){
-  const btn = document.getElementById('greetingBtn');
-  const name = localStorage.getItem('wg-username');
-  if(name){
-    btn.style.display = '';
-    btn.innerHTML = `${t('greetingHi')}<b>${name}</b>`;
-  } else {
-    btn.style.display = 'none';
-  }
-}
-
+// --- Name entry ---
 function openNameModal(){
   document.getElementById('nameInput').value = localStorage.getItem('wg-username') || '';
   document.getElementById('nameModalOverlay').classList.add('open');
 }
-function closeNameModal(){
-  document.getElementById('nameModalOverlay').classList.remove('open');
-}
-document.getElementById('greetingBtn').onclick = openNameModal;
+function closeNameModal(){ document.getElementById('nameModalOverlay').classList.remove('open'); }
 document.getElementById('nameModalSkip').onclick = closeNameModal;
 document.getElementById('nameModalSave').onclick = ()=>{
   const name = document.getElementById('nameInput').value.trim();
   if(!name){ document.getElementById('nameInput').focus(); return; }
   saveFamilyMemberName(name);
-  renderGreeting();
   closeNameModal();
 };
 
+// --- i18n sync ---
+function syncLangUI(){
+  document.querySelectorAll('.lang-pill').forEach(b=>b.classList.toggle('active', b.dataset.lang===currentLang));
+  document.querySelectorAll('[data-i18n]').forEach(elm=>{ elm.textContent = t(elm.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(elm=>{ elm.placeholder = t(elm.dataset.i18nPh); });
+  document.querySelectorAll('[data-i18n-title]').forEach(elm=>{ elm.title = t(elm.dataset.i18nTitle); });
+  document.documentElement.lang = currentLang==='zh' ? 'zh-CN' : 'en';
+}
+document.querySelectorAll('.lang-pill').forEach(btn=>{
+  btn.onclick = ()=>{
+    currentLang = btn.dataset.lang;
+    localStorage.setItem('wg-lang', currentLang);
+    syncLangUI(); renderDayStrip(); renderMeals(); renderChat();
+  };
+});
+
+// --- Boot ---
 syncLangUI();
 renderDayStrip();
 applyTheme();
-renderGreeting();
-if(!localStorage.getItem('wg-username')){
-  openNameModal();
-}
+setActiveTab('meals');
+if(!localStorage.getItem('wg-username')) openNameModal();
 initFirestoreSync();
-initRecipeLibrarySync();
-
-// Same cache-busting fetch pattern as recipes.json/hub-cards.json. A
-// missing/failed fetch or malformed file just leaves the small hardcoded
-// fallback list in place (see tagalogMarkerWords/tagalogMarkerPhrases
-// above) — detection still works, just with fewer words to match against.
-fetch('./tagalog-markers.json?v=' + Date.now())
-  .then(r => r.json())
-  .then(data => {
-    if(data && Array.isArray(data.words) && data.words.length){
-      tagalogMarkerWords = new Set(data.words.map(w => String(w).toLowerCase()));
-    }
-    if(data && Array.isArray(data.phrases) && data.phrases.length){
-      tagalogMarkerPhrases = data.phrases.map(p => String(p).toLowerCase());
-    }
+fetch('./recipes.json?v='+Date.now())
+  .then(r=>r.json())
+  .then(recipes=>{
+    dishLibrary = Array.isArray(recipes) ? recipes.filter(d=>d && typeof d.id==='string' && d.id.trim()!=='' && typeof d.title==='string' && d.title.trim()!=='') : [];
   })
-  .catch(err => console.error('Failed to load tagalog-markers.json — using built-in fallback list', err));
+  .catch(err=>console.error('Failed to load recipes.json', err))
+  .finally(renderMeals);
 
-// Mobile Safari/Chrome can restore this page from the back-forward cache
-// with a stale "this week" or stale meal data (e.g. after navigating to
-// index.html and back) — force a real reload in that case, same fix
-// applied in the wg-groupbuy project.
-window.addEventListener('pageshow', (event) => {
-  if(event.persisted) window.location.reload();
-});
+window.addEventListener('pageshow', (event)=>{ if(event.persisted) window.location.reload(); });
 </script>
 </body>
 </html>

@@ -5,8 +5,7 @@
     "icon": "🍲",
     "text": {
       "en": { "tab": "Meals", "title": "What's Cooking", "desc": "This week's meal plan, recipes and video links — plus messages between you and the helper." },
-      "zh": { "tab": "餐饮", "title": "今天吃什么", "desc": "本周的膳食计划、食谱和视频链接——以及你和帮佣之间的消息。" },
-      "tl": { "tab": "Pagkain", "title": "Ano ang Lutuin", "desc": "Ang meal plan ngayong linggo, mga recipe, at mga video link — kasama ang mga mensahe mo at ng katulong." }
+      "zh": { "tab": "餐饮", "title": "今天吃什么", "desc": "本周的膳食计划、食谱和视频链接——以及你和帮佣之间的消息。" }
     }
   }
 ]
