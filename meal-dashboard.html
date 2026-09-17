@@ -148,7 +148,7 @@
   .modal .context{font-size:12px; color:var(--ink-soft); font-weight:700; margin-bottom:10px;}
   .modal .context b{color:var(--teal);}
   .modal h3{font-family:var(--font-head); font-size:20px; font-weight:600; margin:0 0 14px;}
-  .modal input[type="text"], .modal textarea{width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 9px; font-size:13.5px; background:var(--paper); color:var(--ink); resize:vertical; font-family:var(--font-body);}
+  .modal input[type="text"], .modal input[type="password"], .modal textarea{width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 9px; font-size:13.5px; background:var(--paper); color:var(--ink); resize:vertical; font-family:var(--font-body);}
   .modal textarea{min-height:70px;}
   .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
   .modal-actions button{padding:8px 16px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; font-family:var(--font-body);}
@@ -236,6 +236,20 @@
   </div>
 </div>
 
+<!-- PIN + confirm modal (guards deleting a card / clearing chat history) -->
+<div class="modal-overlay" id="pinModalOverlay">
+  <div class="modal">
+    <h3 id="pinModalTitle" data-i18n="pinModalTitle">需要密码</h3>
+    <div class="hint" id="pinModalHint" data-i18n="pinModalHint" style="margin-bottom:10px;"></div>
+    <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" data-i18n-ph="pinModalPh">
+    <div class="hint" id="pinModalError" style="display:none; color:var(--brick); margin-top:6px;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="pinModalCancel" data-i18n="cancel">取消</button>
+      <button class="btn-save" id="pinModalContinue" data-i18n="continueBtn">继续</button>
+    </div>
+  </div>
+</div>
+
 <!-- Name modal -->
 <div class="modal-overlay" id="nameModalOverlay">
   <div class="modal">
@@ -305,6 +319,64 @@ function saveFamilyMemberName(name){
   setDoc(doc(db,'familyMembers', getUserId()), { name, updatedAt: Date.now() }, { merge:true }).catch(err=>console.error('Failed to save name', err));
 }
 
+// --- Audit log (who deleted a card / cleared the chat) ---
+// One doc per event in `auditLog` — write-only from the client (see
+// firestore-rules.md: create allowed, update/delete disallowed) so the
+// trail can't be edited or wiped after the fact. Records the display name
+// AND the device id, so "who did this" survives even if the name is later
+// changed.
+function logAuditEvent(action, details){
+  if(!db) return;
+  const id = 'audit_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const entry = {
+    action,
+    details: details || {},
+    weekId,
+    by: localStorage.getItem('wg-username') || t('you'),
+    byId: getUserId(),
+    ts: Date.now()
+  };
+  setDoc(doc(db,'auditLog', id), entry).catch(err=>console.error('Failed to write audit log entry', err));
+}
+
+// --- PIN + double-confirm gate for destructive actions ---
+// Deleting a meal card and clearing the whole chat thread both go through
+// this: a PIN prompt first, then a native confirm() as a second, separate
+// "are you sure" step, and only on success does the action run and get
+// logged to auditLog. Wrong PIN shows an inline error and doesn't proceed.
+const DELETE_PIN = '1117';
+let pendingGuardedAction = null;
+function requestPinThenConfirm(action){
+  pendingGuardedAction = action;
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinModalError').style.display = 'none';
+  document.getElementById('pinModalOverlay').classList.add('open');
+  document.getElementById('pinInput').focus();
+}
+function closePinModal(){ document.getElementById('pinModalOverlay').classList.remove('open'); pendingGuardedAction = null; }
+document.getElementById('pinModalCancel').onclick = closePinModal;
+document.getElementById('pinModalOverlay').onclick = (e)=>{ if(e.target.id==='pinModalOverlay') closePinModal(); };
+document.getElementById('pinInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ e.preventDefault(); document.getElementById('pinModalContinue').click(); }
+});
+document.getElementById('pinModalContinue').onclick = ()=>{
+  const pin = document.getElementById('pinInput').value.trim();
+  if(pin !== DELETE_PIN){
+    const errEl = document.getElementById('pinModalError');
+    errEl.textContent = t('pinModalError');
+    errEl.style.display = '';
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').focus();
+    return;
+  }
+  const action = pendingGuardedAction;
+  closePinModal();
+  if(!action) return;
+  if(!window.confirm(action.confirmText)) return;
+  action.onConfirm();
+  logAuditEvent(action.auditAction, action.auditDetails);
+};
+
 const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const todayDate = new Date(); todayDate.setHours(0,0,0,0);
 const todayIndex = (todayDate.getDay()+6)%7;
@@ -342,7 +414,10 @@ const i18n = {
     kids:"Kids", adults:"Adults",
     nameModalTitle:"What's your name?", nameModalSub:"So messages you send show who sent them, instead of just \"You\".",
     nameModalPh:"e.g. Mom, Dad, Effendy...", skip:"Skip for now", save:"Save",
-    editRecipe:"Edit recipe", editDishTitle:"Edit dish", noNoteYet:"No note yet — tap ✏️ to add one"
+    editRecipe:"Edit recipe", editDishTitle:"Edit dish", noNoteYet:"No note yet — tap ✏️ to add one",
+    pinModalTitle:"PIN required", pinModalHint:"Enter the PIN to continue with this action.",
+    pinModalPh:"Enter PIN", pinModalError:"Incorrect PIN", continueBtn:"Continue",
+    deleteCardConfirm:"Delete this meal card? This can't be undone."
   },
   zh: {
     kicker:"本周", title:"今天吃什么", backToHub:"家庭中心",
@@ -370,7 +445,10 @@ const i18n = {
     kids:"儿童", adults:"成人",
     nameModalTitle:"你的名字是？", nameModalSub:"这样你发的消息会显示是谁发的，而不只是「你」。",
     nameModalPh:"例如：妈妈、爸爸、Effendy...", skip:"暂时跳过", save:"保存",
-    editRecipe:"编辑食谱", editDishTitle:"编辑菜肴", noNoteYet:"还没有说明——点 ✏️ 添加"
+    editRecipe:"编辑食谱", editDishTitle:"编辑菜肴", noNoteYet:"还没有说明——点 ✏️ 添加",
+    pinModalTitle:"需要密码", pinModalHint:"请输入密码以继续此操作。",
+    pinModalPh:"输入密码", pinModalError:"密码错误", continueBtn:"继续",
+    deleteCardConfirm:"删除这一餐卡片？此操作无法撤销。"
   }
 };
 function t(key){ return i18n[currentLang][key] || key; }
@@ -753,7 +831,18 @@ function renderMeals(){
       updateCard(card.id, { dishIds:newDishIds });
     };
   });
-  el.querySelectorAll('[data-removecard]').forEach(btn=>{ btn.onclick = ()=> removeCardById(btn.dataset.removecard); });
+  el.querySelectorAll('[data-removecard]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const cardId = btn.dataset.removecard;
+      const card = mealData.cards.find(c=>c.id===cardId);
+      requestPinThenConfirm({
+        confirmText: t('deleteCardConfirm'),
+        onConfirm: ()=> removeCardById(cardId),
+        auditAction: 'deleteCard',
+        auditDetails: { cardId, cardLabel: card ? cardTabLabel(card) : cardId }
+      });
+    };
+  });
   el.querySelectorAll('[data-addto]').forEach(btn=>{ btn.onclick = ()=> openPickDishModal(btn.dataset.addto); });
 
   const ghost = document.getElementById('addCardGhost');
@@ -825,8 +914,12 @@ document.getElementById('chatInput').addEventListener('keydown', (e)=>{
   if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
 });
 document.getElementById('clearMessagesBtn').onclick = ()=>{
-  if(!window.confirm(t('clearMessagesConfirm'))) return;
-  writeThread([]);
+  requestPinThenConfirm({
+    confirmText: t('clearMessagesConfirm'),
+    onConfirm: ()=> writeThread([]),
+    auditAction: 'clearMessages',
+    auditDetails: { messageCount: threadData.messages.length }
+  });
 };
 
 // --- Pick-dish modal (adding an extra dish to an EXISTING card) ---
