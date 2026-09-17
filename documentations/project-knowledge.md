@@ -132,6 +132,40 @@ family members," not fine against an outside actor).
   `performDishSave()` holds the actual dish-mutation logic, called either
   directly (new dish) or after a successful PIN check (editing one).
 
+## Cross-device identity merge (same name, PIN-gated)
+
+Added 2026-09-17, on both `index.html` and `meal-dashboard.html` (the name
+modal exists identically on both pages, sharing `localStorage['wg-username']`
+and `localStorage['wg-userid']` since they're same-origin).
+
+**Problem it solves**: if someone types the same name (e.g. "Effendy") on a
+second device, that device would otherwise get its own `wg-userid` and create
+a second, duplicate `familyMembers` record — splitting that person's chat
+history/attribution across two "identities."
+
+**Behavior**: when the name modal is saved, `findExistingMemberByName(name)`
+queries `familyMembers` (case-insensitive, trimmed match, excluding the
+current device's own id) for an existing record with that name.
+- **No match** → saves normally, no PIN, exactly as before.
+- **Match found** → gated by the same `requestPinThenConfirm()` PIN prompt
+  used elsewhere (PIN `1117`), but with **no second `window.confirm()`**
+  (`confirmText` omitted) — entering the correct PIN and hitting Continue is
+  itself the confirmation, same pattern as the recipe-edit-save flow. On
+  correct PIN, the **current device's `localStorage['wg-userid']` is
+  overwritten to the existing member's id** (`existing.id`), so this device
+  now shares that person's identity — same `familyMembers` doc, same
+  attribution in chat (`isOwnMessage()` will match on both devices going
+  forward), no duplicate record created.
+- Logged to `auditLog` as `claimIdentity` with
+  `{name, claimedId, previousId}` (the device's old, now-abandoned
+  `wg-userid`, in case anything needs to be traced back).
+
+**Known limitation**: matching is by exact name string only — two different
+people who happen to type the same name (e.g. two people both named "Mom")
+would trigger this and could merge into one identity if either knows the PIN.
+Acceptable per the user given this is a small household, but worth keeping in
+mind if the family grows or names start colliding.
+
 ## Recipe library — Firestore-backed, real household dishes (not placeholders)
 
 **This is the current, authoritative recipe set** — the original six
