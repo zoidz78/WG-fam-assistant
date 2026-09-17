@@ -317,7 +317,17 @@ function renderMembers(){
       const member = members.find(m=>m.id===id);
       requestPinThenConfirm({
         confirmText: t('deleteMemberConfirm'),
-        onConfirm: ()=>{ if(db) deleteDoc(doc(db,'familyMembers', id)).catch(err=>console.error('Failed to delete family member', err)); },
+        onConfirm: ()=>{
+          if(db) deleteDoc(doc(db,'familyMembers', id)).catch(err=>console.error('Failed to delete family member', err));
+          // If you just deleted THIS device's own record, also clear this
+          // browser's local identity — otherwise the header keeps showing
+          // the old name/id, since it reads localStorage, not Firestore.
+          if(id === getUserId()){
+            localStorage.removeItem('wg-username');
+            localStorage.removeItem('wg-userid');
+            renderGreeting();
+          }
+        },
         auditAction: 'deleteFamilyMember',
         auditDetails: { memberId: id, memberName: member ? member.name : null }
       });
