@@ -1099,16 +1099,24 @@ document.getElementById('newDishSave').onclick = ()=>{
 };
 
 // --- Name entry ---
+function renderGreeting(){
+  const btn = document.getElementById('greetingBtn');
+  const name = localStorage.getItem('wg-username');
+  if(name){ btn.style.display=''; btn.innerHTML = `${t('greetingHi')}<b>${name}</b>`; }
+  else btn.style.display = 'none';
+}
 function openNameModal(){
   document.getElementById('nameInput').value = localStorage.getItem('wg-username') || '';
   document.getElementById('nameModalOverlay').classList.add('open');
 }
 function closeNameModal(){ document.getElementById('nameModalOverlay').classList.remove('open'); }
+document.getElementById('greetingBtn').onclick = openNameModal;
 document.getElementById('nameModalSkip').onclick = closeNameModal;
 document.getElementById('nameModalSave').onclick = ()=>{
   const name = document.getElementById('nameInput').value.trim();
   if(!name){ document.getElementById('nameInput').focus(); return; }
   saveFamilyMemberName(name);
+  renderGreeting();
   closeNameModal();
 };
 
@@ -1124,7 +1132,7 @@ document.querySelectorAll('.lang-pill').forEach(btn=>{
   btn.onclick = ()=>{
     currentLang = btn.dataset.lang;
     localStorage.setItem('wg-lang', currentLang);
-    syncLangUI(); renderDayStrip(); renderMeals(); renderChat();
+    syncLangUI(); renderDayStrip(); renderMeals(); renderChat(); renderGreeting();
   };
 });
 
@@ -1132,6 +1140,7 @@ document.querySelectorAll('.lang-pill').forEach(btn=>{
 syncLangUI();
 renderDayStrip();
 renderChat();
+renderGreeting();
 if(!localStorage.getItem('wg-username')) openNameModal();
 initFirestoreSync();
 initRecipeLibrary();
