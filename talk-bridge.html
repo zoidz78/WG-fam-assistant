@@ -31,7 +31,7 @@
   .app-header .sub{font-size:11.5px; color:var(--banner-ink); opacity:0.8; margin-top:1px;}
   .lang-pill{font-size:12px; font-weight:700; padding:5px 10px; border-radius:999px; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.12); color:var(--banner-ink); cursor:pointer;}
   .lang-pill.active{background:var(--banner-ink); color:var(--banner-bg);}
-  .greeting{font-size:16px; font-weight:800; color:var(--banner-bg); cursor:pointer; border:none; background:var(--banner-ink); font-family:var(--font-body); padding:7px 14px; border-radius:999px; margin-right:8px; box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+  .greeting{font-size:12px; font-weight:700; color:var(--banner-bg); cursor:pointer; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.12); font-family:var(--font-body); padding:5px 10px; border-radius:999px; margin-right:8px;}
   .greeting:hover{filter:brightness(0.97);}
   .icon-btn{width:34px; height:34px; border-radius:9px; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.12); color:var(--banner-ink); display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer;}
   .icon-btn:hover{background:rgba(255,255,255,0.22);}
@@ -260,7 +260,7 @@ const i18n = {
     nameModalPh:"e.g. Mother-in-law, Effendy...", skip:"Skip for now", save:"Save", greetingHi:"Hi, ",
     pinModalTitle:"PIN required", pinModalHint:"Enter the PIN to continue with this action.",
     pinModalPh:"Enter PIN", pinModalError:"Incorrect PIN", continueBtn:"Continue", cancel:"Cancel",
-    clearChatTitle:"Clear chat", clearChatConfirm:"Clear this whole conversation? This can't be undone.",
+    clearChatTitle:"Clear chat", clearChatConfirm:"Clear this conversation from view? It will be archived, not permanently deleted.",
     inputPlaceholder:"Type in Mandarin, English or Tagalog...", send:"Send",
     translationUnavailable:"(translation unavailable)",
     emptyTitle:"Say hello 👋", emptyHint:"Type a message below — it'll show up translated into the other two languages automatically."
@@ -272,7 +272,7 @@ const i18n = {
     nameModalPh:"例如：岳母、Effendy...", skip:"暂时跳过", save:"保存", greetingHi:"你好，",
     pinModalTitle:"需要密码", pinModalHint:"请输入密码以继续此操作。",
     pinModalPh:"输入密码", pinModalError:"密码错误", continueBtn:"继续", cancel:"取消",
-    clearChatTitle:"清空聊天记录", clearChatConfirm:"清空整个对话？此操作无法撤销。",
+    clearChatTitle:"清空聊天记录", clearChatConfirm:"从聊天窗口清空对话？消息会被存档，不会被永久删除。",
     inputPlaceholder:"用中文、英文或他加禄语输入...", send:"发送",
     translationUnavailable:"（暂无翻译）",
     emptyTitle:"打个招呼吧 👋", emptyHint:"在下面输入一条消息——会自动翻译成另外两种语言。"
@@ -407,12 +407,39 @@ document.getElementById('chatSendBtn').onclick = sendMessage;
 document.getElementById('chatInput').addEventListener('keydown', (e)=>{
   if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
 });
+// "Clear chat" doesn't actually destroy the conversation — it archives the
+// current messages into talkBridgeArchive first, then empties the visible
+// thread. Nothing is truly deleted; the full message history stays
+// retrievable (by a household admin, via Firebase Console) under its
+// archive id, which is recorded on the audit-log entry for this action.
+async function archiveAndClearChat(){
+  const snapshot = threadData.messages;
+  if(db && snapshot.length>0){
+    const archiveId = 'archive_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    try{
+      await setDoc(doc(db,'talkBridgeArchive', archiveId), {
+        messages: snapshot,
+        clearedBy: localStorage.getItem('wg-username') || null,
+        clearedById: getUserId(),
+        clearedAt: Date.now()
+      });
+      writeThread([]);
+      logAuditEvent('clearTalkBridge', { archivedAs: archiveId, messageCount: snapshot.length });
+    }catch(err){
+      console.error('Failed to archive chat before clearing — leaving it as-is so nothing is lost', err);
+    }
+  } else {
+    writeThread([]);
+    logAuditEvent('clearTalkBridge', { archivedAs: null, messageCount: 0 });
+  }
+}
 document.getElementById('clearChatBtn').onclick = ()=>{
   requestPinThenConfirm({
     confirmText: t('clearChatConfirm'),
-    onConfirm: ()=> writeThread([]),
-    auditAction: 'clearTalkBridge',
-    auditDetails: {}
+    onConfirm: ()=> archiveAndClearChat()
+    // No auditAction/auditDetails here — archiveAndClearChat() logs its own
+    // audit entry once the archive write has actually succeeded, so a
+    // failed archive never gets logged as if the clear happened safely.
   });
 };
 
