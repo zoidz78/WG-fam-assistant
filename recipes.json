@@ -1,8 +1,8 @@
 [
-  { "id": "century_congee", "title": "Century Egg & Pork Congee", "note": "Simmer 45 min. Use the clay pot, not the rice cooker.", "video": true, "videoId": "dQw4w9WgXcQ" },
-  { "id": "hainan_chicken_rice", "title": "Hainanese Chicken Rice", "note": "Kids' portion: no chili, extra cucumber.", "video": true, "videoId": null },
-  { "id": "tomato_egg", "title": "Tomato Egg Stir-fry", "note": "Quick wok-fry, 5 min.", "video": false, "videoId": null },
-  { "id": "steamed_fish", "title": "Steamed Fish", "note": "Steam 12 min on high. Ginger + scallion on top.", "video": false, "videoId": null },
-  { "id": "braised_pork", "title": "Braised Pork Belly (红烧肉)", "note": "Braise 1.5 hrs. Extra rock sugar, per Grandma's recipe.", "video": false, "videoId": null },
-  { "id": "choy_sum", "title": "Stir-fried Choy Sum", "note": "Quick garlic stir-fry, 3 min.", "video": false, "videoId": null }
+  { "id": "century_congee", "title": { "en": "Century Egg & Pork Congee", "zh": "皮蛋瘦肉粥" }, "note": "Simmer 45 min. Use the clay pot, not the rice cooker.", "video": true, "videoId": "dQw4w9WgXcQ" },
+  { "id": "hainan_chicken_rice", "title": { "en": "Hainanese Chicken Rice", "zh": "海南鸡饭" }, "note": "Kids' portion: no chili, extra cucumber.", "video": true, "videoId": null },
+  { "id": "tomato_egg", "title": { "en": "Tomato Egg Stir-fry", "zh": "番茄炒蛋" }, "note": "Quick wok-fry, 5 min.", "video": false, "videoId": null },
+  { "id": "steamed_fish", "title": { "en": "Steamed Fish", "zh": "清蒸鱼" }, "note": "Steam 12 min on high. Ginger + scallion on top.", "video": false, "videoId": null },
+  { "id": "braised_pork", "title": { "en": "Braised Pork Belly", "zh": "红烧肉" }, "note": "Braise 1.5 hrs. Extra rock sugar, per Grandma's recipe.", "video": false, "videoId": null },
+  { "id": "choy_sum", "title": { "en": "Stir-fried Choy Sum", "zh": "蒜蓉炒菜心" }, "note": "Quick garlic stir-fry, 3 min.", "video": false, "videoId": null }
 ]

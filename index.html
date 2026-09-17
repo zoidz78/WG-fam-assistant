@@ -10,30 +10,17 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root{
-    --bg: #EEF2EA; --paper: #FBFAF6; --ink: #2A2420; --ink-soft: #6B6459;
-    --teal: #2F4A43; --teal-soft: #E4EBE7; --mustard: #E3A23D;
-    --brick: #C1502E; --line: #DAD4C6; --dot: rgba(42,36,32,0.06);
-    --banner-bg: #22332E; --banner-ink: #F5F1E8;
+    --bg: #F7F7F7; --paper: #FFFFFF; --ink: #1F1F1F; --ink-soft: #8A8A8A;
+    --teal: #E8720C; --teal-soft: #FDEBDA; --mustard: #E3A23D;
+    --brick: #D9480F; --line: #EAEAEA; --dot: rgba(0,0,0,0.035);
+    --banner-bg: #F2711C; --banner-ink: #FFFFFF;
     --font-body: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
     --font-head: "Songti SC", "STSong", "SimSun", Georgia, serif;
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]):not([data-theme="dark"]){
-      --bg:#1E1B17; --paper:#2A2622; --ink:#EDE8DF; --ink-soft:#A89F91;
-      --teal:#6FA394; --teal-soft:#24332F; --mustard:#E3A23D; --brick:#E07854;
-      --line:#46403A; --dot:rgba(255,255,255,0.06); --banner-bg:#14201C; --banner-ink:#F5F1E8;
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg:#1E1B17; --paper:#2A2622; --ink:#EDE8DF; --ink-soft:#A89F91;
-    --teal:#6FA394; --teal-soft:#24332F; --mustard:#E3A23D; --brick:#E07854;
-    --line:#46403A; --dot:rgba(255,255,255,0.06); --banner-bg:#14201C; --banner-ink:#F5F1E8;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
   body{
     margin:0; background:var(--bg); background-image:radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
     background-size:22px 22px; color:var(--ink); font-family:var(--font-body); min-height:100vh;
-    transition:background-color 0.2s ease, color 0.2s ease;
   }
   .app-header{position:sticky; top:0; z-index:20; background:var(--banner-bg); color:var(--banner-ink); box-shadow:0 2px 8px rgba(0,0,0,0.15);}
   .app-header h1{font-family:var(--font-head); font-style:normal; font-weight:600; font-size:26px; margin:0; color:var(--banner-ink);}
@@ -79,9 +66,6 @@
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
       <button class="greeting" id="greetingBtn" style="display:none;"></button>
-      <button class="icon-btn" data-theme-choice="light" data-i18n-title="themeLight">☀️</button>
-      <button class="icon-btn" data-theme-choice="dark" data-i18n-title="themeDark">🌙</button>
-      <button class="icon-btn" data-theme-choice="auto" data-i18n-title="themeAuto">🌗</button>
       <button class="lang-pill" data-lang="zh">中文</button>
       <button class="lang-pill" data-lang="en">EN</button>
     </div>
@@ -134,13 +118,11 @@ function saveFamilyMemberName(name){
 const i18n = {
   en: {
     kicker:"Household", title:"Home Hub", openLink:"Open →",
-    themeLight:"Light", themeDark:"Dark", themeAuto:"Auto",
     nameModalTitle:"What's your name?", nameModalSub:"So messages in the meal thread show who sent them, instead of just \"You\".",
     nameModalPh:"e.g. Mom, Dad, Effendy...", skip:"Skip for now", save:"Save", greetingHi:"Hi, "
   },
   zh: {
     kicker:"家庭", title:"家庭中心", openLink:"打开 →",
-    themeLight:"浅色", themeDark:"深色", themeAuto:"自动",
     nameModalTitle:"你的名字是？", nameModalSub:"这样餐饮消息里会显示是谁发的，而不只是「你」。",
     nameModalPh:"例如：妈妈、爸爸、Effendy...", skip:"暂时跳过", save:"保存", greetingHi:"你好，"
   }
@@ -156,16 +138,6 @@ function syncLangUI(){
 }
 document.querySelectorAll('.lang-pill').forEach(btn=>{
   btn.onclick = ()=>{ currentLang = btn.dataset.lang; localStorage.setItem('wg-lang', currentLang); syncLangUI(); renderHubCards(); renderGreeting(); };
-});
-
-let themePref = localStorage.getItem('wg-theme') || 'auto';
-function applyTheme(){
-  if(themePref==='auto') document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.setAttribute('data-theme', themePref);
-  document.querySelectorAll('[data-theme-choice]').forEach(btn=>btn.classList.toggle('active', btn.dataset.themeChoice===themePref));
-}
-document.querySelectorAll('[data-theme-choice]').forEach(btn=>{
-  btn.onclick = ()=>{ themePref = btn.dataset.themeChoice; localStorage.setItem('wg-theme', themePref); applyTheme(); };
 });
 
 let hubCards = [];
@@ -257,7 +229,6 @@ document.getElementById('nameModalSave').onclick = ()=>{
 };
 
 syncLangUI();
-applyTheme();
 renderGreeting();
 subscribeMealsBadge();
 if(!localStorage.getItem('wg-username')) openNameModal();
