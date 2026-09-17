@@ -21,6 +21,14 @@ anything live/cross-device.
 - `meal-dashboard.html` — "What's Cooking": a weekly meal planner with dynamic
   meal cards, a recipe library, and a unified translated chat thread with the
   helper.
+- `admin.html` — Admin page (2026-09-17). PIN-gated (same PIN, `1117`) at the
+  page level — the whole page is blocked behind a full-screen PIN prompt
+  until unlocked, not just individual actions. Currently has one working
+  section: viewing/renaming/deleting `familyMembers` records, for cleaning up
+  old test-device entries. Explicitly scoped to grow — more database-editing
+  tools will be added here later (a "More admin tools" placeholder card
+  already sits below the family-members one). Linked from a new "Admin" card
+  on the Home Hub (`hub-cards.json`, id `admin`, icon 🛠️).
 
 ## Files
 
@@ -32,6 +40,7 @@ anything live/cross-device.
 | `recipes.json` | Seed data for the Firestore recipe library (see Recipe library section) — **not the live source once Firestore has data**. |
 | `firestore-rules.md` | Firestore security rules for all collections used by this app. |
 | `README.md` | User-facing docs for a non-technical maintainer — **stale, still describes the old fixed-6-slot flow; needs a rewrite before handoff.** |
+| `admin.html` | PIN-gated admin page — see the "Admin page" section above. |
 | `project-knowledge.md` | This file. |
 
 ## Current visual design — WeChat-style, no theme toggle
@@ -232,6 +241,14 @@ file (`SendUserFile`) in addition to being saved into the claude.ai Project —
 `project_write` alone does not hand the user a file, which was a real gap
 flagged directly by the user earlier in this project's history. Keep doing
 both on every edit.
+
+**Quirk to know about**: `admin.html`, being a brand-new bare filename the
+first time it was written to the Project, landed at the internal Project
+path `claude/admin.html` rather than `admin.html` (the tool namespaces new
+bare-filename docs this way). This does NOT affect the actual downloaded
+file's name (still `admin.html`, correct for the live site) — it only means
+a future `project_read`/`project_write` on this file needs the path
+`claude/admin.html`, not `admin.html`, to find it.
 
 ## Not done yet
 

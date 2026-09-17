@@ -7,5 +7,14 @@
       "en": { "tab": "Meals", "title": "What's Cooking", "desc": "This week's meal plan, recipes and video links — plus messages between you and the helper." },
       "zh": { "tab": "餐饮", "title": "今天吃什么", "desc": "本周的膳食计划、食谱和视频链接——以及你和帮佣之间的消息。" }
     }
+  },
+  {
+    "id": "admin",
+    "href": "admin.html",
+    "icon": "🛠️",
+    "text": {
+      "en": { "tab": "Admin", "title": "Admin", "desc": "Manage app data — starting with cleaning up family member / device records. PIN required." },
+      "zh": { "tab": "管理", "title": "管理", "desc": "管理应用数据——目前用于清理家庭成员/设备记录。需要密码。" }
+    }
   }
 ]
