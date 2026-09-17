@@ -41,6 +41,18 @@ service cloud.firestore {
     match /recipeLibrary/{docId} {
       allow read, write: if true;
     }
+
+    // Audit trail for destructive actions (deleting a meal card, clearing
+    // the week's chat) that are gated behind a PIN + double confirm in the
+    // UI. One doc per event: {action, details, weekId, by, byId, ts}.
+    // `create` is open (any client can log an event it just performed),
+    // but `update`/`delete` are blocked so a logged entry can never be
+    // edited or removed after the fact — this collection is append-only.
+    match /auditLog/{entryId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if false;
+    }
   }
 }
 ```
