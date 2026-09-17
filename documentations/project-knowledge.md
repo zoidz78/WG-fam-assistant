@@ -194,6 +194,44 @@ would trigger this and could merge into one identity if either knows the PIN.
 Acceptable per the user given this is a small household, but worth keeping in
 mind if the family grows or names start colliding.
 
+**Fixed bugs (2026-09-17), found via live testing:**
+- **Name-modal placeholder accidentally showed a real name.** The "what's
+  your name?" input's placeholder text was hardcoded as `"e.g. Mom, Dad,
+  Effendy..."` — "Effendy" was just an example name picked during
+  development, but it happened to be the actual household member's real
+  name, which understandably looked like the app was reading personal data.
+  Changed to a neutral example (`"e.g. Mom, Dad, Helper..."`) in all three
+  pages with a name modal (`index.html`, `meal-dashboard.html`,
+  `talk-bridge.html`). Lesson: never use a real name (the user's or anyone
+  else's) as placeholder/example text in this app.
+- **The PIN prompt could get silently blocked by the name modal.** When
+  `findExistingMemberByName()` finds a match, it calls
+  `requestPinThenConfirm()` to show the PIN modal — but the name modal was
+  never hidden first, so both overlays ended up "open" at the same time.
+  Both share the same CSS `z-index`, so which one visually wins is decided
+  by DOM order; in `meal-dashboard.html` the name modal happened to be
+  declared *after* the PIN modal in the markup, so it rendered on top and
+  completely blocked the PIN prompt from being seen or interacted with (in
+  `index.html`/`talk-bridge.html` the order happened to be the other way,
+  masking the same underlying bug). Fixed two ways: (1) the name modal is
+  now explicitly hidden (`classList.remove('open')`) right before
+  `requestPinThenConfirm()` is called in the "existing member" branch, and
+  reopens itself via a new `onCancel` callback on the guarded action if the
+  PIN step is cancelled (Cancel button or tapping the backdrop) — so the two
+  modals can never both be visible at once, regardless of DOM order; and
+  (2) `meal-dashboard.html`'s markup was reordered to put `pinModalOverlay`
+  after `nameModalOverlay`, matching the other two pages, as defense in
+  depth. `requestPinThenConfirm(action)`'s `action` object now supports an
+  optional `onCancel` alongside `onConfirm`/`auditAction`/`auditDetails`.
+- **The Save button on the name modal could look frozen.** The Firestore
+  lookup in `findExistingMemberByName()` had no timeout, so a slow or
+  stalled connection could leave `await` pending indefinitely with no
+  visual feedback. Added: the Save button now shows a `"Checking…"` label
+  and is disabled while the lookup runs, and the lookup itself is raced
+  against a 6-second timeout — if it doesn't resolve in time, it's treated
+  as "no match" and the save proceeds normally (best-effort, consistent
+  with how every other Firestore write in this app is handled).
+
 ## Recipe library — Firestore-backed, real household dishes (not placeholders)
 
 **This is the current, authoritative recipe set** — the original six
