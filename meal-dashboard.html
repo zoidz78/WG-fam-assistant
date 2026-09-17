@@ -55,6 +55,8 @@
   .icon-btn.active{background:rgba(255,255,255,0.3);}
   .lang-pill{font-size:12px; font-weight:700; padding:5px 10px; border-radius:999px; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.12); color:var(--banner-ink); cursor:pointer;}
   .lang-pill.active{background:var(--banner-ink); color:var(--banner-bg);}
+  .greeting{font-size:16px; font-weight:800; color:var(--banner-bg); cursor:pointer; border:none; background:var(--banner-ink); font-family:var(--font-body); padding:7px 14px; border-radius:999px; margin-right:8px; box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+  .greeting:hover{filter:brightness(0.97);}
 
   /* Chat card (embedded in the Meals view, not a separate tab) */
   .chat-card{padding:0; margin-bottom:16px;}
@@ -166,6 +168,7 @@
       <h1 data-i18n="title" style="margin-top:2px;">今天吃什么</h1>
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
+      <button class="greeting" id="greetingBtn" style="display:none;"></button>
       <button class="lang-pill" data-lang="zh">中文</button>
       <button class="lang-pill" data-lang="en">EN</button>
     </div>
@@ -422,7 +425,8 @@ const i18n = {
     pinModalTitle:"PIN required", pinModalHint:"Enter the PIN to continue with this action.",
     pinModalPh:"Enter PIN", pinModalError:"Incorrect PIN", continueBtn:"Continue",
     deleteCardConfirm:"Delete this meal card? This can't be undone.",
-    removeDishConfirm:"Remove this dish from the meal? This can't be undone."
+    removeDishConfirm:"Remove this dish from the meal? This can't be undone.",
+    greetingHi:"Hi, "
   },
   zh: {
     kicker:"本周", title:"今天吃什么", backToHub:"家庭中心",
@@ -454,7 +458,8 @@ const i18n = {
     pinModalTitle:"需要密码", pinModalHint:"请输入密码以继续此操作。",
     pinModalPh:"输入密码", pinModalError:"密码错误", continueBtn:"继续",
     deleteCardConfirm:"删除这一餐卡片？此操作无法撤销。",
-    removeDishConfirm:"从这一餐中移除此菜肴？此操作无法撤销。"
+    removeDishConfirm:"从这一餐中移除此菜肴？此操作无法撤销。",
+    greetingHi:"你好，"
   }
 };
 function t(key){ return i18n[currentLang][key] || key; }
