@@ -1,8 +1,14 @@
 [
-  { "id": "century_congee", "title": { "en": "Century Egg & Pork Congee", "zh": "皮蛋瘦肉粥" }, "note": "Simmer 45 min. Use the clay pot, not the rice cooker.", "video": true, "videoId": "dQw4w9WgXcQ" },
-  { "id": "hainan_chicken_rice", "title": { "en": "Hainanese Chicken Rice", "zh": "海南鸡饭" }, "note": "Kids' portion: no chili, extra cucumber.", "video": true, "videoId": null },
-  { "id": "tomato_egg", "title": { "en": "Tomato Egg Stir-fry", "zh": "番茄炒蛋" }, "note": "Quick wok-fry, 5 min.", "video": false, "videoId": null },
-  { "id": "steamed_fish", "title": { "en": "Steamed Fish", "zh": "清蒸鱼" }, "note": "Steam 12 min on high. Ginger + scallion on top.", "video": false, "videoId": null },
-  { "id": "braised_pork", "title": { "en": "Braised Pork Belly", "zh": "红烧肉" }, "note": "Braise 1.5 hrs. Extra rock sugar, per Grandma's recipe.", "video": false, "videoId": null },
-  { "id": "choy_sum", "title": { "en": "Stir-fried Choy Sum", "zh": "蒜蓉炒菜心" }, "note": "Quick garlic stir-fry, 3 min.", "video": false, "videoId": null }
+  { "id": "udon_honey_wings", "title": { "en": "Udon Noodles with Honey Fried Chicken Wings", "zh": "乌冬面配炸蜂蜜鸡翅" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null },
+  { "id": "udon_jinjja_wings", "title": { "en": "Udon Noodles with Jinjja Chicken Wings", "zh": "乌冬面配jinjja鸡翅" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null },
+  { "id": "scrambled_eggs", "title": { "en": "Scrambled Eggs", "zh": "炒蛋" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null },
+  { "id": "tomato_egg_soup_rice", "title": { "en": "Tomato Egg Soup with White Rice", "zh": "番茄鸡蛋汤配白饭" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null },
+  { "id": "fried_chicken_ribs_rice", "title": { "en": "Fried Chicken Ribs with White Rice", "zh": "炸鸡肋配白饭" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null },
+  { "id": "squid_ink_noodles", "title": { "en": "Squid Ink Noodles (\"Black Noodles\")", "zh": "墨鱼汁面（黑面面）" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null },
+  { "id": "korean_instant_noodles", "title": { "en": "Korean Instant Noodles (\"Korean Noodles\")", "zh": "韩国泡面（韩国面面）" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null },
+  { "id": "braised_chicken", "title": { "en": "Braised Chicken (Red-Braised)", "zh": "红烧鸡" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null },
+  { "id": "braised_duck", "title": { "en": "Braised Duck (Red-Braised)", "zh": "红烧鸭" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null },
+  { "id": "blanching_technique", "title": { "en": "Blanching (Meat Prep)", "zh": "焯水" }, "note": "Put raw meat into cold water with 2-3 slices of ginger, one knotted scallion, and a splash of cooking wine / 白酒. Bring to a boil, skim off the blood foam that rises, then discard the water. (Steps to be refined later.)", "video": false, "videoId": null },
+  { "id": "steamed_fish", "title": { "en": "Steamed Fish", "zh": "蒸鱼" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null },
+  { "id": "stir_fried_vegetables", "title": { "en": "Stir-Fried Vegetables", "zh": "炒蔬菜" }, "note": "Recipe steps to be shared via chat.", "video": false, "videoId": null }
 ]
