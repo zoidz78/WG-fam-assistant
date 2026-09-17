@@ -830,7 +830,15 @@ function renderMeals(){
       renderMeals();
     };
   });
-  el.querySelectorAll('[data-editdish]').forEach(btn=>{ btn.onclick = ()=> openEditDishModal(btn.dataset.editdish); });
+  el.querySelectorAll('[data-editdish]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const dishId = btn.dataset.editdish;
+      requestPinThenConfirm({
+        confirmText: t('editDishConfirm'),
+        onConfirm: ()=>{ editAuditPending = true; openEditDishModal(dishId); }
+      });
+    };
+  });
   el.querySelectorAll('[data-removedish]').forEach(btn=>{
     btn.onclick = ()=>{
       const card = mealData.cards.find(c=>c.id===btn.dataset.removedish);
@@ -968,7 +976,14 @@ function renderDishPickList(){
     };
   });
   listEl.querySelectorAll('[data-editpickid]').forEach(btn=>{
-    btn.onclick = (e)=>{ e.stopPropagation(); openEditDishModal(btn.dataset.editpickid); };
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      const dishId = btn.dataset.editpickid;
+      requestPinThenConfirm({
+        confirmText: t('editDishConfirm'),
+        onConfirm: ()=>{ editAuditPending = true; openEditDishModal(dishId); }
+      });
+    };
   });
 }
 document.getElementById('dishSearchInput').oninput = (e)=>{ dishSearchQuery = e.target.value; renderDishPickList(); };
@@ -1006,7 +1021,7 @@ function openNewDishModal(cardIdContext){
   else contextEl.style.display = 'none';
   document.getElementById('newDishModalOverlay').classList.add('open');
 }
-function closeNewDishModal(){ document.getElementById('newDishModalOverlay').classList.remove('open'); draftForNewDish=false; }
+function closeNewDishModal(){ document.getElementById('newDishModalOverlay').classList.remove('open'); draftForNewDish=false; editAuditPending=false; }
 function openEditDishModal(dishId){
   const dish = findRecipe(dishId);
   if(!dish) return;
@@ -1056,8 +1071,12 @@ document.getElementById('newDishSave').onclick = ()=>{
     else if(link){ dish.video=false; dish.videoId=null; dish.note="Linked recipe: "+link; }
     else { dish.video=false; dish.videoId=null; }
   }
+  const wasEdit = !!editingDishId;
   if(!editingDishId) dishLibrary.push(dish);
   writeRecipeLibrary();
+  if(wasEdit && editAuditPending){
+    logAuditEvent('editDish', { dishId: dish.id, title: dishTitleObj(dish) });
+  }
 
   if(newDishContextCardId){
     const card = mealData.cards.find(c=>c.id===newDishContextCardId);
