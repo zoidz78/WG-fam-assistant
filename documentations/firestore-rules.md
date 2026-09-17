@@ -42,6 +42,14 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Stores the Talk Bridge translated chat (field `messages`, an array) —
+    // a single ongoing doc, `main`, not week-scoped like mealThreads, since
+    // this is general-purpose household<->helper communication rather than
+    // meal-plan-specific. Open read/write, same trust model as above.
+    match /talkBridge/{docId} {
+      allow read, write: if true;
+    }
+
     // Audit trail for destructive actions (deleting a meal card, clearing
     // the week's chat) that are gated behind a PIN + double confirm in the
     // UI. One doc per event: {action, details, weekId, by, byId, ts}.

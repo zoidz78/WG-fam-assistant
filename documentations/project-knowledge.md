@@ -29,6 +29,19 @@ anything live/cross-device.
   tools will be added here later (a "More admin tools" placeholder card
   already sits below the family-members one). Linked from a new "Admin" card
   on the Home Hub (`hub-cards.json`, id `admin`, icon 🛠️).
+- `talk-bridge.html` — "**Talk Bridge**" / "**语桥**" (2026-09-17). A
+  standalone, full-page translated chat — same MyMemory translation engine
+  and Mandarin/English/Tagalog language-detection logic as the meal chat,
+  but pulled out into its own page with much bigger fonts (~19px message
+  text vs ~13.5px in the meal chat's compact card), built specifically so a
+  less tech-savvy family member (this was requested for a mother-in-law) can
+  read messages to/from the helper comfortably. Not tied to meal planning or
+  a specific week — one ongoing conversation (`talkBridge/main`). Has its
+  own PIN-gated "clear chat" (🗑️ in the header, audit-logged as
+  `clearTalkBridge`) and reuses the same name modal + cross-device
+  identity-merge-with-PIN flow as the other pages. Card sits on the Home Hub
+  between "What's Cooking" and "Admin" (`hub-cards.json`, id `talkbridge`,
+  icon 🌉), with its own unread-message badge like the meal chat's.
 
 ## Files
 
@@ -37,6 +50,7 @@ anything live/cross-device.
 | `index.html` | Home Hub landing page. Fetches `hub-cards.json`, falls back to `FALLBACK_HUB_CARDS` if that fails. |
 | `hub-cards.json` | List of Home Hub cards: `{id, href, icon, text: {en, zh}}`. |
 | `meal-dashboard.html` | The meal planner + recipe library + chat. See sections below. |
+| `talk-bridge.html` | Standalone big-font translated chat page ("Talk Bridge" / "语桥") — see the page list above. |
 | `recipes.json` | Seed data for the Firestore recipe library (see Recipe library section) — **not the live source once Firestore has data**. |
 | `firestore-rules.md` | Firestore security rules for all collections used by this app. |
 | `README.md` | User-facing docs for a non-technical maintainer — **stale, still describes the old fixed-6-slot flow; needs a rewrite before handoff.** |
@@ -242,6 +256,8 @@ except `auditLog` which is append-only)
   (`localStorage['wg-userid']`).
 - `recipeLibrary/main` — `{ recipes: [...] }`, one shared doc, seeded from
   `recipes.json` (see above).
+- `talkBridge/main` — `{ messages: [...] }`, one shared doc, powers
+  `talk-bridge.html`'s ongoing translated chat (not week-scoped).
 - `auditLog/{entryId}` — `{ action, details, weekId, by, byId, ts }`,
   append-only, logs destructive/edit actions (see PIN section above).
 
