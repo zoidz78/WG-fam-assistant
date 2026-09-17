@@ -285,8 +285,20 @@ catch(e){ console.warn('Firebase not configured — local-only this session.', e
 // --- Translation (MyMemory, free/no-key) ---
 const MYMEMORY_LANG_CODE = { en:'en', zh:'zh-CN', tl:'tl' };
 const TAGALOG_MARKERS = new Set(['ang','ng','mga','sa','ako','ikaw','siya','tayo','kami','sila','kayo','hindi','wala','opo','po','naman','lang','din','rin','kasi','ba','yung','yun','ito','iyon','pag','pala','talaga','salamat','kumusta','paano','ganito','ganyan','marunong','gusto','pwede','oo','na','may','meron','kung','para','dahil','saan','ano','sino','bakit']);
+// A code-mixed message (e.g. "so half chinese words, 一半菲律宾话...") used
+// to be classified as 'zh' the instant it contained ANY Chinese character,
+// even a single embedded phrase in an otherwise-English sentence — which
+// then skipped generating a Chinese translation entirely (origLang=='zh'
+// is excluded from the translation fan-out), leaving Mandarin-only readers
+// with no translation for the English majority of the message. Now it's a
+// ratio: only messages where Chinese characters make up a real share of
+// the text (not just a short mixed-in phrase) are classified as Chinese;
+// anything more English-dominant falls through to the Tagalog/English
+// check below, so a Chinese translation still gets generated for it.
 function detectLangHeuristic(text){
-  if(/[一-鿿]/.test(text)) return 'zh';
+  const cjkCount = (text.match(/[一-鿿]/g) || []).length;
+  const meaningfulCount = text.replace(/\s/g,'').length || 1;
+  if(cjkCount / meaningfulCount > 0.4) return 'zh';
   const words = text.toLowerCase().replace(/[^\p{L}\s]/gu,'').split(/\s+/).filter(Boolean);
   return words.some(w=>TAGALOG_MARKERS.has(w)) ? 'tl' : 'en';
 }
@@ -300,6 +312,22 @@ async function translateText(text, targetAppLang, sourceAppLang){
     if(data.responseStatus!==200 || !data.responseData || !data.responseData.translatedText) throw new Error('no usable translation');
     return data.responseData.translatedText;
   }catch(err){ console.error('Translation failed', err); return null; }
+}
+// MyMemory's direct zh<->tl pair is low quality/coverage — a Chinese+Tagalog
+// mixed message translated straight to Tagalog (or vice versa) tended to
+// come back barely-translated (sometimes just English-looking text, not
+// actually Tagalog). Neither side of that pair is English, which is the
+// language MyMemory is strongest with, so route zh<->tl through English as
+// an intermediate hop; a direct pair involving English is left as a single
+// call, since that's the case MyMemory handles well already.
+async function translateViaBestPath(text, targetAppLang, sourceAppLang){
+  if(targetAppLang===sourceAppLang) return text;
+  if(sourceAppLang==='en' || targetAppLang==='en'){
+    return translateText(text, targetAppLang, sourceAppLang);
+  }
+  const viaEnglish = await translateText(text, 'en', sourceAppLang);
+  if(!viaEnglish) return null;
+  return translateText(viaEnglish, targetAppLang, 'en');
 }
 
 function getUserId(){
@@ -923,7 +951,7 @@ async function sendMessage(){
   sendBtn.disabled = true;
   const origLang = detectLangHeuristic(text);
   const targetLangs = ALL_LANGS.filter(l=>l!==origLang);
-  const results = await Promise.all(targetLangs.map(lang=>translateText(text, lang, origLang)));
+  const results = await Promise.all(targetLangs.map(lang=>translateViaBestPath(text, lang, origLang)));
   const translations = {};
   targetLangs.forEach((lang,i)=>{ translations[lang] = results[i]; });
   const newMessages = threadData.messages.concat([{ from:"you", text, origLang, translations, unread:true, senderId:getUserId(), senderName: localStorage.getItem('wg-username'), ts: Date.now() }]);
