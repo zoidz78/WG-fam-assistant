@@ -29,7 +29,7 @@
   .icon-btn.active{background:rgba(255,255,255,0.22);}
   .lang-pill{font-size:12px; font-weight:700; padding:5px 10px; border-radius:999px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:var(--banner-ink); cursor:pointer;}
   .lang-pill.active{background:var(--banner-ink); color:var(--banner-bg);}
-  .greeting{font-size:12px; font-weight:700; color:var(--banner-bg); cursor:pointer; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.12); font-family:var(--font-body); padding:5px 10px; border-radius:999px; margin-right:8px;}
+  .greeting{font-size:12px; font-weight:700; color:var(--banner-bg); cursor:pointer; border:none; background:var(--banner-ink); font-family:var(--font-body); padding:5px 10px; border-radius:999px; margin-right:8px;}
   .greeting b{opacity:1;}
   .greeting:hover{filter:brightness(0.97);}
 
@@ -132,7 +132,14 @@ function saveFamilyMemberName(name){
 async function findExistingMemberByName(name){
   if(!db) return null;
   try{
-    const snap = await getDocs(collection(db,'familyMembers'));
+    // Race against a timeout so a slow/stuck connection can never leave the
+    // name modal hanging forever with no feedback — if the lookup doesn't
+    // come back in time, treat it as "no match" and let the save proceed
+    // (best-effort, same as the rest of this app's Firestore writes).
+    const snap = await Promise.race([
+      getDocs(collection(db,'familyMembers')),
+      new Promise((_, reject)=>setTimeout(()=>reject(new Error('familyMembers lookup timed out')), 6000))
+    ]);
     const norm = name.trim().toLowerCase();
     const match = snap.docs.find(d => d.id!==getUserId() && (d.data().name||'').trim().toLowerCase()===norm);
     return match ? { id: match.id, name: match.data().name } : null;
@@ -163,14 +170,14 @@ const i18n = {
   en: {
     kicker:"Household", title:"Home Hub", openLink:"Open →",
     nameModalTitle:"What's your name?", nameModalSub:"So messages in the meal thread show who sent them, instead of just \"You\".",
-    nameModalPh:"e.g. Mom, Dad, Effendy...", skip:"Skip for now", save:"Save", greetingHi:"Hi, ", you:"You",
+    nameModalPh:"e.g. Mom, Dad, Helper...", skip:"Skip for now", save:"Save", checking:"Checking…", greetingHi:"Hi, ", you:"You",
     pinModalTitle:"PIN required", pinModalHint:"Enter the PIN to continue with this action.",
     pinModalPh:"Enter PIN", pinModalError:"Incorrect PIN", continueBtn:"Continue", cancel:"Cancel"
   },
   zh: {
     kicker:"家庭", title:"家庭中心", openLink:"打开 →",
     nameModalTitle:"你的名字是？", nameModalSub:"这样餐饮消息里会显示是谁发的，而不只是「你」。",
-    nameModalPh:"例如：妈妈、爸爸、Effendy...", skip:"暂时跳过", save:"保存", greetingHi:"你好，", you:"你",
+    nameModalPh:"例如：妈妈、爸爸、帮佣...", skip:"暂时跳过", save:"保存", checking:"检查中…", greetingHi:"你好，", you:"你",
     pinModalTitle:"需要密码", pinModalHint:"请输入密码以继续此操作。",
     pinModalPh:"输入密码", pinModalError:"密码错误", continueBtn:"继续", cancel:"取消"
   }
@@ -283,9 +290,24 @@ document.getElementById('nameModalSkip').onclick = closeNameModal;
 document.getElementById('nameModalSave').onclick = async ()=>{
   const name = document.getElementById('nameInput').value.trim();
   if(!name){ document.getElementById('nameInput').focus(); return; }
-  const existing = await findExistingMemberByName(name);
+  const saveBtn = document.getElementById('nameModalSave');
+  const originalLabel = saveBtn.textContent;
+  saveBtn.disabled = true;
+  saveBtn.textContent = t('checking');
+  let existing;
+  try{
+    existing = await findExistingMemberByName(name);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = originalLabel;
+  }
   if(existing){
     const previousId = getUserId();
+    // Hide the name modal while the PIN prompt is up — otherwise both
+    // overlays end up "open" at once, and depending on their order in the
+    // page markup, the name modal can end up sitting on top and blocking
+    // the PIN modal entirely. Bring it back if the PIN step is cancelled.
+    document.getElementById('nameModalOverlay').classList.remove('open');
     requestPinThenConfirm({
       onConfirm: ()=>{
         localStorage.setItem('wg-userid', existing.id);
@@ -293,6 +315,7 @@ document.getElementById('nameModalSave').onclick = async ()=>{
         renderGreeting();
         closeNameModal();
       },
+      onCancel: ()=>{ document.getElementById('nameModalOverlay').classList.add('open'); },
       auditAction: 'claimIdentity',
       auditDetails: { name, claimedId: existing.id, previousId }
     });
@@ -302,8 +325,17 @@ document.getElementById('nameModalSave').onclick = async ()=>{
   renderGreeting();
   closeNameModal();
 };
-document.getElementById('pinModalCancel').onclick = closePinModal;
-document.getElementById('pinModalOverlay').onclick = (e)=>{ if(e.target.id==='pinModalOverlay') closePinModal(); };
+document.getElementById('pinModalCancel').onclick = ()=>{
+  const action = pendingGuardedAction;
+  closePinModal();
+  if(action && action.onCancel) action.onCancel();
+};
+document.getElementById('pinModalOverlay').onclick = (e)=>{
+  if(e.target.id!=='pinModalOverlay') return;
+  const action = pendingGuardedAction;
+  closePinModal();
+  if(action && action.onCancel) action.onCancel();
+};
 document.getElementById('pinInput').addEventListener('keydown', (e)=>{
   if(e.key==='Enter'){ e.preventDefault(); document.getElementById('pinModalContinue').click(); }
 });
