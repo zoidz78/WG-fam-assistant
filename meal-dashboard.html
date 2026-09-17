@@ -175,15 +175,15 @@
 <main class="wrap" id="mealsPanel" style="margin-top:14px;">
   <div class="day-strip" id="dayStrip"></div>
 
-  <div class="card chat-card">
+  <div class="meals" id="mealArea"></div>
+
+  <div class="card chat-card" style="margin-top:16px;">
     <div class="chat-card-head">
       <span class="chat-card-title">💬 <span data-i18n="chatTitle">消息</span></span>
       <button class="icon-btn" id="clearMessagesBtn" data-i18n-title="clearMessagesTitle" style="border-color:var(--line); background:none; color:var(--ink-soft);">🗑️</button>
     </div>
     <div class="chat-card-messages" id="chatMessages"></div>
   </div>
-
-  <div class="meals" id="mealArea"></div>
 </main>
 
 <div class="chat-bar" id="chatBottomBar">
@@ -319,7 +319,7 @@ let currentLang = localStorage.getItem('wg-lang') || 'zh';
 const i18n = {
   en: {
     kicker:"This week", title:"What's Cooking", backToHub:"Home Hub",
-    mealsTab:"🍲 Meals", chatTab:"💬 Chat",
+    mealsTab:"🍲 Meals", chatTab:"💬 Chat", chatTitle:"Chat",
     breakfast:"Breakfast", lunch:"Lunch", dinner:"Dinner",
     planned:"Planned", cooking:"Cooking", missing:"Missing ingredient", done:"Done",
     videoLink:"Watch recipe video",
@@ -346,7 +346,7 @@ const i18n = {
   },
   zh: {
     kicker:"本周", title:"今天吃什么", backToHub:"家庭中心",
-    mealsTab:"🍲 餐单", chatTab:"💬 消息",
+    mealsTab:"🍲 餐单", chatTab:"💬 消息", chatTitle:"消息",
     Mon:"周一", Tue:"周二", Wed:"周三", Thu:"周四", Fri:"周五", Sat:"周六", Sun:"周日",
     breakfast:"早餐", lunch:"午餐", dinner:"晚餐",
     planned:"已安排", cooking:"烹饪中", missing:"食材不足", done:"已完成",
