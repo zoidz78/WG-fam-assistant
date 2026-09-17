@@ -37,11 +37,25 @@ anything live/cross-device.
   less tech-savvy family member (this was requested for a mother-in-law) can
   read messages to/from the helper comfortably. Not tied to meal planning or
   a specific week — one ongoing conversation (`talkBridge/main`). Has its
-  own PIN-gated "clear chat" (🗑️ in the header, audit-logged as
-  `clearTalkBridge`) and reuses the same name modal + cross-device
-  identity-merge-with-PIN flow as the other pages. Card sits on the Home Hub
-  between "What's Cooking" and "Admin" (`hub-cards.json`, id `talkbridge`,
-  icon 🌉), with its own unread-message badge like the meal chat's.
+  own PIN-gated "clear chat" (🗑️ in the header) and reuses the same name
+  modal + cross-device identity-merge-with-PIN flow as the other pages. Card
+  sits on the Home Hub between "What's Cooking" and "Admin" (`hub-cards.json`,
+  id `talkbridge`, icon 🌉), with its own unread-message badge like the meal
+  chat's.
+  - **"Clear chat" archives, it doesn't truly delete** (2026-09-17, explicit
+    request): before emptying `talkBridge/main`, the current messages are
+    written to a new doc in `talkBridgeArchive/{archiveId}` (`{messages,
+    clearedBy, clearedById, clearedAt}`), which is append-only in
+    `firestore-rules.md` (same as `auditLog` — create allowed,
+    update/delete blocked) so an archived conversation can't be edited or
+    erased afterward either. The `auditLog` entry for the action
+    (`clearTalkBridge`) only records `{archivedAs: archiveId,
+    messageCount}`, not the full message text — the actual content lives in
+    the archive doc, not the audit trail. If the archive write fails, the
+    clear is aborted entirely (nothing is wiped without a successful backup
+    first) and no audit entry is logged for that attempt. There's currently
+    no in-app UI to browse `talkBridgeArchive` — retrieving an old
+    conversation means looking it up in the Firebase Console.
 
 ## Files
 
